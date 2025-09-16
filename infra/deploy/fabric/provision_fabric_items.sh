@@ -167,7 +167,7 @@ print_success "pip is available"
 
 # Install Python dependencies
 print_step "Installing Python dependencies from requirements.txt..."
-if ! $PIP_CMD install -r requirements.txt --quiet; then
+if ! $PIP_CMD install -r "$requirementFile" --quiet; then
     print_error "❌ Failed to install Python dependencies. Please check requirements.txt and try again."
     exit 1
 fi
