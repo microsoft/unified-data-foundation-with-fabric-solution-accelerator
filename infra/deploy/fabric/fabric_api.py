@@ -21,11 +21,11 @@ Dependencies:
 Author: Generated for Unified Data Foundation with Fabric (UDFF) project
 """
 
-import json
 import time
+import json
+import requests
 from datetime import datetime
 from typing import Dict, List, Optional, Union, Any
-import requests
 from azure.identity import AzureCliCredential, DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeServiceClient, FileSystemClient
 
@@ -115,7 +115,9 @@ class FabricApiClient:
                      data: Optional[Union[str, dict]] = None,
                      headers: Optional[Dict[str, str]] = None,
                      timeout: Optional[int] = None,
-                     wait_for_lro: bool = True) -> requests.Response:
+                     wait_for_lro: bool = True,
+                     max_retries: int = 3,
+                     retry_count: int = 0) -> requests.Response:
         """
         Make an HTTP request to the Fabric API.
         
@@ -126,6 +128,8 @@ class FabricApiClient:
             headers: Additional headers
             timeout: Request timeout
             wait_for_lro: Whether to wait for long running operations to complete
+            max_retries: Maximum number of retries for rate limiting
+            retry_count: Current retry count (internal use)
             
         Returns:
             Response object
@@ -133,6 +137,9 @@ class FabricApiClient:
         Raises:
             FabricApiError: If request fails
         """
+        if retry_count > max_retries:
+            raise FabricApiError(f"Maximum retries ({max_retries}) exceeded for rate limiting")
+        
         url = f"{self.api_url}/{uri.lstrip('/')}"
         
         # Prepare headers
@@ -148,7 +155,7 @@ class FabricApiClient:
             data = json.dumps(data)
         
         try:
-            self._log(f"Making {method} request to {url}")
+            self._log(f"Making {method} request to {url} (attempt {retry_count + 1})")
             response = requests.request(
                 method=method.upper(),
                 url=url,
@@ -165,28 +172,59 @@ class FabricApiClient:
             if response.status_code == 202 and wait_for_lro:
                 location = response.headers.get('Location')
                 if location:
-                    self._log("Long-running operation detected, waiting for completion...")
-                    return self._wait_for_lro_completion(location, max_wait_time=300)
+                    return self._wait_for_lro_completion(
+                        job_url=location,
+                        operation_name=f"{method} {uri}",
+                        max_wait_time=1800
+                    )
                 else:
-                    return response
+                    self._log("Long-running operation detected but no Location header found", "WARNING")
+                
             elif response.status_code == 202 and not wait_for_lro:
                 self._log("Long-running operation detected, returning 202 response without waiting")
             
-            # Check for errors
-            if response.status_code >= 400:
-                error_msg = f"API request failed with status {response.status_code}"
-                try:
-                    error_data = response.json()
-                    if 'message' in error_data:
-                        error_msg += f": {error_data['message']}"
-                except:
-                    error_msg += f": {response.text}"
+            elif response.status_code == 429:
+                # Handle rate limiting with exponential backoff
+                retry_after_header = response.headers.get('Retry-After', '60')
                 
-                raise FabricApiError(error_msg, response.status_code, error_data if 'error_data' in locals() else None)
+                # Parse retry-after header (could be seconds or HTTP date)
+                try:
+                    retry_after = int(retry_after_header)
+                except ValueError:
+                    # If it's not a number, assume it's an HTTP date (not implemented here)
+                    retry_after = min(60, 2 ** retry_count)  # Exponential backoff with cap
+                
+                # Cap the retry time to reasonable limits
+                retry_after = min(retry_after, 300)  # Max 5 minutes
+                
+                self._log(f"Rate limit exceeded. Retrying in {retry_after} seconds... (attempt {retry_count + 1}/{max_retries})", "WARNING")
+                time.sleep(retry_after)
+                
+                # Recursive call with retry count
+                return self._make_request(uri, method, data, headers, timeout, wait_for_lro, max_retries, retry_count + 1)
+            
+            # Check for errors
+            elif response.status_code >= 400:
+                error_msg = f"API request failed with status {response.status_code}"
+                error_data = None
+                
+                try:
+                    error_response = response.json()
+                    if 'error' in error_response:
+                        error_data = error_response['error']
+                        error_msg += f": {error_data.get('message', 'Unknown error')}"
+                except (ValueError, json.JSONDecodeError):
+                    error_msg += f": {response.text[:500]}"  # Limit error text length
+                
+                raise FabricApiError(error_msg, response.status_code, error_data)
             
             self._log("Request completed successfully")
             return response
             
+        except requests.Timeout as e:
+            raise FabricApiError(f"Request timed out after {timeout or self.timeout_sec} seconds: {str(e)}")
+        except requests.ConnectionError as e:
+            raise FabricApiError(f"Connection error: {str(e)}")
         except requests.RequestException as e:
             raise FabricApiError(f"Request failed: {str(e)}")
     
@@ -373,68 +411,6 @@ class FabricApiClient:
         response = self._make_request(f"workspaces/{workspace_id}/folders", method="POST", data=data)
         return response.json()['id']
     
-    def create_folder_hierarchy(self, workspace_id: str, folder_path: str) -> str:
-        """
-        Create a complete folder hierarchy.
-        
-        Args:
-            workspace_id: Target workspace ID
-            folder_path: Full path separated by forward slashes
-            
-        Returns:
-            Final folder ID
-        """
-        # Get existing folders and build path mapping
-        existing_folders = self.get_folders(workspace_id)
-        folder_map = self._build_folder_path_mapping(existing_folders)
-        
-        # Check if folder already exists
-        if folder_path in folder_map:
-            self._log(f"Folder '{folder_path}' already exists with ID: {folder_map[folder_path]}")
-            return folder_map[folder_path]
-        
-        # Split path and create recursively
-        path_parts = folder_path.split('/')
-        
-        if len(path_parts) == 1:
-            # Root folder
-            return self.create_folder(workspace_id, path_parts[0])
-        else:
-            # Ensure parent exists
-            parent_path = '/'.join(path_parts[:-1])
-            parent_id = self.create_folder_hierarchy(workspace_id, parent_path)
-            
-            # Create this folder
-            folder_name = path_parts[-1]
-            folder_id = self.create_folder(workspace_id, folder_name, parent_id)
-            self._log(f"Created folder '{folder_name}' with ID: {folder_id}")
-            return folder_id
-    
-    def _build_folder_path_mapping(self, folders: List[Dict[str, Any]]) -> Dict[str, str]:
-        """Build a mapping of full folder paths to folder IDs."""
-        folder_lookup = {f['id']: f for f in folders}
-        path_map = {}
-        
-        def build_path(folder_id: str) -> str:
-            if folder_id not in folder_lookup:
-                return ""
-            
-            folder = folder_lookup[folder_id]
-            name = folder['displayName']
-            parent_id = folder.get('parentFolderId')
-            
-            if not parent_id:
-                return name
-            
-            parent_path = build_path(parent_id)
-            return f"{parent_path}/{name}"
-        
-        for folder in folders:
-            full_path = build_path(folder['id'])
-            path_map[full_path] = folder['id']
-        
-        return path_map
-    
     # Notebook operations
     def get_notebooks(self, workspace_id: str) -> Dict[str, str]:
         """
@@ -500,6 +476,207 @@ class FabricApiClient:
             items = [item for item in items if item.get('type', '').lower() == item_type.lower()]
         
         return items
+    
+    # Lakehouse operations
+    def get_lakehouses(self, workspace_id: str) -> List[Dict[str, Any]]:
+        """
+        Get all lakehouses from a workspace.
+        
+        Args:
+            workspace_id: Target workspace ID
+            
+        Returns:
+            List of lakehouse objects containing:
+            - id: Lakehouse ID
+            - displayName: Lakehouse display name
+            - description: Lakehouse description
+            - type: Item type ("Lakehouse")
+            - workspaceId: Workspace ID
+            - properties: Lakehouse properties including OneLake paths and SQL endpoint
+            - folderId: Folder ID (if in a folder)
+            - tags: List of applied tags
+            
+        Raises:
+            FabricApiError: If request fails
+            
+        Required Scopes:
+            Workspace.Read.All or Workspace.ReadWrite.All
+        """
+        self._log(f"Getting lakehouses from workspace {workspace_id}")
+        response = self._make_request(f"workspaces/{workspace_id}/lakehouses")
+        lakehouses = response.json().get('value', [])
+        self._log(f"Found {len(lakehouses)} lakehouse(s)")
+        return lakehouses
+    
+    def get_lakehouse(self, workspace_id: str, lakehouse_id: str) -> Dict[str, Any]:
+        """
+        Get properties of a specific lakehouse.
+        
+        Args:
+            workspace_id: Target workspace ID
+            lakehouse_id: Lakehouse ID
+            
+        Returns:
+            Lakehouse object containing:
+            - id: Lakehouse ID
+            - displayName: Lakehouse display name
+            - description: Lakehouse description
+            - type: Item type ("Lakehouse")
+            - workspaceId: Workspace ID
+            - properties: Lakehouse properties including:
+              - oneLakeTablesPath: OneLake path to tables directory
+              - oneLakeFilesPath: OneLake path to files directory
+              - sqlEndpointProperties: SQL endpoint details (connection string, ID, status)
+              - defaultSchema: Default schema (for schema-enabled lakehouses)
+            - folderId: Folder ID (if in a folder)
+            - tags: List of applied tags
+            
+        Raises:
+            FabricApiError: If lakehouse not found or request fails
+            
+        Required Scopes:
+            Lakehouse.Read.All or Lakehouse.ReadWrite.All or Item.Read.All or Item.ReadWrite.All
+        """
+        self._log(f"Getting lakehouse {lakehouse_id} from workspace {workspace_id}")
+        response = self._make_request(f"workspaces/{workspace_id}/lakehouses/{lakehouse_id}")
+        lakehouse = response.json()
+        self._log(f"Retrieved lakehouse '{lakehouse.get('displayName', 'Unknown')}'")
+        return lakehouse
+    
+    def get_lakehouse_by_name(self, workspace_id: str, lakehouse_name: str) -> Dict[str, Any]:
+        """
+        Get lakehouse by display name.
+        
+        Args:
+            workspace_id: Target workspace ID
+            lakehouse_name: Display name of the lakehouse
+            
+        Returns:
+            Lakehouse object
+            
+        Raises:
+            FabricApiError: If lakehouse not found or request fails
+        """
+        lakehouses = self.get_lakehouses(workspace_id)
+        lakehouse = next((lh for lh in lakehouses if lh['displayName'].lower() == lakehouse_name.lower()), None)
+        
+        if not lakehouse:
+            raise FabricApiError(f"Lakehouse '{lakehouse_name}' not found in workspace {workspace_id}")
+        
+        return lakehouse
+    
+    def create_lakehouse(self, 
+                        workspace_id: str, 
+                        display_name: str,
+                        description: Optional[str] = None,
+                        folder_id: Optional[str] = None,
+                        enable_schemas: bool = True,
+                        wait_for_lro: bool = True) -> Dict[str, Any]:
+        """
+        Create a new lakehouse in the specified workspace.
+        
+        Args:
+            workspace_id: Target workspace ID
+            display_name: Lakehouse display name
+            description: Optional lakehouse description (max 256 characters)
+            folder_id: Optional folder ID (if None, created in workspace root)
+            enable_schemas: Whether to enable schemas (default: True)
+            wait_for_lro: Whether to wait for long running operations to complete
+            
+        Returns:
+            Lakehouse object containing:
+            - id: Lakehouse ID
+            - displayName: Lakehouse display name
+            - description: Lakehouse description
+            - type: Item type ("Lakehouse")
+            - workspaceId: Workspace ID
+            - folderId: Folder ID (if in a folder)
+            
+        Raises:
+            FabricApiError: If creation fails
+            
+        Required Scopes:
+            Lakehouse.ReadWrite.All or Item.ReadWrite.All
+        """
+        self._log(f"Creating lakehouse '{display_name}' in workspace {workspace_id}")
+        
+        # Prepare request data
+        lakehouse_data = {
+            "displayName": display_name,
+            "type": "Lakehouse"
+        }
+        
+        if description:
+            lakehouse_data["description"] = description
+            
+        if folder_id:
+            lakehouse_data["folderId"] = folder_id
+            
+        if enable_schemas:
+            lakehouse_data["creationPayload"] = {
+                "enableSchemas": True
+            }
+        
+        # Make the API request
+        response = self._make_request(
+            f"workspaces/{workspace_id}/lakehouses", 
+            method="POST", 
+            data=lakehouse_data,
+            wait_for_lro=wait_for_lro
+        )
+        
+        if response.status_code in [201, 200]:
+            lakehouse = response.json()
+            self._log(f"Lakehouse '{display_name}' created successfully with ID: {lakehouse.get('id')}")
+            return lakehouse
+        else:
+            raise FabricApiError(f"Unexpected response status: {response.status_code}")
+    
+    def update_lakehouse(self, 
+                        workspace_id: str, 
+                        lakehouse_id: str,
+                        display_name: Optional[str] = None,
+                        description: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Update properties of an existing lakehouse.
+        
+        Args:
+            workspace_id: Target workspace ID
+            lakehouse_id: Lakehouse ID to update
+            display_name: New lakehouse display name (optional)
+            description: New lakehouse description (optional, max 256 characters)
+            
+        Returns:
+            Updated lakehouse object
+            
+        Raises:
+            FabricApiError: If update fails or lakehouse not found
+            
+        Required Scopes:
+            Lakehouse.ReadWrite.All or Item.ReadWrite.All
+        """
+        if not display_name and not description:
+            raise FabricApiError("At least one property (display_name or description) must be provided for update")
+        
+        self._log(f"Updating lakehouse {lakehouse_id} in workspace {workspace_id}")
+        
+        # Prepare request data
+        update_data = {}
+        if display_name:
+            update_data["displayName"] = display_name
+        if description:
+            update_data["description"] = description
+        
+        # Make the API request
+        response = self._make_request(
+            f"workspaces/{workspace_id}/lakehouses/{lakehouse_id}", 
+            method="PATCH", 
+            data=update_data
+        )
+        
+        lakehouse = response.json()
+        self._log(f"Lakehouse updated successfully: '{lakehouse.get('displayName')}'")
+        return lakehouse
     
     # Notebook execution operations
     def schedule_notebook_job(self, workspace_id: str, notebook_id: str) -> Dict[str, Any]:

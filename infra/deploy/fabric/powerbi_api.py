@@ -340,6 +340,140 @@ class PowerBIAPIClient:
         response = self.invoke_powerbi_api_request(uri=uri, method="GET")
         return response.get('value', []) if response else []
     
+    def get_powerbi_datasets(self, workspace_id: Optional[str] = None) -> List[dict]:
+        """Get all datasets in a workspace or user's datasets
+        
+        Args:
+            workspace_id: Optional workspace ID. If provided, gets datasets from the specified workspace.
+                         If None, gets datasets from "My workspace"
+        
+        Returns:
+            List of dataset dictionaries containing dataset information such as:
+            - id: Dataset ID
+            - name: Dataset name
+            - addRowsAPIEnabled: Whether the dataset allows adding new rows
+            - configuredBy: The dataset owner
+            - isRefreshable: Whether the dataset is refreshable
+            - isEffectiveIdentityRequired: Whether the dataset requires an effective identity
+            - isEffectiveIdentityRolesRequired: Whether row-level security is defined
+            - isOnPremGatewayRequired: Whether the dataset requires an on-premises data gateway
+            - createdDate: The dataset creation date and time
+            - description: The dataset description
+            - webUrl: The web URL of the dataset
+        
+        Raises:
+            requests.HTTPError: If the API request fails
+        
+        Required Scope:
+            Dataset.ReadWrite.All or Dataset.Read.All
+        """
+        if workspace_id:
+            uri = f"groups/{workspace_id}/datasets"
+        else:
+            uri = "datasets"
+        
+        response = self.invoke_powerbi_api_request(uri=uri, method="GET")
+        return response.get('value', []) if response else []
+    
+    def get_powerbi_dataset(self, dataset_name: str, workspace_id: Optional[str] = None) -> dict:
+        """Get Power BI dataset by name
+        
+        Args:
+            dataset_name: Name of the dataset to find
+            workspace_id: Optional workspace ID. If provided, searches in the specified workspace.
+                         If None, searches in "My workspace"
+        
+        Returns:
+            Dataset dictionary containing dataset information
+        
+        Raises:
+            Exception: If the dataset cannot be found
+            requests.HTTPError: If the API request fails
+        
+        Required Scope:
+            Dataset.ReadWrite.All or Dataset.Read.All
+        """
+        datasets = self.get_powerbi_datasets(workspace_id)
+        
+        dataset = next((d for d in datasets if d['name'].lower() == dataset_name.lower()), None)
+        
+        if not dataset:
+            workspace_info = f" in workspace ID '{workspace_id}'" if workspace_id else " in My workspace"
+            raise Exception(f"Cannot find dataset '{dataset_name}'{workspace_info}")
+        
+        return dataset
+    
+    def update_powerbi_dataset_parameters(self, dataset_id: str, parameters: List[Dict[str, str]], 
+                                        workspace_id: Optional[str] = None) -> None:
+        """Update dataset parameters in Power BI
+        
+        Args:
+            dataset_id: The dataset ID
+            parameters: List of parameter dictionaries with 'name' and 'newValue' keys
+                       Example: [{"name": "DatabaseName", "newValue": "NewDB"}, 
+                                {"name": "MaxId", "newValue": "5678"}]
+            workspace_id: Optional workspace ID. If provided, updates parameters in the specified workspace.
+                         If None, updates parameters in "My workspace"
+        
+        Raises:
+            requests.HTTPError: If the API request fails
+            Exception: If the request body is invalid
+        
+        Required Scope:
+            Dataset.ReadWrite.All
+        
+        Limitations:
+            - Maximum of 100 parameters per request
+            - All specified parameters must exist in the dataset
+            - Parameter values should be of the expected type
+            - The parameter list can't be empty or include duplicate parameters
+            - Parameter names are case-sensitive
+            - Parameter 'IsRequired' must have a non-empty value
+            - The parameter types 'Any' and 'Binary' can't be updated
+        
+        Note:
+            - We recommend using enhanced dataset metadata with this API call
+            - If using enhanced dataset metadata, refresh the dataset to apply new parameter values
+            - If not using enhanced dataset metadata, wait 30 minutes before refreshing the dataset
+        """
+        if not parameters:
+            raise Exception("Parameter list cannot be empty")
+        
+        if len(parameters) > 100:
+            raise Exception("Maximum of 100 parameters per request")
+        
+        # Validate parameter structure
+        for param in parameters:
+            if not isinstance(param, dict) or 'name' not in param or 'newValue' not in param:
+                raise Exception("Each parameter must be a dictionary with 'name' and 'newValue' keys")
+        
+        # Check for duplicate parameter names
+        param_names = [param['name'] for param in parameters]
+        if len(param_names) != len(set(param_names)):
+            raise Exception("Parameter list cannot include duplicate parameters")
+        
+        # Build the request body
+        request_body = {
+            "updateDetails": parameters
+        }
+        
+        # Build the URI
+        if workspace_id:
+            uri = f"groups/{workspace_id}/datasets/{dataset_id}/Default.UpdateParameters"
+        else:
+            uri = f"datasets/{dataset_id}/Default.UpdateParameters"
+        
+        self.write_log(f"Updating parameters for dataset {dataset_id}")
+        
+        # Make the API request
+        self.invoke_powerbi_api_request(
+            uri=uri,
+            method="POST",
+            body=request_body
+        )
+        
+        self.write_log("Dataset parameters updated successfully")
+    
     def delete_powerbi_report(self, report_id: str, workspace_id: Optional[str] = None):
         """Delete a Power BI report"""
         if workspace_id:
