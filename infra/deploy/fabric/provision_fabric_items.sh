@@ -94,7 +94,21 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-fabricWorkspaceId="$1"
+# Variables
+baseUrl="$1"
+fabricWorkspaceId="$2"
+requirementFile="requirements.txt"
+requirementFileUrl=${baseUrl}"infra/deploy/fabric/requirements.txt"
+
+echo "Script Started"
+
+curl --output "create_fabric_items.py" ${baseUrl}"infra/deploy/fabric/create_fabric_items.py"
+curl --output "fabric_api.py" ${baseUrl}"infra/deploy/fabric/fabric_api.py"
+curl --output "powerbi_api.py" ${baseUrl}"infra/deploy/fabric/powerbi_api.py"
+
+# Download the requirement file
+curl --output "$requirementFile" "$requirementFileUrl"
+
 print_info "Fabric Workspace ID: $fabricWorkspaceId"
 
 # Validate workspace ID format
@@ -134,7 +148,7 @@ print_success "pip is available"
 
 # Install Python dependencies
 print_step "Installing Python dependencies from requirements.txt..."
-if ! $PIP_CMD install -r requirements.txt --quiet; then
+if ! $PIP_CMD install -r "$requirementFile" --quiet; then
     print_error "❌ Failed to install Python dependencies. Please check requirements.txt and try again."
     exit 1
 fi

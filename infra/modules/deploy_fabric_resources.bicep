@@ -1,6 +1,7 @@
 @description('Specifies the location for resources.')
 param location string
-param scriptUri string // Full absolute https URI the script to be run.
+param baseUrl string // Base URL for downloading additional required files.
+param scriptUri string // Fully qualified URI for the script to be executed.
 param fabricWorkspaceId string // Workspace ID for the Fabric resources
 param identity string // Fully qualified resource ID for the managed identity.
 param enableDeploymentScript bool = false
@@ -40,9 +41,9 @@ param enableDeploymentScript bool = false
 //   }
 // }
 
-resource copy_demo_Data 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
+resource create_fabric_resources 'Microsoft.Resources/deploymentScripts@2023-08-01' = if (enableDeploymentScript) {
   kind:'AzureCLI'
-  name: 'copy_demo_Data'
+  name: 'create-fabric-resources-${uniqueString(deployment().name)}'
   location: location
   identity:{
     type:'UserAssigned'
@@ -53,7 +54,7 @@ resource copy_demo_Data 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
   properties: {
     azCliVersion: '2.52.0'
     primaryScriptUri: scriptUri
-    arguments: fabricWorkspaceId
+    arguments: '${baseUrl} ${fabricWorkspaceId}'
     timeout: 'PT1H'
     retentionInterval: 'PT1H'
     cleanupPreference:'OnSuccess'
