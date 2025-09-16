@@ -1,0 +1,49 @@
+﻿CategoryID,CategoryName
+1,Bikes
+2,Components
+3,Clothing
+4,Accessories
+5,Mountain Bikes
+6,Road Bikes
+7,Touring Bikes
+8,Handlebars
+9,Bottom Brackets
+10,Brakes
+11,Chains
+12,Cranksets
+13,Derailleurs
+14,Forks
+15,Headsets
+16,Mountain Frames
+17,Pedals
+18,Road Frames
+19,Saddles
+20,Touring Frames
+21,Wheels
+22,Bib-Shorts
+23,Caps
+24,Gloves
+25,Jerseys
+26,Shorts
+27,Socks
+28,Tights
+29,Vests
+30,Bike Racks
+31,Bike Stands
+32,Bottles and Cages
+33,Cleaners
+34,Fenders
+35,Helmets
+36,Hydration Packs
+37,Lights
+38,Locks
+39,Panniers
+40,Pumps
+41,Tires and Tubes
+51,Tents
+52,Backpacks
+53,Hiking Clothing
+54,Hiking Footwear
+55,Camping Tables
+56,Camping Stoves
+57,Sleeping Bags

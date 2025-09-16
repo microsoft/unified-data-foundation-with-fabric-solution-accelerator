@@ -1,0 +1,13 @@
+ProductID,ProductName,ProductDescription,BrandName,ProductNumber,Color,ProductModel,ProductCategoryID,CategoryName,ListPrice,StandardCost,Weight,WeightUom,ProductStatus,CreatedDate,SellStartDate,SellEndDate,IsoCurrencyCode,UpdatedDate,CreatedBy,UpdatedBy
+501,Coffee Maker,"Programmable drip coffee maker, 12-cup capacity",Contoso Kitchen,CM-1001,Black,Model-001,201,Coffee Makers,268.13,142.25,3.74,oz,active,2018-01-10,2018-03-01,,USD,2025-08-13,SampleGen,SampleGen
+502,Espresso Machine,Automatic espresso machine with milk frother,Contoso Kitchen,EM-2002,Silver,Model-002,201,Coffee Makers,68.61,28.65,1.68,lb,active,2018-01-10,2018-03-01,,USD,2025-08-13,SampleGen,SampleGen
+503,Chef Knife,8-inch stainless steel chef's knife,Contoso Kitchen,CK-3001,Steel,Model-003,202,Cutlery,98.51,37.26,4.58,kg,active,2018-01-10,2018-03-01,,USD,2025-08-13,SampleGen,SampleGen
+504,Fork Set,Set of 12 dinner forks,Contoso Kitchen,FS-4001,Steel,Model-004,202,Cutlery,288.84,155.07,1.67,lb,active,2018-01-10,2018-03-01,,USD,2025-08-13,SampleGen,SampleGen
+505,Coffee Mug,"Ceramic mug, 16oz, set of 4",Contoso Kitchen,CMG-5001,White,Model-005,203,Cups & Mugs,56.47,38.79,2.01,oz,active,2018-01-10,2018-03-01,,USD,2025-08-13,SampleGen,SampleGen
+506,Serving Platter,Large porcelain serving platter,Contoso Kitchen,SP-6001,White,Model-006,204,Serving Dishes,141.82,82.36,1.86,lb,active,2018-01-10,2018-03-01,,USD,2025-08-13,SampleGen,SampleGen
+507,Ice Cream Bowl,"Glass ice cream bowl, set of 6",Contoso Kitchen,ICB-7001,Clear,Model-007,205,Ice Cream Dishes,15.11,9.23,3.1,oz,active,2018-01-10,2018-03-01,,USD,2025-08-13,SampleGen,SampleGen
+508,Mixing Bowl,"Stainless steel mixing bowl, 3 sizes",Contoso Kitchen,MB-8001,Steel,Model-008,206,Mixing Bowls,40.75,28.03,2.91,oz,active,2018-01-10,2018-03-01,,USD,2025-08-13,SampleGen,SampleGen
+509,Baking Pan,"Non-stick baking pan, 9x13 inch",Contoso Kitchen,BP-9001,Gray,Model-009,207,Bakeware,148.53,92.7,4.72,lb,active,2018-01-10,2018-03-01,,USD,2025-08-13,SampleGen,SampleGen
+510,Food Storage Set,"Plastic food storage containers, set of 10",Contoso Kitchen,FSS-10001,Clear,Model-010,208,Storage Containers,128.45,73.91,0.87,kg,active,2018-01-10,2018-03-01,,USD,2025-08-13,SampleGen,SampleGen
+511,Spatula,"Silicone spatula, heat resistant",Contoso Kitchen,SPT-11001,Red,Model-011,209,Cooking Utensils,207.67,80.14,2.3,kg,active,2018-01-10,2018-03-01,,USD,2025-08-13,SampleGen,SampleGen
+512,Measuring Cup Set,"Measuring cups, set of 5",Contoso Kitchen,MCS-12001,White,Model-012,210,Measuring Tools,135.42,54.52,1.44,oz,active,2018-01-10,2018-03-01,,USD,2025-08-13,SampleGen,SampleGen

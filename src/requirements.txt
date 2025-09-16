@@ -1,0 +1,9 @@
+# Core dependencies
+pandas==2.1.4
+jupyter==1.0.0
+ipykernel==6.27.1
+
+# Optional dependencies for notebooks
+matplotlib==3.8.2
+seaborn==0.13.0
+plotly==5.18.0
