@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "solutionName": {
+      "value": "${AZURE_ENV_NAME}"
+    },
+    "location": {
+      "value": "${AZURE_LOCATION}"
+    },
+    "fabricWorkspaceId": {
+      "value": "${FABRIC_WORKSPACE_ID}"
+    },
+    "enableDeploymentScript": {
+      "value": "${ENABLE_DEPLOYMENT_SCRIPT:=true}"
+    },
+    "enableTelemetry": {
+      "value": "${ENABLE_TELEMETRY:=false}"
+    }
+  }
+}

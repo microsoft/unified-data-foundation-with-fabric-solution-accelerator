@@ -23,7 +23,7 @@ param tags object = {}
 param enableTelemetry bool = false
 
 @description('Required. Fabric Workspace ID for the deployment of the solution accelerator.')
-param fabricWorkspaceId string
+param fabricWorkspaceId string = '4fa9ecad-28d2-493e-8f51-08b6a238251d'
 
 @description('Optional. Enable running the deploymentScript from the ARM template. Default is true to run the Python deployment script automatically.')
 param enableDeploymentScript bool = true
@@ -51,14 +51,26 @@ var abbrs = loadJsonContent('./abbreviations.json')
 @description('Optional created by user name')
 param createdBy string = empty(deployer().userPrincipalName) ? '' : split(deployer().userPrincipalName, '@')[0]
 
+
+// Use a test URL to test code before the code is published to a Public GitHub repository for production use.
+// Need to push the code to this public repository to test deployment code. 
+// var testBaseURL = 'https://raw.githubusercontent.com/DocGailZhou/TestScripts/main/'
+
+// This is the production URL for the solution accelerator code repository. Currently in private mode. 
+// Once the code is published to a public repository, this URL can be used for production deployments.
+// var baseURL = 'https://raw.githubusercontent.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator/main/'
+var baseURL = 'https://raw.githubusercontent.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator/pipeline-workflow/'
+
+
 // ========== Resource Group Tag ========== //
 resource resourceGroupTags 'Microsoft.Resources/tags@2021-04-01' = {
   name: 'default'
   properties: {
     tags: {
       ...allTags
-      TemplateName: 'MAAG'
+      TemplateName: 'UDF-Fabric-MAAG'
       CreatedBy: createdBy
+      SecurityControl: 'Ignore'
     }
   }
 }
@@ -74,15 +86,27 @@ module appIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.
   }
 }
 
-// Storage account removed - deployment will not stage files in blob storage
-
-// Use a test URL to test code before the code is published to a Public GitHub repository for production use.
-// Need to push the code to this public repository to test deployment code. 
-var testBaseURL = 'https://raw.githubusercontent.com/DocGailZhou/TestScripts/main/'
-
-// This is the production URL for the solution accelerator code repository. Currently in private mode. 
-// Once the code is published to a public repository, this URL can be used for production deployments.
-var baseURL = 'https://raw.githubusercontent.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator/main/'
+#disable-next-line no-deployments-resources
+resource avmTelemetry 'Microsoft.Resources/deployments@2024-03-01' = if (enableTelemetry) {
+  name: take(
+    '46d3xbcp.ptn.sa-unifieddatafoundation.${replace('-..--..-', '.', '-')}.${substring(uniqueString(deployment().name, location), 0, 4)}',
+    64
+  )
+  properties: {
+    mode: 'Incremental'
+    template: {
+      '$schema': 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#'
+      contentVersion: '1.0.0.0'
+      resources: []
+      outputs: {
+        telemetry: {
+          type: 'String'
+          value: 'For more information, see https://aka.ms/avm/TelemetryInfo'
+        }
+      }
+    }
+  }
+}
 
 module deployFabricResources './modules/deploy_fabric_resources.bicep' = {
   name: 'main_deploy_fabric_resourcesscript'
@@ -90,10 +114,21 @@ module deployFabricResources './modules/deploy_fabric_resources.bicep' = {
   params: {
     location: location
     identity: appIdentity.outputs.resourceId
-    scriptUri: '${testBaseURL}infra/deploy/fabric/provision_fabric_items.sh'
+    scriptUri: '${baseURL}infra/deploy/fabric/provision_fabric_items.sh'
     fabricWorkspaceId: fabricWorkspaceId
     enableDeploymentScript: enableDeploymentScript
   }
 }
 
-// storageAccount resource moved above to ensure dependencies and readability
+// Outputs for AZD
+@description('The location the resources were deployed to')
+output AZURE_LOCATION string = location
+
+@description('The name of the resource group')
+output AZURE_RESOURCE_GROUP string = resourceGroup().name
+
+@description('The managed identity client ID')
+output AZURE_CLIENT_ID string = appIdentity.outputs.clientId
+
+@description('The fabric workspace ID used in deployment')
+output FABRIC_WORKSPACE_ID string = fabricWorkspaceId
