@@ -112,18 +112,25 @@ def create_lakehouse_directory_structure(file_system_client, lakehouse_root_path
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description=f'Deploy {solution_name} to Microsoft Fabric')
-parser.add_argument('--workspaceId', required=True, help='Microsoft Fabric workspace ID')
+parser.add_argument('--capacityName', required=True, help='Microsoft Fabric capacity name')
+parser.add_argument('--workspaceName', required=False, help='Workspace name (if not provided, will use "UDFF-{timestamp}")')
 args = parser.parse_args()
 
 print(f"🚀 Starting {solution_name} deployment to Microsoft Fabric")
-print(f"📋 Target workspace ID: {args.workspaceId}")
+print(f"📋 Target capacity: {args.capacityName}")
+if args.workspaceName:
+    print(f"📋 Target workspace name: {args.workspaceName}")
+else:
+    print(f"📋 Will create new workspace with auto-generated name")
 print("-" * 60)
 
 ####################
 # Variables set up #
 ####################
 
-workspace_id = args.workspaceId
+capacity_name = args.capacityName
+workspace_name = args.workspaceName
+workspace_default_name = "Unified Data Foundation with Fabric"
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))  # Go up three levels from infra/deploy/fabric to repo root
 
@@ -137,36 +144,72 @@ except Exception as e:
     print("   Solution: Please ensure you are logged in with Azure CLI: az login")
     sys.exit(1)
 
+
 #############
 # Workspace #
 #############
 # Docs: https://learn.microsoft.com/en-us/rest/api/fabric/admin/workspaces
 
 try:
-    # Get workspace info using the new API client
-    workspaces = fabric_client.get_workspaces()
-    workspace = next((w for w in workspaces if w['id'] == workspace_id), None)
+    # Get capacity ID from capacity name
+    print(f"🔍 Looking up capacity: '{capacity_name}'")
+    capacities = fabric_client.get_capacities()
+    capacity = next((c for c in capacities if c['displayName'].lower() == capacity_name.lower()), None)
     
-    if not workspace:
-        print(f"❌ ERROR: Workspace '{workspace_id}' not found")
-        print("   Solution: Verify the workspace ID and ensure you have access")
+    if not capacity:
+        print(f"❌ ERROR: Capacity '{capacity_name}' not found")
+        print("   Available capacities:")
+        for cap in capacities:
+            print(f"   - {cap['displayName']} (ID: {cap['id']})")
         sys.exit(1)
     
-    workspace_name = workspace['displayName']
-    print(f"✅ Connected to workspace: '{workspace_name}'")
+    capacity_id = capacity['id']
+    print(f"✅ Found capacity: '{capacity['displayName']}' (ID: {capacity_id})")
+    print(f"   SKU: {capacity.get('sku', 'N/A')}")
+    print(f"   State: {capacity.get('state', 'N/A')}")
+    print(f"   Region: {capacity.get('region', 'N/A')}")
+    
+    # Handle workspace creation or lookup
+    if workspace_name:
+        # Check if workspace with given name already exists
+        print(f"🔍 Looking for existing workspace: '{workspace_name}'")
+        workspaces = fabric_client.get_workspaces()
+        workspace = next((w for w in workspaces if w['displayName'].lower() == workspace_name.lower()), None)
+        
+        if workspace:
+            workspace_id = workspace['id']
+            print(f"✅ Found existing workspace: '{workspace_name}' (ID: {workspace_id})")
+            
+            # Assign the existing workspace to the specified capacity
+            print(f"🔄 Assigning workspace to capacity: '{capacity_name}'")
+            fabric_client.assign_workspace_to_capacity(workspace_id, capacity_id)
+            print(f"✅ Workspace assigned to capacity: '{capacity_name}'")
+        else:
+            # Create new workspace with specified name
+            print(f"🏗️  Creating new workspace: '{workspace_name}'")
+            workspace_id = fabric_client.create_workspace(workspace_name, capacity_id)
+            print(f"✅ Created workspace: '{workspace_name}' (ID: {workspace_id})")
+    
+    else:
+        # Generate workspace name with timestamp
+        workspace_name = workspace_default_name
+        print(f"🏗️  Creating new workspace: '{workspace_name}'")
+        workspace_id = fabric_client.create_workspace(workspace_name, capacity_id)
+        print(f"✅ Created workspace: '{workspace_name}' (ID: {workspace_id})")
     
 except FabricApiError as e:
     if e.status_code == 404:
-        print(f"❌ ERROR: Workspace '{workspace_id}' not found")
-        print("   Solution: Verify the workspace ID and ensure you have access")
+        print(f"❌ ERROR: Resource not found")
     elif e.status_code == 403:
-        print(f"❌ ERROR: Access denied to workspace '{workspace_id}'")
-        print("   Solution: Ensure you have Contributor or Admin permissions")
+        print(f"❌ ERROR: Access denied")
+        print("   Solution: Ensure you have appropriate permissions")
     else:
-        print(f"❌ ERROR: Failed to access workspace: {e}")
+        print(f"❌ ERROR: Fabric API error")
+    print(f"   Status Code: {e.status_code}")
+    print(f"   Details: {str(e)}")
     sys.exit(1)
 except Exception as e:
-    print(f"❌ ERROR: Unexpected error accessing workspace: {str(e)}")
+    print(f"❌ ERROR: Unexpected error during workspace setup: {str(e)}")
     sys.exit(1)
 
 ####################

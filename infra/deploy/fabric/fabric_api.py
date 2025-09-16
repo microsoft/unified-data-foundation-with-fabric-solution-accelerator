@@ -341,6 +341,33 @@ class FabricApiClient:
         service_client = DataLakeServiceClient(account_url, credential=self._credential)
         return service_client.get_file_system_client(file_system=workspace_name)
     
+    # Capacity operations
+    def get_capacities(self) -> List[Dict[str, Any]]:
+        """
+        Get all capacities accessible to the user.
+        
+        Returns:
+            List of capacity objects containing:
+            - id: Capacity ID (GUID)
+            - displayName: Capacity display name
+            - sku: Capacity SKU (e.g., "F2", "F4", "P1", etc.)
+            - state: Capacity state ("Active", "Paused", "Suspended", etc.)
+            - region: Azure region where capacity is located
+            - admins: List of capacity administrators
+            - contributors: List of capacity contributors (if any)
+            
+        Raises:
+            FabricApiError: If request fails
+            
+        Required Scopes:
+            Capacity.Read.All or Capacity.ReadWrite.All
+        """
+        self._log("Getting all capacities accessible to user")
+        response = self._make_request("capacities")
+        capacities = response.json().get('value', [])
+        self._log(f"Found {len(capacities)} capacity(ies)")
+        return capacities
+
     # Workspace operations
     def get_workspaces(self) -> List[Dict[str, Any]]:
         """Get all workspaces accessible to the user."""
@@ -385,6 +412,38 @@ class FabricApiClient:
         
         response = self._make_request("workspaces", method="POST", data=data)
         return response.json()['id']
+    
+    def assign_workspace_to_capacity(self, workspace_id: str, capacity_id: str) -> None:
+        """
+        Assign a workspace to a capacity.
+        
+        Args:
+            workspace_id: ID of the workspace to assign
+            capacity_id: ID of the capacity to assign to
+            
+        Raises:
+            FabricApiError: If assignment fails
+            
+        Required Scopes:
+            Workspace.ReadWrite.All
+            
+        Reference:
+            https://learn.microsoft.com/en-us/rest/api/fabric/core/workspaces/assign-to-capacity
+        """
+        self._log(f"Assigning workspace {workspace_id} to capacity {capacity_id}")
+        
+        data = {"capacityId": capacity_id}
+        
+        response = self._make_request(
+            f"workspaces/{workspace_id}/assignToCapacity", 
+            method="POST", 
+            data=data
+        )
+        
+        if response.status_code == 200:
+            self._log(f"Successfully assigned workspace to capacity")
+        else:
+            raise FabricApiError(f"Failed to assign workspace to capacity: {response.status_code}")
     
     # Folder operations
     def get_folders(self, workspace_id: str) -> List[Dict[str, Any]]:
