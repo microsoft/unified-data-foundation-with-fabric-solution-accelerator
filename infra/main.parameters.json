@@ -7,7 +7,7 @@
     },
     "fabricAdminMembers": {
       "value": [
-        "${AZURE_FABRIC_ADMIN}"
+        "${AZURE_FABRIC_ADMIN_USER_EMAIL}"
       ]
     }
   }

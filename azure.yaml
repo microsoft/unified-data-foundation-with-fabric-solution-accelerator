@@ -13,9 +13,7 @@ infra:
   parameters:
     solutionName: ${AZURE_ENV_NAME}
     location: ${AZURE_LOCATION}
-    fabricWorkspaceId: ${AZURE_FABRIC_WORKSPACE_ID}
-    enableDeploymentScript: ${AZURE_ENABLE_DEPLOYMENT_SCRIPT=true}
-    enableTelemetry: ${AZURE_ENABLE_TELEMETRY=false}
+    fabricAdminMembers: ${AZURE_FABRIC_ADMIN_USER_EMAIL}
 
 hooks:
   postprovision:

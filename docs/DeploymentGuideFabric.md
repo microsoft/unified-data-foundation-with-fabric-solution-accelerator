@@ -1,273 +1,341 @@
 # Microsoft Fabric Deployment Guide
 
-This guide describes how to deploy the Microsoft Fabric components of the **Unified Data Foundation with Fabric** solution accelerator. It includes deployment of [Fabric lakehouses](https://learn.microsoft.com/fabric/data-engineering/lakehouse-overview), [notebooks](https://learn.microsoft.com/fabric/data-engineering/how-to-use-notebook), sample data, and folder structure.
-
----
+This guide describes how to deploy the **Unified Data Foundation with Fabric** solution accelerator using the **Azure Developer CLI (azd)** - the recommended deployment method.
 
 ## Prerequisites
 
-Before starting, ensure the following:
+Before starting, ensure you have:
 
-- A **Microsoft Fabric workspace** has been provisioned. If not, follow steps in [Provisioning of Microsoft Fabric](./SetupFabric.md).
-- You have **Contributor or Admin** [permissions](https://learn.microsoft.com/fabric/fundamentals/roles-workspaces) in the Fabric workspace  
-
-**Required tools:**
-
-- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) - for authentication
-- [Python 3.9+](https://www.python.org/downloads/) - for running deployment scripts
-- [Git](https://git-scm.com/downloads) - for cloning the repository
+- **Azure subscription** with appropriate permissions to create Fabric resources
+- One of the following environments:
+  - **Local machine** with [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) installed
+  - **Azure Cloud Shell** (azd can be installed during deployment)
+  - **GitHub Codespaces** (azd can be installed during deployment)
 
 ---
 
-## Deployment Options
+## 🚀 Quick Start
 
-Choose from the following deployment environments based on your preference and setup:
+For the fastest deployment experience:
 
-| GitHub Codespaces | [![Azure Cloud Shell](https://img.shields.io/static/v1?style=for-the-badge&label=Azure%20Cloud%20Shell&message=Open&color=blue&logo=microsoft-azure)](https://portal.azure.com/#cloudshell/) | Local Environment |
-|---|---|---|
+```bash
+# Clone repository
+git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
+cd unified-data-foundation-with-fabric-solution-accelerator
+
+# REQUIRED: Set up your user to be configured as Fabric administrator
+azd env set AZURE_FABRIC_ADMIN_USER_EMAIL "your-user@your-org-domain.com"
+
+# Optional: Customize the Fabric workspace name (defaults to "Unified Data Foundation with Fabric")
+azd env set AZURE_FABRIC_WORKSPACE_NAME "My Custom Workspace Name"
+
+# Deploy everything with one command
+azd up
+```
+
+You'll be prompted for:
+- **Environment name** (e.g., "dev", "test", "prod")
+- **Azure region** (e.g., "eastus", "westus2")
+
+**That's it!** `azd up` handles everything: infrastructure provisioning, Fabric workspace creation, data deployment, and admin configuration.
+
+---
+
+## Deployment Overview
+
+The **Azure Developer CLI (azd)** automates the complete deployment process with a single `azd up` command. The deployment creates a complete data foundation solution with medallion architecture (Bronze-Silver-Gold) including infrastructure, data assets, and analytics components.
+
+### Deployment Logic
+
+1. **Infrastructure Provisioning**: Creates Azure resources using Bicep templates
+2. **Access Configuration**: Sets up admin permissions for users and managed identity
+3. **Fabric Workspace Setup**: Creates or configures Microsoft Fabric workspace and underlying data assets: lakehouses, sample data, notebooks and Power BI reports
+
+### What Gets Created
+
+#### In Azure:
+- **Microsoft Fabric Capacity**: Dedicated compute resources
+- **User-Assigned Managed Identity**: Secure access for automated operations
+
+#### In Microsoft Fabric:
+- **Workspace**: Container for all Fabric items
+- **Lakehouses**: 3-tier medallion architecture (`maag_bronze`, `maag_silver`, `maag_gold`)
+- **Notebooks**: Data transformation and management notebooks organized by layer
+- **Sample Data**: Representative CSV files for testing and demonstration
+- **Power BI Reports**: Any `.pbix` files from the repository (if present)
+
+---
+
+## Detailed Deployment Options
+
+Choose your preferred environment for running `azd up`:
+
+<div align="center">
+
+| **[🖥️ Local Environment](#local-environment)** | **[☁️ Azure Cloud Shell](#azure-cloud-shell)** | **[🚀 GitHub Codespaces](#github-codespaces)** |
+|:---:|:---:|:---:|
+| Deploy from your local machine | Deploy without local installation | Full cloud development environment |
+| Full control over environment | Pre-authenticated & configured | VS Code in browser |
+| Requires local tool installation | Always up-to-date tools | Pre-configured & collaborative |
+
+</div>
 
 <details>
-  <summary><b>Deploy in GitHub Codespaces</b></summary>
+<summary><b>🖥️ Local Environment</b></summary>
 
-### GitHub Codespaces
-
-You can run this solution using GitHub Codespaces in your own fork of the repository:
-
-1. **Fork the repository first:**
-   - Navigate to the main repository on GitHub
-   - Click the **Fork** button in the top-right corner
-   - Select your account to create a fork
-
-2. **Open your fork in GitHub Codespaces:**
-   - In your forked repository, click the **Code** button
-   - Select the **Codespaces** tab
-   - Click **Create codespace on main** (this may take several minutes)
-
-   Alternatively, you can use this direct link format with your GitHub username:
-   ```
-   https://codespaces.new/YOUR-GITHUB-USERNAME/MaagDataFoundationForAI
-   ```
-
-3. Accept the default values on the create Codespaces page.
-4. Open a terminal window if it is not already open.
-5. Continue with the [Fabric Items Deployment](#fabric-items-deployment) steps.
-
-</details>
-
-<details>
-  <summary><b>Deploy in Azure Cloud Shell</b></summary>
-
-### Azure Cloud Shell
-
-You can run the Fabric deployment directly from Azure Cloud Shell without needing to install anything locally:
-
-1. Open [Azure Cloud Shell](https://portal.azure.com/#cloudshell/) in your browser.
-
-2. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd MaagDataFoundationForAI
-   ```
-
-3. Navigate to the deployment directory:
-   ```bash
-   cd infra/scripts/fabric
-   ```
-
-4. Continue with the [Fabric Items Deployment](#fabric-items-deployment) steps using the bash script.
-
-</details>
-
-<details>
-  <summary><b>Deploy in Local Environment</b></summary>
+<div id="local-environment">
 
 ### Local Environment
 
-If you're deploying from your local machine, ensure you have the required tools installed:
+Deploy from your local machine with full control over the environment.
 
-1. **Required tools:**
-   - [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
-   - [Python 3.9+](https://www.python.org/downloads/)
-   - [Git](https://git-scm.com/downloads)
+#### Prerequisites:
+- [Azure Developer CLI (azd)](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
+- [Python 3.9+](https://www.python.org/downloads/)
+- [Git](https://git-scm.com/downloads)
 
-2. **Clone the repository:**
-   ```shell
-   git clone <repository-url>
-   cd MaagDataFoundationForAI
+#### Installation Steps:
+
+**Windows (PowerShell):**
+```powershell
+# Install Azure Developer CLI
+winget install microsoft.azd
+
+# Verify installation
+azd version
+```
+
+**macOS:**
+```bash
+# Install Azure Developer CLI
+brew tap azure/azd && brew install azd
+
+# Verify installation
+azd version
+```
+
+**Linux:**
+```bash
+# Install Azure Developer CLI
+curl -fsSL https://aka.ms/install-azd.sh | bash
+
+# Verify installation
+azd version
+```
+
+#### Deployment Steps:
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
+   cd unified-data-foundation-with-fabric-solution-accelerator
    ```
 
-3. Continue with the [Fabric Items Deployment](#fabric-items-deployment) steps.
+2. **Authenticate with Azure:**
+   ```bash
+   az login
+   azd auth login
+   ```
+
+3. **Initialize the project:**
+   ```bash
+   azd init
+   ```
+
+4. **REQUIRED: Set admin email for Fabric capacity access:**
+   ```bash
+   azd env set AZURE_FABRIC_ADMIN_USER_EMAIL "your-user@your-org-domain.com"
+   ```
+
+5. **Optional: Set custom workspace name:**
+   ```bash
+   azd env set AZURE_FABRIC_WORKSPACE_NAME "My Production Workspace"
+   ```
+
+6. **Deploy everything:**
+   ```bash
+   azd up
+   ```
+
+   You'll be prompted for:
+   - Environment name (e.g., "production", "dev", "test")
+   - Azure location (e.g., "eastus", "westus2")
+
+</details>
+
+<details>
+  <summary><b>☁️ Azure Cloud Shell</b></summary>
+
+### Azure Cloud Shell
+
+Deploy directly from Azure Cloud Shell without installing anything locally.
+
+#### Benefits:
+- **No local installation required**: Azure CLI and Python are pre-installed
+- **Always up-to-date**: Latest tools are maintained automatically
+- **Secure authentication**: Automatically authenticated with your Azure account
+- **Persistent storage**: Files persist across sessions
+
+#### Deployment Steps:
+
+1. **Open Azure Cloud Shell:**
+   - Navigate to [Azure Cloud Shell](https://portal.azure.com/#cloudshell/)
+   - Choose **Bash** as your shell environment
+
+2. **Install Azure Developer CLI:**
+   ```bash
+   # Install azd in Cloud Shell
+   curl -fsSL https://aka.ms/install-azd.sh | bash
+   
+   # Restart your shell or reload PATH
+   exec bash
+   
+   # Verify installation
+   azd version
+   ```
+
+3. **Clone the repository:**
+   ```bash
+   git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
+   cd unified-data-foundation-with-fabric-solution-accelerator
+   ```
+
+4. **Initialize and deploy:**
+   ```bash
+   # Initialize the project
+   azd init
+   
+   # REQUIRED: Set admin email for Fabric capacity access
+   azd env set AZURE_FABRIC_ADMIN_USER_EMAIL "your-user@your-org-domain.com"
+   
+   # Optional: Set custom workspace name
+   azd env set AZURE_FABRIC_WORKSPACE_NAME "Cloud Shell Deployment"
+   
+   # Deploy everything
+   azd up
+   ```
+
+   During deployment, you'll be prompted for:
+   - Environment name
+   - Azure location
+
+> **💡 Tip**: Cloud Shell sessions last 20 minutes. For longer deployments, periodically interact with the shell to keep it active.
+</details>
+
+<details>
+  <summary><b>🚀 GitHub Codespaces</b></summary>
+
+### GitHub Codespaces
+
+Deploy using GitHub Codespaces for a complete cloud development environment.
+
+#### Benefits:
+- **Full development environment**: VS Code in the browser with all extensions
+- **Pre-configured**: Development environment is ready to use
+- **Collaborative**: Easy to share and collaborate
+- **No local setup**: Everything runs in the cloud
+
+#### Deployment Steps:
+
+1. **Fork the repository:**
+   - Navigate to [the repository](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator) on GitHub
+   - Click the **Fork** button in the top-right corner
+   - Select your account to create a fork
+
+2. **Open GitHub Codespaces:**
+   - In your forked repository, click the **Code** button
+   - Select the **Codespaces** tab
+   - Click **Create codespace on main**
+   
+   Alternatively, use this direct link with your GitHub username:
+   ```
+   https://codespaces.new/YOUR-GITHUB-USERNAME/unified-data-foundation-with-fabric-solution-accelerator
+   ```
+
+3. **Wait for environment setup:**
+   - Codespaces will automatically set up the development environment
+   - This typically takes 2-3 minutes
+
+4. **Open terminal in Codespaces:**
+   - Press `Ctrl+`` (backtick) or go to **Terminal > New Terminal**
+
+5. **Install Azure Developer CLI:**
+   ```bash
+   # Install azd
+   curl -fsSL https://aka.ms/install-azd.sh | bash
+   
+   # Reload PATH
+   source ~/.bashrc
+   
+   # Verify installation
+   azd version
+   ```
+
+6. **Authenticate with Azure:**
+   ```bash
+   # Login to Azure CLI
+   az login --use-device-code
+   
+   # Login to azd (will use the same authentication)
+   azd auth login --use-device-code
+   ```
+
+7. **Initialize and deploy:**
+   ```bash
+   # Initialize the project
+   azd init
+   
+   # REQUIRED: Set admin email for Fabric capacity access
+   azd env set AZURE_FABRIC_ADMIN_USER_EMAIL "your-user@your-org-domain.com"
+   
+   # Optional: Set custom workspace name
+   azd env set AZURE_FABRIC_WORKSPACE_NAME "Codespaces Deployment"
+   
+   # Deploy everything
+   azd up
+   ```
+
+> **💡 Tip**: Use device code authentication (`--use-device-code`) in Codespaces for the most reliable authentication experience.
+
 
 </details>
 
 ---
 
-## Overview
+## Deployment Results
 
-The Microsoft Fabric deployment creates a complete medallion architecture with:
+### Fabric Components Created
 
+The deployment creates a complete medallion architecture with:
+
+- **Infrastructure**: Automated provisioning of Fabric capacity and workspace
 - **Folder Structure**: Organized folders for lakehouses, notebooks, and reports
 - **Lakehouses**: Three-tier architecture (Bronze, Silver, Gold) with schema support
 - **Sample Data**: Representative CSV files uploaded to the bronze lakehouse
 - **Notebooks**: Complete set of data transformation and management notebooks
 - **Automated Processing**: Initial data pipeline execution
 - **Power BI Reports**: Automated deployment of Power BI reports (.pbix files) to the workspace
+- **User-Assigned Managed Identity**: Automatically created for secure access to Azure resources
 
-### Data Architecture
+### Azure Infrastructure
 
-The MAAG solution follows a medallion architecture pattern:
+| Resource | Type | Purpose |
+|----------|------|---------|
+| [**Fabric Capacity**](https://learn.microsoft.com/fabric/admin/capacity-settings?tabs=power-bi-premium) | `Microsoft.Fabric/capacities` | Dedicated compute capacity for Fabric workloads |
+| [**User-Assigned Managed Identity**](https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview) | `Microsoft.ManagedIdentity/userAssignedIdentities` | Secure authentication for automated operations |
 
-- **Bronze Layer** (`maag_bronze`): Raw data ingestion from CSV files
-- **Silver Layer** (`maag_silver`): Cleaned and standardized data  
-- **Gold Layer** (`maag_gold`): Business-ready aggregated data
+![Screenshot of deployed Azure resources](./images/deployment/fabric/azure_resources.png)
 
-### Notebook Categories
+### Fabric items
 
-- **Bronze to Silver**: Data cleansing and standardization notebooks
-- **Silver to Gold**: Business logic and aggregation notebooks
-- **Data Management**: Utilities for managing tables and troubleshooting
-- **Schema**: Data model definitions for each layer
+#### Fabric Workspace
 
-### Power BI Reports
+Workspace created with the specified or default name.
 
-The deployment automatically discovers and deploys any Power BI report files (`.pbix`) found in the `reports/` directory of the repository. Reports are:
-- Deployed to the `reports/` folder within the Fabric workspace
-- Configured with appropriate conflict resolution (Create or Overwrite)
-- Tracked for deployment verification and final summary reporting
+![Screenshot of resulting Fabric workspace](./images/deployment/fabric/fabric_workspace.png)
 
----
-
-## Fabric Items Deployment
-
-> ⚠️ **Important: File Replacement Behavior**
-> 
-> The deployment script (`create_fabric_items.py`) is designed to **always replace** existing CSV files, notebooks, and Power BI reports that have the same name as those in the repository. This behavior is **intentional** and ensures that when deploying a new version of the repository, all components are updated to the latest version.
-> 
-> **What gets replaced:**
-> - All sample CSV files in the bronze lakehouse
-> - All notebooks with matching names
-> - All Power BI reports (.pbix files) with matching names
-> 
-> **Impact:** Any manual changes you made to these files will be overwritten. If you have customized notebooks, reports, or data files, ensure you:
-> - Back them up before deployment
-> - Rename them to avoid conflicts
-> - Or apply your customizations after deployment
-> 
-> This design ensures consistency and repeatability when deploying solution updates.
-
-### 1. Workspace Setup
-
-Ensure you have a Microsoft Fabric workspace available. Note your **workspace ID** as it will be required for the deployment script.
-
-### 2. Authentication
-
-Login to Azure using the Azure CLI:
-
-```bash
-az login
-```
-
-Ensure you have appropriate permissions in the target Fabric workspace (see [pre-requisites](#prerequisites)).
-
-### 3. Navigate to Deployment Directory
-
-```bash
-cd infra/scripts/fabric
-```
-
-### 4. Run Deployment Script
-
-Choose the appropriate script for your platform:
-
-#### For Linux/macOS/Cloud Shell (Bash)
-
-```bash
-# Make the script executable
-chmod +x provision_fabric_items.sh
-
-# Run the deployment
-./provision_fabric_items.sh <fabric-workspace-id>
-```
-
-#### For Windows Local (PowerShell)
-
-> ⚠️ **Important Note for PowerShell Users**
-> 
-> If you encounter issues running PowerShell scripts due to execution policy restrictions, temporarily adjust the `ExecutionPolicy`:
-> 
-> ```powershell
-> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-> ```
-> 
-> This allows scripts to run for the current session without permanently changing system policy.
-
-```powershell
-# Run the PowerShell script
-.\provision_fabric_items.ps1 -FabricWorkspaceId "<fabric-workspace-id>"
-```
-
-#### For GitHub Codespaces
-
-```bash
-# Codespaces comes with Python and Azure CLI pre-installed
-# Navigate to the fabric deployment directory
-cd infra/scripts/fabric
-
-# Make the script executable
-chmod +x provision_fabric_items.sh
-
-# Run the deployment
-./provision_fabric_items.sh <fabric-workspace-id>
-```
-
-**Example Usage:**
-
-```bash
-# Bash/Cloud Shell/Codespaces example
-./provision_fabric_items.sh "12345678-1234-1234-1234-123456789abc"
-```
-
-```powershell
-# PowerShell example (Windows local only)
-.\provision_fabric_items.ps1 -FabricWorkspaceId "12345678-1234-1234-1234-123456789abc"
-```
-
-### 5. Monitor Deployment Progress
-
-The script will perform the following operations in sequence:
-
-1. **Environment Setup**: Install Python dependencies from `requirements.txt`
-2. **Authentication**: Use Azure CLI credentials for Fabric API access
-3. **Folder Creation**: Create organized folder hierarchy
-4. **Lakehouse Deployment**: Create bronze, silver, and gold lakehouses
-5. **Data Upload**: Upload sample CSV files with proper structure
-6. **Notebook Deployment**: Upload and configure all notebooks with lakehouse attachments
-7. **Initial Processing**: Execute transformation notebooks for initial data processing
-8. **Power BI Report Deployment**: Discover and deploy any .pbix files from the reports directory
-
-### 6. Review Deployment Summary
-
-Upon successful completion, the script provides a comprehensive deployment summary showing:
-
-```
-🎉 Unified Data Foundation with Fabric deployment completed successfully!
-✅ Workspace: [Your Workspace Name]
-✅ Lakehouses: 3 created (Bronze, Silver, Gold)
-✅ Notebooks: [X] deployed
-✅ Sample data: [X] files uploaded
-✅ Pipelines: 2 executed successfully
-✅ Power BI Reports: [X] deployed
-   📊 Report Name 1 (ID: report-id-1)
-   📊 Report Name 2 (ID: report-id-2)
-```
-
-This summary helps verify that all components were deployed successfully and provides reference information for the created resources.
-
----
-
-## What Gets Created
-
-### Folder Structure
+#### Folder Structure
 
 ```
 workspace/
@@ -282,7 +350,7 @@ workspace/
 
 ![Screenshot of resulting Fabric workspace folder structure](./images/deployment/fabric/fabric_workspace_folders.png)
 
-### Lakehouses
+#### Lakehouses
 
 | Name | Purpose | Schema Support |
 |------|---------|----------------|
@@ -292,7 +360,7 @@ workspace/
 
 ![Screenshot of resulting Fabric lakehouses](./images/deployment/fabric/fabric_lakehouses.png)
 
-### Sample Data
+#### Sample Data
 
 The solution includes sample data for:
 - **Finance data**: accounts, invoices, payments
@@ -301,7 +369,7 @@ The solution includes sample data for:
 
 ![Screenshot of resulting Fabric sample data](./images/deployment/fabric/fabric_sample_data.png)
 
-### Notebooks
+#### Jupyter Notebooks
 
 ![Screenshot of resulting Fabric notebooks](./images/deployment/fabric/fabric_notebooks.png)
 
@@ -325,7 +393,7 @@ The solution includes sample data for:
 - Business logic implementation
 - Data aggregation and enrichment
 
-### Power BI Reports
+#### Power BI Report
 
 Any `.pbix` files found in the `reports/` directory will be automatically deployed to the workspace's reports folder. The deployment process:
 - Scans recursively through the reports directory
@@ -337,74 +405,18 @@ Any `.pbix` files found in the `reports/` directory will be automatically deploy
 
 ---
 
-## Post-Deployment Verification
+## Additional Resources
 
-### 1. Verify Deployment
+- [Microsoft Fabric Documentation](https://learn.microsoft.com/fabric/)
+- [Azure Developer CLI Documentation](https://learn.microsoft.com/azure/developer/azure-developer-cli/)
+- [Power BI Deployment Guide](./DeploymentGuidePowerBI.md)
+- [Solution Architecture Overview](../architecture/README.md)
+- [Frequently Asked Questions](./FAQs.md)
 
-- Open your Microsoft Fabric workspace
-- Confirm lakehouses (`maag_bronze`, `maag_silver`, `maag_gold`) exist
-- Check notebooks are organized in correct folder structure
-- Verify sample data uploaded to bronze lakehouse
-- Confirm Power BI reports are deployed to the reports folder (if .pbix files were present)
-
-### 2. Explore the Data
-
-- Navigate to bronze lakehouse to see uploaded CSV files
-- Open notebooks to understand transformation logic
-- Review data in silver and gold lakehouses
-- Open deployed Power BI reports to explore business insights
-
-### 3. Test Manual Execution
-
-Run orchestration notebooks manually if needed:
-- Execute `run_bronze_to_silver` to verify bronze-to-silver pipeline
-- Execute `run_silver_to_gold` to verify silver-to-gold pipeline
-- Open Power BI reports to validate data connectivity and visualizations
+For technical support and community discussions, visit the [project repository](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator) or engage with the Microsoft Fabric community.
 
 ---
 
-## Troubleshooting
-
-| Issue | Possible Cause | Resolution |
-|-------|----------------|------------|
-| Authentication Issues | Not logged in or insufficient permissions | Run `az login` and verify workspace permissions |
-| Workspace Not Found | Incorrect workspace ID | Verify workspace ID is correct and accessible |
-| Permission Errors | Insufficient Fabric workspace rights | Ensure Contributor or Admin role in workspace |
-| Network Issues | Firewall or connectivity problems | Check internet connection and Fabric API access |
-| Python Dependencies | Missing Python or pip | Ensure Python 3.9+ and pip are properly installed |
-| Script Execution Error | Policy restrictions (Windows) | Use `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` |
-| Power BI Report Upload Failed | Invalid .pbix file or insufficient Power BI permissions | Verify .pbix file integrity and Power BI workspace access |
-| Codespaces Timeout | Long-running operation | Increase Codespaces timeout or run script in segments |
-| Cloud Shell Session Expired | Session timeout | Re-authenticate and resume from last successful step |
-
-### Environment-Specific Troubleshooting
-
-#### GitHub Codespaces
-- **Issue**: Codespaces environment timeout during long operations
-- **Solution**: The deployment typically completes within 10-15 minutes. If timeout occurs, restart Codespaces and re-run the script.
-- **Issue**: Directory navigation in Codespaces
-- **Solution**: Ensure you navigate to the correct path: `cd infra/scripts/fabric` before running the script.
-
-#### Azure Cloud Shell
-- **Issue**: Cloud Shell session expires during deployment
-- **Solution**: Cloud Shell sessions last 20 minutes by default. For longer operations, periodically interact with the shell or restart if needed.
-- **Issue**: Storage mount issues
-- **Solution**: Ensure your Cloud Shell storage is properly mounted and accessible.
-
-#### Local Environment
-- **Issue**: Azure CLI not authenticated
-- **Solution**: Run `az login` and follow the authentication flow
-- **Issue**: Python/pip not found
-- **Solution**: Ensure Python 3.9+ is installed and added to your system PATH
-- **Issue**: Script not found error
-- **Solution**: Verify you're in the correct directory: `infra/scripts/fabric`
-
-### Common Resolution Steps
-
-1. **Verify Prerequisites**: Ensure all required tools are installed
-2. **Check Authentication**: Confirm Azure CLI login status with `az account show`
-3. **Validate Permissions**: Verify workspace access rights in Fabric portal
-4. **Review Logs**: Check script output for specific error messages
-5. **Retry Individual Steps**: Re-run specific components if needed
+*This deployment guide is part of the Unified Data Foundation with Fabric solution accelerator. For the latest updates and documentation, visit the [official repository](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator).*
 
 ---
