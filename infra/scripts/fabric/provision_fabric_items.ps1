@@ -8,16 +8,24 @@
 
 .PARAMETER FabricCapacityName
     The name of the Microsoft Fabric capacity to use for workspace creation.
+    If not provided, will use AZURE_FABRIC_CAPACITY_NAME environment variable.
 
 .PARAMETER FabricWorkspaceName
     The name of the Microsoft Fabric workspace. If the workspace doesn't exist, it will be created.
-    If not provided, a workspace with auto-generated name will be created.
+    If not provided, will use AZURE_FABRIC_WORKSPACE_NAME environment variable.
+    If neither parameter nor environment variable is provided, a workspace with auto-generated name will be created.
 
 .EXAMPLE
     .\provision_fabric_items.ps1 -FabricCapacityName "MyCapacity" -FabricWorkspaceName "UDFF-Workspace"
 
 .EXAMPLE
     .\provision_fabric_items.ps1 -FabricCapacityName "MyCapacity"
+
+.EXAMPLE
+    $env:AZURE_FABRIC_CAPACITY_NAME = "MyCapacity"; .\provision_fabric_items.ps1
+
+.EXAMPLE
+    $env:AZURE_FABRIC_CAPACITY_NAME = "MyCapacity"; $env:AZURE_FABRIC_WORKSPACE_NAME = "MyWorkspace"; .\provision_fabric_items.ps1
 
 .NOTES
     Prerequisites:
@@ -27,8 +35,7 @@
 #>
 
 param(
-    [Parameter(Mandatory = $true, HelpMessage = "Enter the Fabric capacity name")]
-    [ValidateNotNullOrEmpty()]
+    [Parameter(Mandatory = $false, HelpMessage = "Enter the Fabric capacity name (optional, will use AZURE_FABRIC_CAPACITY_NAME env var if not provided)")]
     [string]$FabricCapacityName,
     
     [Parameter(Mandatory = $false, HelpMessage = "Enter the Fabric workspace name (optional)")]
@@ -37,6 +44,30 @@ param(
 
 # Set error action preference
 $ErrorActionPreference = "Stop"
+
+# Check if FabricCapacityName is provided, otherwise use environment variable
+if ([string]::IsNullOrWhiteSpace($FabricCapacityName)) {
+    $FabricCapacityName = $env:AZURE_FABRIC_CAPACITY_NAME
+    if ([string]::IsNullOrWhiteSpace($FabricCapacityName)) {
+        Write-Host "❌ Error: Fabric capacity name is required" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "Please provide the capacity name either:" -ForegroundColor Yellow
+        Write-Host "1. As a parameter: -FabricCapacityName 'MyCapacity'" -ForegroundColor White
+        Write-Host "2. Set the AZURE_FABRIC_CAPACITY_NAME environment variable" -ForegroundColor White
+        exit 1
+    }
+    else {
+        Write-Host "Using Fabric capacity name from environment variable: $FabricCapacityName" -ForegroundColor Cyan
+    }
+}
+
+# Check if FabricWorkspaceName is provided, otherwise use environment variable
+if ([string]::IsNullOrWhiteSpace($FabricWorkspaceName)) {
+    $FabricWorkspaceName = $env:AZURE_FABRIC_WORKSPACE_NAME
+    if (-not [string]::IsNullOrWhiteSpace($FabricWorkspaceName)) {
+        Write-Host "Using Fabric workspace name from environment variable: $FabricWorkspaceName" -ForegroundColor Cyan
+    }
+}
 
 Write-Host "Starting Microsoft Fabric deployment script..." -ForegroundColor Green
 Write-Host "Fabric Capacity Name: $FabricCapacityName" -ForegroundColor Cyan
@@ -50,6 +81,10 @@ else {
 }
 
 try {
+    # Get script directory for relative paths
+    $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+    $RequirementsPath = Join-Path $ScriptDir "requirements.txt"
+    
     # Validate that Python is available
     Write-Host "Checking Python installation..." -ForegroundColor Yellow
     $pythonVersion = python --version 2>&1
@@ -68,11 +103,17 @@ try {
 
     # Install Python dependencies
     Write-Host "Installing Python dependencies from requirements.txt..." -ForegroundColor Yellow
-    pip install -r requirements.txt --quiet
+    if (-not (Test-Path $RequirementsPath)) {
+        throw "requirements.txt not found at: $RequirementsPath"
+    }
+    pip install -r "$RequirementsPath" --quiet
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to install Python dependencies. Please check requirements.txt and try again."
     }
     Write-Host "Dependencies installed successfully" -ForegroundColor Green
+
+    # Change to script directory for Python execution
+    Push-Location $ScriptDir
 
     # Run the Python deployment script
     Write-Host "Starting Fabric items deployment..." -ForegroundColor Yellow
@@ -112,4 +153,10 @@ catch {
     Write-Host "4. Ensure Python 3.9+ and pip are properly installed" -ForegroundColor White
     Write-Host "5. Check your internet connection and Fabric API access" -ForegroundColor White
     exit 1
+}
+finally {
+    # Restore original location
+    if (Get-Location -Stack -ErrorAction SilentlyContinue) {
+        Pop-Location
+    }
 }

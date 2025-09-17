@@ -5,7 +5,7 @@ name: unified-data-foundation-fabric-accelerator
 #   template: unified-data-foundation-fabric-accelerator@1.0
 
 requiredVersions:
-  azd: '>1.17.1'
+  azd: ">1.17.1"
 
 infra:
   provider: bicep
@@ -16,3 +16,16 @@ infra:
     fabricWorkspaceId: ${AZURE_FABRIC_WORKSPACE_ID}
     enableDeploymentScript: ${AZURE_ENABLE_DEPLOYMENT_SCRIPT=true}
     enableTelemetry: ${AZURE_ENABLE_TELEMETRY=false}
+
+hooks:
+  postprovision:
+    windows:
+      shell: pwsh
+      run: ./infra/scripts/fabric/provision_fabric_items.ps1
+      interactive: true
+      continueOnError: false
+    posix:
+      shell: sh
+      run: ./infra/scripts/fabric/provision_fabric_items.sh
+      interactive: true
+      continueOnError: false

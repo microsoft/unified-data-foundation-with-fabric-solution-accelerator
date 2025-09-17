@@ -88,12 +88,12 @@ function Prompt-IfMissing {
 }
 
 # Prompt if running interactively
-$WorkspaceUrl           = Prompt-IfMissing $WorkspaceUrl "Enter Databricks Workspace URL (e.g. https://adb-xxxx.azuredatabricks.net)"
-$Token                  = Prompt-IfMissing $Token "Enter Databricks Token"
-$SolutionName           = Prompt-IfMissing $SolutionName "Enter Solution Name (e.g. maag)"
-$CatalogName            = Prompt-IfMissing $CatalogName "Enter Catalog Name (e.g. maagcatalog)"
-$SchemaName             = Prompt-IfMissing $SchemaName "Enter Schema Name (e.g. sales)"
-$ClusterId              = Prompt-IfMissing $ClusterId "Enter Cluster ID"
+$WorkspaceUrl = Prompt-IfMissing $WorkspaceUrl "Enter Databricks Workspace URL (e.g. https://adb-xxxx.azuredatabricks.net)"
+$Token = Prompt-IfMissing $Token "Enter Databricks Token"
+$SolutionName = Prompt-IfMissing $SolutionName "Enter Solution Name (e.g. maag)"
+$CatalogName = Prompt-IfMissing $CatalogName "Enter Catalog Name (e.g. maagcatalog)"
+$SchemaName = Prompt-IfMissing $SchemaName "Enter Schema Name (e.g. sales)"
+$ClusterId = Prompt-IfMissing $ClusterId "Enter Cluster ID"
 $CatalogManagedLocation = Prompt-IfMissing $CatalogManagedLocation "Enter Catalog Managed Location (external location name or URI)"
 
 Write-Host "`n[INFO] Starting Databricks deployment..." -ForegroundColor Green
@@ -118,7 +118,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 
-# Use requirements.txt in infra/deploy/databricks
+# Use requirements.txt in infra/scripts/databricks
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $requirements = Join-Path $scriptDir 'requirements.txt'
 if (-not (Test-Path $requirements)) {
@@ -152,6 +152,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "2. Verify that notebooks and sample data have been uploaded" -ForegroundColor White
     Write-Host "3. Check that Unity Catalog and schema are created as expected" -ForegroundColor White
     Write-Host "4. Explore the uploaded notebooks and data" -ForegroundColor White
-} else {
+}
+else {
     throw "Python script execution failed with exit code: $LASTEXITCODE"
 }

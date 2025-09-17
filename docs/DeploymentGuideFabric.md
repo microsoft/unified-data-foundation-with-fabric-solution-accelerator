@@ -71,7 +71,7 @@ You can run the Fabric deployment directly from Azure Cloud Shell without needin
 
 3. Navigate to the deployment directory:
    ```bash
-   cd infra/deploy/fabric
+   cd infra/scripts/fabric
    ```
 
 4. Continue with the [Fabric Items Deployment](#fabric-items-deployment) steps using the bash script.
@@ -172,7 +172,7 @@ Ensure you have appropriate permissions in the target Fabric workspace (see [pre
 ### 3. Navigate to Deployment Directory
 
 ```bash
-cd infra/deploy/fabric
+cd infra/scripts/fabric
 ```
 
 ### 4. Run Deployment Script
@@ -211,7 +211,7 @@ chmod +x provision_fabric_items.sh
 ```bash
 # Codespaces comes with Python and Azure CLI pre-installed
 # Navigate to the fabric deployment directory
-cd infra/deploy/fabric
+cd infra/scripts/fabric
 
 # Make the script executable
 chmod +x provision_fabric_items.sh
@@ -383,7 +383,7 @@ Run orchestration notebooks manually if needed:
 - **Issue**: Codespaces environment timeout during long operations
 - **Solution**: The deployment typically completes within 10-15 minutes. If timeout occurs, restart Codespaces and re-run the script.
 - **Issue**: Directory navigation in Codespaces
-- **Solution**: Ensure you navigate to the correct path: `cd infra/deploy/fabric` before running the script.
+- **Solution**: Ensure you navigate to the correct path: `cd infra/scripts/fabric` before running the script.
 
 #### Azure Cloud Shell
 - **Issue**: Cloud Shell session expires during deployment
@@ -397,7 +397,7 @@ Run orchestration notebooks manually if needed:
 - **Issue**: Python/pip not found
 - **Solution**: Ensure Python 3.9+ is installed and added to your system PATH
 - **Issue**: Script not found error
-- **Solution**: Verify you're in the correct directory: `infra/deploy/fabric`
+- **Solution**: Verify you're in the correct directory: `infra/scripts/fabric`
 
 ### Common Resolution Steps
 

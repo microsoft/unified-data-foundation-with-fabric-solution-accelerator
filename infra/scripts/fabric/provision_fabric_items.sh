@@ -14,13 +14,15 @@
 #     ./provision_fabric_items.sh [options]
 #
 # OPTIONS
-#     -c, --capacity-name <name>     Microsoft Fabric capacity name (required)
-#     -w, --workspace-name <name>    Microsoft Fabric workspace name (optional, will create if doesn't exist)
+#     -c, --capacity-name <name>     Microsoft Fabric capacity name (optional, will use AZURE_FABRIC_CAPACITY_NAME env var if not provided)
+#     -w, --workspace-name <name>    Microsoft Fabric workspace name (optional, will use AZURE_FABRIC_WORKSPACE_NAME env var if not provided)
 #     -h, --help                     Show this help message
 #
 # EXAMPLES
 #     ./provision_fabric_items.sh -c "MyCapacity" -w "UDFF-Workspace"
 #     ./provision_fabric_items.sh -c "MyCapacity"
+#     export AZURE_FABRIC_CAPACITY_NAME="MyCapacity" && ./provision_fabric_items.sh
+#     export AZURE_FABRIC_CAPACITY_NAME="MyCapacity" AZURE_FABRIC_WORKSPACE_NAME="MyWorkspace" && ./provision_fabric_items.sh
 #
 # PREREQUISITES
 #     - Azure CLI installed and authenticated (az login)
@@ -70,13 +72,15 @@ show_usage() {
     echo "Usage: $0 [options]"
     echo ""
     echo "Options:"
-    echo "  -c, --capacity-name <name>     Microsoft Fabric capacity name (required)"
-    echo "  -w, --workspace-name <name>    Microsoft Fabric workspace name (optional, will create if doesn't exist)"
+    echo "  -c, --capacity-name <name>     Microsoft Fabric capacity name (optional, will use AZURE_FABRIC_CAPACITY_NAME env var if not provided)"
+    echo "  -w, --workspace-name <name>    Microsoft Fabric workspace name (optional, will use AZURE_FABRIC_WORKSPACE_NAME env var if not provided)"
     echo "  -h, --help                     Show this help message"
     echo ""
     echo "Examples:"
     echo "  $0 -c \"MyCapacity\" -w \"UDFF-Workspace\""
     echo "  $0 -c \"MyCapacity\""
+    echo "  export AZURE_FABRIC_CAPACITY_NAME=\"MyCapacity\" && $0"
+    echo "  export AZURE_FABRIC_CAPACITY_NAME=\"MyCapacity\" AZURE_FABRIC_WORKSPACE_NAME=\"MyWorkspace\" && $0"
     echo ""
     echo "Prerequisites:"
     echo "  - Azure CLI installed and authenticated (az login)"
@@ -86,6 +90,10 @@ show_usage() {
 
 # Main script starts here
 print_success "Starting Microsoft Fabric deployment script..."
+
+# Get script directory for relative paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REQUIREMENTS_PATH="$SCRIPT_DIR/requirements.txt"
 
 # Initialize variables
 fabricCapacityName=""
@@ -117,12 +125,31 @@ done
 
 # Validate parameters
 if [[ -z "$fabricCapacityName" ]]; then
-    print_error "❌ Error: Capacity name is required"
-    echo ""
-    print_info "Usage examples:"
-    echo -e "${WHITE}  $0 -c 'MyCapacity' -w 'MyWorkspace'${NC}"
-    echo -e "${WHITE}  $0 -c 'MyCapacity'${NC}"
-    exit 1
+    # Check if environment variable exists
+    if [[ -n "${AZURE_FABRIC_CAPACITY_NAME:-}" ]]; then
+        fabricCapacityName="$AZURE_FABRIC_CAPACITY_NAME"
+        print_info "Using Fabric capacity name from environment variable: $fabricCapacityName"
+    else
+        print_error "❌ Error: Capacity name is required"
+        echo ""
+        print_info "Please provide the capacity name either:"
+        echo -e "${WHITE}1. As a parameter: -c 'MyCapacity'${NC}"
+        echo -e "${WHITE}2. Set the AZURE_FABRIC_CAPACITY_NAME environment variable${NC}"
+        echo ""
+        print_info "Usage examples:"
+        echo -e "${WHITE}  $0 -c 'MyCapacity' -w 'MyWorkspace'${NC}"
+        echo -e "${WHITE}  $0 -c 'MyCapacity'${NC}"
+        echo -e "${WHITE}  export AZURE_FABRIC_CAPACITY_NAME='MyCapacity' && $0${NC}"
+        exit 1
+    fi
+fi
+
+# Check if workspace name is provided, otherwise use environment variable
+if [[ -z "$fabricWorkspaceName" ]]; then
+    if [[ -n "${AZURE_FABRIC_WORKSPACE_NAME:-}" ]]; then
+        fabricWorkspaceName="$AZURE_FABRIC_WORKSPACE_NAME"
+        print_info "Using Fabric workspace name from environment variable: $fabricWorkspaceName"
+    fi
 fi
 
 print_info "Fabric Capacity Name: $fabricCapacityName"
@@ -167,11 +194,18 @@ print_success "pip is available"
 
 # Install Python dependencies
 print_step "Installing Python dependencies from requirements.txt..."
-if ! $PIP_CMD install -r "$requirementFile" --quiet; then
+if [[ ! -f "$REQUIREMENTS_PATH" ]]; then
+    print_error "❌ requirements.txt not found at: $REQUIREMENTS_PATH"
+    exit 1
+fi
+if ! $PIP_CMD install -r "$REQUIREMENTS_PATH" --quiet; then
     print_error "❌ Failed to install Python dependencies. Please check requirements.txt and try again."
     exit 1
 fi
 print_success "Dependencies installed successfully"
+
+# Change to script directory for Python execution
+cd "$SCRIPT_DIR"
 
 # Run the Python deployment script
 print_step "Starting Fabric items deployment..."

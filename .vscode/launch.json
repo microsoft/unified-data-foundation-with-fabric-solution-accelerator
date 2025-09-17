@@ -8,19 +8,19 @@
             "name": "UDFF: fabric deployment",
             "type": "debugpy",
             "request": "launch",
-            "program": "infra/deploy/fabric/create_fabric_items.py",
+            "program": "infra/scripts/fabric/create_fabric_items.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "args": [
                 "--capacityName",
-                "alguadam"
+                "fcudffzsysa"
             ]
         },
         {
             "name": "UDFF: fabric examples",
             "type": "debugpy",
             "request": "launch",
-            "program": "infra/deploy/fabric/fabric_api_examples.py",
+            "program": "infra/scripts/fabric/fabric_api_examples.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "args": [

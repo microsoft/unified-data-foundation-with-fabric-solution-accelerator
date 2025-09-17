@@ -440,7 +440,7 @@ class FabricApiClient:
             data=data
         )
         
-        if response.status_code == 200:
+        if response.status_code == 200 or response.status_code == 202:
             self._log(f"Successfully assigned workspace to capacity")
         else:
             raise FabricApiError(f"Failed to assign workspace to capacity: {response.status_code}")

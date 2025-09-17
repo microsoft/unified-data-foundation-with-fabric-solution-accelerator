@@ -106,6 +106,15 @@ def create_lakehouse_directory_structure(file_system_client, lakehouse_root_path
             print(f"   Solution: Check OneLake connectivity and permissions")
             sys.exit(1)
 
+
+####################
+# Variables set up #
+####################
+
+workspace_default_name = "Unified Data Foundation with Fabric"
+script_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))  # Go up three levels from infra/scripts/fabric to repo root
+
 ##########################
 # Command line arguments #
 ##########################
@@ -113,7 +122,7 @@ def create_lakehouse_directory_structure(file_system_client, lakehouse_root_path
 # Parse command line arguments
 parser = argparse.ArgumentParser(description=f'Deploy {solution_name} to Microsoft Fabric')
 parser.add_argument('--capacityName', required=True, help='Microsoft Fabric capacity name')
-parser.add_argument('--workspaceName', required=False, help='Workspace name (if not provided, will use "UDFF-{timestamp}")')
+parser.add_argument('--workspaceName', required=False, help=f'Workspace name (if not provided, will use "{workspace_default_name}")')
 args = parser.parse_args()
 
 print(f"🚀 Starting {solution_name} deployment to Microsoft Fabric")
@@ -124,15 +133,8 @@ else:
     print(f"📋 Will create new workspace with auto-generated name")
 print("-" * 60)
 
-####################
-# Variables set up #
-####################
-
 capacity_name = args.capacityName
 workspace_name = args.workspaceName
-workspace_default_name = "Unified Data Foundation with Fabric"
-script_dir = os.path.dirname(os.path.abspath(__file__))
-repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))  # Go up three levels from infra/deploy/fabric to repo root
 
 # Initialize Fabric API client
 try:
@@ -170,29 +172,26 @@ try:
     print(f"   Region: {capacity.get('region', 'N/A')}")
     
     # Handle workspace creation or lookup
-    if workspace_name:
-        # Check if workspace with given name already exists
-        print(f"🔍 Looking for existing workspace: '{workspace_name}'")
-        workspaces = fabric_client.get_workspaces()
-        workspace = next((w for w in workspaces if w['displayName'].lower() == workspace_name.lower()), None)
-        
-        if workspace:
-            workspace_id = workspace['id']
-            print(f"✅ Found existing workspace: '{workspace_name}' (ID: {workspace_id})")
-            
-            # Assign the existing workspace to the specified capacity
-            print(f"🔄 Assigning workspace to capacity: '{capacity_name}'")
-            fabric_client.assign_workspace_to_capacity(workspace_id, capacity_id)
-            print(f"✅ Workspace assigned to capacity: '{capacity_name}'")
-        else:
-            # Create new workspace with specified name
-            print(f"🏗️  Creating new workspace: '{workspace_name}'")
-            workspace_id = fabric_client.create_workspace(workspace_name, capacity_id)
-            print(f"✅ Created workspace: '{workspace_name}' (ID: {workspace_id})")
-    
-    else:
-        # Generate workspace name with timestamp
+    # If no workspace name provided, use default name
+    if not workspace_name:
         workspace_name = workspace_default_name
+        print(f"📋 No workspace name provided, using default: '{workspace_name}'")
+    
+    # Check if workspace with the name already exists
+    print(f"🔍 Looking for existing workspace: '{workspace_name}'")
+    workspaces = fabric_client.get_workspaces()
+    workspace = next((w for w in workspaces if w['displayName'].lower() == workspace_name.lower()), None)
+    
+    if workspace:
+        workspace_id = workspace['id']
+        print(f"✅ Found existing workspace: '{workspace_name}' (ID: {workspace_id})")
+        
+        # Assign the existing workspace to the specified capacity
+        print(f"🔄 Assigning workspace to capacity: '{capacity_name}'")
+        fabric_client.assign_workspace_to_capacity(workspace_id, capacity_id)
+        print(f"✅ Workspace assigned to capacity: '{capacity_name}'")
+    else:
+        # Create new workspace with the specified name
         print(f"🏗️  Creating new workspace: '{workspace_name}'")
         workspace_id = fabric_client.create_workspace(workspace_name, capacity_id)
         print(f"✅ Created workspace: '{workspace_name}' (ID: {workspace_id})")
