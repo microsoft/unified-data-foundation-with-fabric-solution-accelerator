@@ -1,113 +1,94 @@
 # Power BI Deployment Guide
  
-This guide describes how to deploy the **Unified data foundation with Fabric solution accelerator** Power BI reports to Microsoft Fabric, using either a Power BI Template (.pbit) or a pre-built Power BI Report (.pbix).
+This guide describes how to setup the **Unified data foundation with Fabric solution accelerator** Power BI reports to Microsoft Fabric.
  
 ---
  
 ## Prerequisites
 Refer to the [Setup Guide for Fabric](./SetupFabric.md) and [Deployment Guide for Fabric](./DeploymentGuideFabric.md) to complete the required environment and account setup before proceeding.
- 
+
 ---
- 
+
+## Obtain the SQL Endpoint 
+
+1. In Microsoft Fabric, open the **`maag_gold` lakehouse**.  
+2. Go to **Lakehouse settings** (*top left*) and locate the **SQL analytics endpoint**. 
+      
+   ![SQL_credentials](./images/deployment/sqlConnection.jpg)
+
+3. Copy the **SQL connection string**. You will use this value to verify or configure connections in both automated and manual deployments.
+
+---
+
 ## Deployment Options
- 
-You can deploy the Power BI report to Fabric using either of the following methods:
- 
-1. **Option 1: Configure and Publish Power BI Template (.pbit) using Power BI Desktop**
-2. **Option 2: Use .pbix directly in Fabric and update data source parameters in the portal**
- 
+You can deploy the Power BI report using either of the following approaches:
+
+- **Option 1: Automated Report Deployment (PBIX)** – Recommended for most scenarios.  
+- **Option 2: Manual Report Configuration (PBIT in Power BI Desktop)** – Advanced setup.  
+
 ---
- 
-## Option 1: Configure and Publish Power BI Template (.pbit) using Power BI Desktop
- 
-This method uses the provided Power BI template to create a new report and semantic model, parameterized for your environment.
- 
+
+## Option 1: Automated Report Deployment (PBIX)
+
 ### Steps
- 
-1. **Get Source Connection**
-   - In the Fabric workspace, open the **maag_gold** Lakehouse.
-   - Select **SQL analytics endpoint** from top right 
-   - Click on **Settings** gera icon on top left.
-   - Get the **SQL endpoint** (SQL connection string) for use as parameters.
 
-   ![SQL_connection_string](./images/deployment/sqlConnection.jpg)
-2. **Open and Connect Power BI Template**
-   - Launch **Power BI Desktop**.
-   - Go to **File > Open** and select **sales_dashboard.pbit** located in the [reports](./reports/sales_dashboard.pbit) folder.
-   - When prompted, enter credential values:
-     - **SQL endpoint**: `xxxx.datawarehouse.fabric.microsoft.com`
-     - **Database**: `maag_gold` (same as Lakehouse name)
-     - **Select Schema**: `shared`, `salesadb`, `salesfabric`, or `finance`
-   - Click **Load**.
-   - Ensure tables are loaded in **DirectQuery** mode (not Import)
+1. **PBIX Upload and Connection Setup**
+   - The Fabric automation script uploads the `.pbix` file to the **`reports`** folder in your Fabric workspace.
+   - The report is preconfigured to connect to the **`maag_gold` lakehouse** using the SQL endpoint.
 
-    ![SQL_credentials](./images/deployment/SQL_credentials.jpg)
+2. **Verify Connection in Power BI**
+   - In your Fabric workspace, open the **`reports`** folder and locate the semantic model linked to the report.  
+   - Open the model’s **Settings** (three dots menu). 
+      ![Sementic Model settings](./images/deployment/sementicmodelsetting.png) 
+   - If you’re not the owner, click **Take Over**. 
+   ![Sementic Model takeover](./images/deployment/sementicmodel-takeover.png)
+   - Under **Parameters**, check the value for **`sqlEndPoint`** and confirm that it matches the SQL endpoint obtained earlier.  
+  ![Sementic Model parametrs](./images/deployment/sementicmodel-parameter.png) 
 
-    ![Data_tables_directquerymode](./images/deployment/directMode.png)
- 
-3. **Review and Validate Data Model**
-   - Confirm the necessary tables are available in Direct mode:
-     - **Sales**: Order, Order Line, Order Payment
-     - **Product**: Product, Product Category
-     - **Customer**: Customer, Customer Account, Relationship Type, Trade Name, Location
-     - **Finance**: Invoice, Payment, Account (if included)
-   - In **Model view**, check relationship and cardinality view.
+1. **Explore the Report**
+   - Once verified, you can start exploring the report without additional configuration.  
 
-   ![data_model](./images/deployment/data_model.png)
- 
-4. **Publish to Fabric and setup refresh**
-   - In Power BI Desktop, select **Home > Publish**
-   - In the Fabric portal, go to the published **Semantic Model > Settings**.
-   - Under **Data source credentials**, set:
-     - **Authentication**: Microsoft Account / OAuth (Fabric)
-     - **Privacy level**: Organizational
-   - Click **Refresh now** to validate connectivity.
+> **Tip:** 
+> 1. If you experience connection issues, see the [Troubleshooting](#troubleshooting) section.  
+> 2. If the SQL endpoint does not match, follow the steps in Option 2 to manually configure the connection.
 
- 
 ---
- 
-## Option 2: Use .pbix directly in Fabric and update data source parameters in the portal**
- 
-This method allows you to upload a pre-built Power BI report file (`.pbix`) directly to Fabric and update connection parameters in the portal, without using Power BI Desktop.
- 
-### Steps to follow
- 
-1. **Use already uploaded .pbix file to Fabric workspace**
-   - Open your Fabric workspace > Click **Upload > Browse this device**.
-   - Select **sales_dashboard.pbix** located in the [reports](./reports/sales_dashboard.pbit) folder.
- 
-2. **Get the SQL Endpoint for Lakehouse**
-   - In the Fabric workspace, open the **maag_gold** Lakehouse.
-   - Click **Open SQL analytics endpoint** (top right) > click on **Settings** > copy the **SQL endpoint** (e.g., `xxxx.datawarehouse.fabric.microsoft.com`).
- 
-3. **Update Data Source Parameters in Fabric**
-   - In the Fabric **maag_gold** workspace > go to **Semantic Model**.
-   - Find your uploaded dataset (from the .pbix file).
-   - Click the ellipsis (•••) next to the dataset > **Settings**.
-  ![data_model](./images/deployment/sementicmodelsetting.png)
-   - Scroll to the **Parameters** section.
-   - Update the parameter values:
-     - **SQL endpoint**: `xxxx.datawarehouse.fabric.microsoft.com`
-     - **DatabaseName**: `maag_gold` (same as Lakehouse name)
-   ![data_model](./images/deployment/sementicmodel-parameter.png)
-   - Click **Save** to apply the changes.
- 
-1. **Configure Credentials and Refresh**
-   - In Dataset > Settings > Data source credentials:
-     - Set authentication to Microsoft Account / OAuth (Fabric).
-     - Set Privacy level to Organizational.
-   - Click **Refresh now** to validate the connection.
- 
+
+## Option 2: Manual Report Configuration (PBIT in Power BI Desktop)
+
+### Steps
+
+1. **Download the `.pbit` Template**
+   - From the repository’s [reports](./reports) folder, download the `.pbit` template file.
+
+2. **Open in Power BI Desktop**
+   - Launch Power BI Desktop and open the downloaded `.pbit` file.  
+
+3. **Provide Connection Details**
+   - When prompted, enter:
+     - **sqlEndpoint**: The value obtained in the earlier step.  
+     - **database**: `maag_gold`.  
+
+   ![pbit-parmeters-update](./images/deployment/PowerBI-parameters.png) 
+   
+4. **Authenticate**
+   - Sign in with your organizational account to establish the connection.  
+
+5. **Verify and Publish**
+   - Ensure the data model loads and visuals render correctly.  
+   - Once verified, publish the report to your Fabric workspace.  
+
 ---
- 
+---
+
 ## Troubleshooting
- 
+
 | Issue | Likely Cause | Action |
 |-------|--------------|--------|
-| Parameter Issues | Incorrect server, database, or schema values | Double-check all parameter values and ensure they match your environment |
-| Data Refresh Failures | Invalid credentials or permissions | Confirm credentials, privacy level, and authentication method |
-| Missing Tables | Gold layer tables not present or schema mismatch | Ensure tables exist in maag_gold and schema names are correct |
-| Access Permissions | Insufficient permissions in Fabric or data source | Verify your user account has adequate permissions |
-| Capacity/Performance | Resource limits or slow refresh | Consider scaling up Fabric capacity |
- 
+| Parameter Issues | Incorrect server, database, or schema values | Double-check all parameter values against your environment |
+| Data Refresh Failures | Invalid credentials or permissions | Confirm credentials, privacy levels, and authentication method |
+| Missing Tables | `maag_gold` tables absent or schema mismatch | Verify tables exist and schema names match |
+| Access Permissions | Insufficient permissions in Fabric or data source | Ensure your account has proper access |
+| Capacity/Performance | Resource limits or slow refresh | Consider scaling Fabric capacity |
+
 ---

@@ -11,9 +11,8 @@ This guide helps an organization to set up  set up Azure Databricks for Microsof
 
 ---
 
-## Step 1: Create Azure Databricks Workspace
-
-You can create an Azure Databricks workspace using several methods. The fastest approach is to use the Azure Portal. For step-by-step instructions, see [Deploy a workspace using the Azure Portal](https://learn.microsoft.com/en-us/azure/databricks/admin/workspace/create-workspace).
+## Step 1: Create Azure Databricks workspace
+You can create an Azure Databricks workspace in several ways (Azure Portal, Databricks CLI, ARM/Terraform templates). The fastest method is the Azure Portal — see Microsoft’s guide: [Deploy a workspace using the Azure Portal](https://learn.microsoft.com/en-us/azure/databricks/admin/workspace/create-workspace) for full details. The steps below walk through the Portal-based creation..
 
 
 1. Go to the [Azure Portal](https://portal.azure.com/).
@@ -22,14 +21,11 @@ You can create an Azure Databricks workspace using several methods. The fastest 
    - Choose your Subscription and Resource Group (or create a new one).
    - Enter a Workspace Name.
    - Select the **Premium** pricing tier.
+![create DataBricks workspace](../docs/images/deployment/databricks-create-workspace.png)
 
-
-  ![create DataBricks workspace](../docs/images/deployment/databricks-create-workspace.png)
 4. Click **Review + Create** and then **Create**.
 5. When deployment is complete, click **Go to resource**.
 6. Click **Launch Workspace** and copy the workspace URL for later.
-
-
 ![databricks connection new](../docs/images/deployment/databricks-workspace-url.png)
 
 ---
@@ -50,14 +46,17 @@ You can create an Azure Databricks workspace using several methods. The fastest 
 
 External data access is required for Fabric to mirror Databricks data. Request your global tenant administrator to help you to set up this. 
 
-1. In Databricks, click the **Catalog** icon (left menu).
+1. In Databricks workspace, click the **Catalog** icon (left menu).
 2. Click the **gear** icon at the top of the Catalog pane and select **Metastore**.
 3. On the **Details** tab, enable **External data access**.
-4. If you see a message that only a global admin can enable this, ask your Azure admin for help. When complete the admin will see this view: ![databricks external data access enabled](../docs/images/deployment/databricks-external-data-access-enabled.png)
+4. If you see a message that only a global admin can enable this, ask your Azure admin for help. When complete the admin will see this view:
+  
+  
+  ![databricks external data access enabled](../docs/images/deployment/databricks-external-data-access-enabled.png)
 
 ---
 
-## Step 4: Find Required Values in Databricks
+## Step 4: Find Required Values in Databricks Workspace
 You will need the following values for deployment process later. Be sure to record them for future reference.
 
 - **Workspace URL:**  
@@ -69,23 +68,42 @@ You will need the following values for deployment process later. Be sure to reco
     ![Get Databricks URL](./images/deployment/1-DatabricksURL.png)  
 
 - **Personal Access Token (PAT):**  
-  - In Databricks, click your profile icon (top-right).  
+  - In Databricks workspace, click your profile icon (top-right).  
   - Navigate to **User Settings → Access Tokens → Generate New Token**.  
   - Copy the token (it begins with `dapi...`) and store it in a secure location. You will not be able to view this token again after closing the dialog.
   
   
   ![Generate Databricks PAT](./images/deployment/2-DatabricksGeneratePAT.png)  
 
-- **Cluster ID:**  
-  - In Databricks, go to **Compute** and open your cluster.  
-  - The Cluster ID is part of the URL.  
-    - Example: `.../cluster/1234-567890-abcd123` → Cluster ID = `1234-567890-abcd123`.  
-  
+- **Cluster ID (create a cluster / compute to obtain this):**
+  If you do not yet have a cluster, create one before running the deployment scripts (instructions below).
 
-    ![Get Cluster ID](./images/deployment/3-DatabricksClusterID.png)  
+
+  **How to create a cluster:**
+    1. In your Databricks workspace, click **Compute** → **Create Compute**. 
+    ![Create Compute](./images/deployment/ADB-Cluster1.png)  
+    2. Enter a **Compute name**, choose the runtime version, worker type and node count appropriate for your workloads.
+    3. Click **Create**. Wait until the cluster status displays `Running` (or `Started`) — you can verify this by the green dot next to the cluster name.
+    ![Compute running](./images/deployment/ADB-Cluster2.png)
+
+
+  **How to get the Cluster ID:**
+
+  1. Open your Databricks workspace.
+  2. In the left navigation pane, go to Compute.
+  3. Select the cluster you want to inspect.
+  4. On the cluster details page, click the ... (More Actions) menu in the top-right corner.
+  5. Choose View JSON from the dropdown. A JSON window will open with the cluster configuration details.
+    ![Compute running](./images/deployment/ADB-Cluster3.png)
+  6.  Search (Ctrl + F) for "cluster_id".
+  7.  Copy the value next to "cluster_id" — that’s your Cluster ID.
+    ![Compute running](./images/deployment/ADB-Cluster4.png)
+    
+
+    >Notes: Creating a cluster requires appropriate Databricks permissions. If you cannot create a cluster, ask your administrator to provision one or supply you with the Cluster ID.
 
 - **Catalog Managed Location:**
-  - In Databricks, go to **Catalogs → Settings**.  
+  - In Databricks workspace, go to **Catalogs → Settings**.  
 
 
     ![Catalog Settings](./images/deployment/4-databricksSettingIcon.png) 
@@ -117,4 +135,4 @@ After setup, you can reuse this connection by choosing **Existing connection**.
 ## Next Steps
 
 
-For deploying Databricks resources, follow instructions the [Deployment Guide for Databricks](./DeploymentGuideDatabricks.md). 
+For deploying Databricks resources, follow instructions the [Deployment Guide for Databricks](./DeploymentGuideDatabricks.md).
