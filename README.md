@@ -221,24 +221,6 @@ Please refer to [Transparency FAQ](./TRANSPARENCY_FAQ.md) for responsible AI tra
 
 <br/>
 
-## AZD Template Required Sections 
-
-## Features
-
-Please refer to **Key Features** section above 
-
-## Getting Started
-
-Please refer to **How to Install or Deploy** section above 
-
-## Guidance
-
-Please refer to **Solution Overview** section above. 
-
-## Resources 
-
-Please refer to **Additional resources** section above. 
-
 ## Disclaimers
 
 To the extent that the Software includes components or code used in or derived from Microsoft products or services, including without limitation Microsoft Azure Services (collectively, “Microsoft Products and Services”), you must also comply with the Product Terms applicable to such Microsoft Products and Services. You acknowledge and agree that the license governing the Software does not grant you a license or other right to use Microsoft Products and Services. Nothing in the license or this ReadMe file will serve to supersede, amend, terminate or modify any terms in the Product Terms for any Microsoft Products and Services. 
