@@ -1,0 +1,71 @@
+# Run when commits are pushed to pre-deploy-alguadam
+on:
+  workflow_dispatch:
+  push:
+    # Run when commits are pushed to mainline branch (main or master)
+    # Set this to the mainline branch you are using
+    branches:
+      - main
+      - pre-deploy
+      - pre-deploy-alguadam
+
+# Set up permissions for deploying with secretless Azure federated credentials
+# https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-portal%2Clinux#set-up-azure-login-with-openid-connect-authentication
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validation steps
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate AZD template
+        uses: microsoft/template-validation-action@Latest
+        id: validation
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: print result
+        run: cat ${{ steps.validation.outputs.resultFile }}
+      # - name: Install azd
+      #   uses: Azure/setup-azd@v2
+      # - name: Validate Infrastructure as Code
+      #   run: azd infra validate
+      # - name: Install azd
+      #   uses: Azure/setup-azd@v2
+      # - name: Validate Infrastructure as Code
+      #   run: azd infra validate
+  # build:
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  #     AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  #     AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  #     AZURE_FABRIC_ADMIN_USER_EMAIL: ${{ vars.AZURE_FABRIC_ADMIN_USER_EMAIL }}
+  #     AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #     - name: Install azd
+  #       uses: Azure/setup-azd@v2
+  #     - name: Log in with Azure (Federated Credentials)
+  #       run: |
+  #         azd auth login `
+  #           --client-id "$Env:AZURE_CLIENT_ID" `
+  #           --federated-credential-provider "github" `
+  #           --tenant-id "$Env:AZURE_TENANT_ID"
+  #       shell: pwsh
+
+  #     - name: Provision Infrastructure
+  #       run: azd provision --no-prompt
+
+  #     - name: Deploy Application
+  #       run: azd deploy --no-prompt
