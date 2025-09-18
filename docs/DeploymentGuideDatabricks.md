@@ -1,5 +1,3 @@
-
-
 # Azure Databricks Deployment Guide
 
 This guide describes how to deploy the **Unified data foundation with Fabric solution accelerator** - Databricks components including notebooks, sample data, Unity Catalog, and workspace structure.
@@ -9,7 +7,7 @@ This guide describes how to deploy the **Unified data foundation with Fabric sol
 ## Prerequisites
 
 
-Refer to the [Deployment Guide for Fabric](./DeploymentGuideFabric.md) and [Setup Guide for Databricks](./SetupDatabricks.md) to complete the required environment and account setup before proceeding.
+Refer to the [Deployment Guide for Fabric](./DeploymentGuideFabric.md) and follow the [Setup Guide for Databricks](./SetupDatabricks.md). The Setup guide for Databricks contains important steps you must complete before running the deployment scripts.
 
 **Required Tools for deployment**
 - [Python 3.9+](https://www.python.org/downloads/) - for running deployment scripts
@@ -71,7 +69,7 @@ You can run the Databricks deployment directly from Azure Cloud Shell without ne
 
 3. Navigate to the deployment directory:
    ```bash
-   cd infra/scripts/databricks
+   cd infra/deploy/databricks
    ```
 
 4. Continue with the [Databricks Items Deployment](#databricks-items-deployment) steps using the bash script.
@@ -119,18 +117,19 @@ The Databricks deployment script automates the following:
 
 ### 1. Workspace Setup
 
-Ensure you have an Azure Databricks workspace available. Note your following values as it will be required for running the deployment script.
+Ensure you have an Azure Databricks workspace available and that you have completed the steps in [Setup Guide for Databricks](./SetupDatabricks.md) to obtain the values listed below. 
 
-1. Workspace Url
-2. Personal Access Token (PAT) (if not using Azure CLI authentication)
-3. Cluster ID
-4. Catalog Managed Location
+Required values (collect these before running the script):
 
+1. Workspace URL (e.g. https://adb-xxxx.azuredatabricks.net)
+2. Personal Access Token (PAT)
+3. Databricks Cluster ID 
+4. Catalog Managed Location (external location name or URI)
 
 ### 2. Navigate to Deployment Directory
 
 ```bash
-cd infra/scripts/databricks
+cd infra/deploy/databricks
 ```
 
 ### 3. Run Deployment Script
@@ -159,7 +158,7 @@ chmod +x provision_databricks_items.sh
 ```bash
 # Codespaces comes with Python and Azure CLI pre-installed
 # Navigate to the databricks deployment directory
-cd infra/scripts/databricks
+cd infra/deploy/databricks
 
 # Make the script executable
 chmod +x provision_databricks_items.sh

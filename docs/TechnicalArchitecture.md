@@ -21,3 +21,20 @@ Below architecture illustrates the architecture for option 4, **Core Medallion A
 ![Solution Architecture](../docs/images/readme/solution-architecture.png)
 
 If you choose to deploy this architecture, you will need to follow the deployment guide step by step to set up and deploy all resources. If you choose the option 1, 2, or 3. You can deploy the respective parts by following the [Deployment Guide](./DeploymentGuide.md) accordingly. 
+
+Below diagram illustrates the architecture if you choose to deploy option 1, **Core Medallion Architecture in Microsoft Fabric only**.
+
+![Architecture Option 1](./images/deployment/architectures/sa-architecture-option-1-fabric.png)
+
+Below diagram illustrates the architecture if you choose to deploy option 2, **Core Medallion Architecture in Microsoft Fabric + Microsoft Purview**.
+
+![Architecture Option 2](./images/deployment/architectures/sa-architecture-option-2-fabric-purview.png)
+
+Below diagram illustrates the architecture if you choose to deploy option 3, **Core Medallion Architecture in Microsoft Fabric + Azure Databricks**.
+
+![Architecture Option 3](./images/deployment/architectures/sa-architecture-option-3-fabric-databricks.png)
+
+
+
+
+
