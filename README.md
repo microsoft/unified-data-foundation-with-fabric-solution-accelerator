@@ -19,7 +19,9 @@ We have built flexibility and options so that you do not have to provision all t
 <br/>
 
 <div align="center">
-[**SOLUTION OVERVIEW**](#solution-overview)  \| [**QUICK DEPLOY**](#quick-deploy)  \| [**BUSINESS USE CASE**](#business-use-case)  \| [**SUPPORTING DOCUMENTATION**](#supporting-documentation)
+
+[**SOLUTION OVERVIEW**](#solution-overview) \| [**QUICK DEPLOY**](#quick-deploy) \| [**BUSINESS SCENARIO**](#business-use-case) \| [**SUPPORTING DOCUMENTATION**](#supporting-documentation)
+
 </div>
 <br/>
 
@@ -218,6 +220,24 @@ Have questions, find a bug, or want to request a feature? [Submit a new issue](h
 Please refer to [Transparency FAQ](./TRANSPARENCY_FAQ.md) for responsible AI transparency details of this solution accelerator.
 
 <br/>
+
+## AZD Template Required Sections 
+
+## Features
+
+Please refer to **Key Features** section above 
+
+## Getting Started
+
+Please refer to **How to Install or Deploy** section above 
+
+## Guidance
+
+Please refer to **Solution Overview** section above. 
+
+## Resources 
+
+Please refer to **Additional resources** section above. 
 
 ## Disclaimers
 
