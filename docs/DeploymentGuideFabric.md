@@ -23,9 +23,6 @@ For the fastest deployment experience:
 git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
 cd unified-data-foundation-with-fabric-solution-accelerator
 
-# REQUIRED: Set up your user to be configured as Fabric administrator
-azd env set AZURE_FABRIC_ADMIN_USER_EMAIL "your-user@your-org-domain.com"
-
 # Optional: Customize the Fabric workspace name (defaults to "Unified Data Foundation with Fabric")
 azd env set AZURE_FABRIC_WORKSPACE_NAME "My Custom Workspace Name"
 
@@ -143,17 +140,12 @@ azd version
    azd init
    ```
 
-4. **REQUIRED: Set admin email for Fabric capacity access:**
-   ```bash
-   azd env set AZURE_FABRIC_ADMIN_USER_EMAIL "your-user@your-org-domain.com"
-   ```
-
-5. **Optional: Set custom workspace name:**
+4. **Optional: Set custom workspace name:**
    ```bash
    azd env set AZURE_FABRIC_WORKSPACE_NAME "My Production Workspace"
    ```
 
-6. **Deploy everything:**
+5. **Deploy everything:**
    ```bash
    azd up
    ```
@@ -205,9 +197,6 @@ Deploy directly from Azure Cloud Shell without installing anything locally.
    ```bash
    # Initialize the project
    azd init
-   
-   # REQUIRED: Set admin email for Fabric capacity access
-   azd env set AZURE_FABRIC_ADMIN_USER_EMAIL "your-user@your-org-domain.com"
    
    # Optional: Set custom workspace name
    azd env set AZURE_FABRIC_WORKSPACE_NAME "Cloud Shell Deployment"
@@ -285,9 +274,6 @@ Deploy using GitHub Codespaces for a complete cloud development environment.
    ```bash
    # Initialize the project
    azd init
-   
-   # REQUIRED: Set admin email for Fabric capacity access
-   azd env set AZURE_FABRIC_ADMIN_USER_EMAIL "your-user@your-org-domain.com"
    
    # Optional: Set custom workspace name
    azd env set AZURE_FABRIC_WORKSPACE_NAME "Codespaces Deployment"
