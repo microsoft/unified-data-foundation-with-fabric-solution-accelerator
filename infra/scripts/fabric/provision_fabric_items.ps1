@@ -93,13 +93,44 @@ try {
     }
     Write-Host "Found: $pythonVersion" -ForegroundColor Green
 
-    # Validate that pip is available
-    Write-Host "Checking pip installation..." -ForegroundColor Yellow
+    # Create and activate Python virtual environment
+    Write-Host "Setting up Python virtual environment..." -ForegroundColor Yellow
+    $VenvPath = Join-Path $ScriptDir ".venv"
+    
+    if (-not (Test-Path $VenvPath)) {
+        python -m venv "$VenvPath"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to create Python virtual environment."
+        }
+        Write-Host "Created virtual environment at: $VenvPath" -ForegroundColor Green
+    } else {
+        Write-Host "Using existing virtual environment at: $VenvPath" -ForegroundColor Green
+    }
+    
+    # Activate virtual environment
+    $ActivateScript = if ($IsWindows -or $env:OS -eq "Windows_NT") {
+        Join-Path $VenvPath "Scripts\Activate.ps1"
+    } else {
+        Join-Path $VenvPath "bin/activate"
+    }
+    
+    if ($IsWindows -or $env:OS -eq "Windows_NT") {
+        & $ActivateScript
+    } else {
+        # On Unix-like systems, source the activation script
+        $env:VIRTUAL_ENV = $VenvPath
+        $env:PATH = "$(Join-Path $VenvPath 'bin')$([System.IO.Path]::PathSeparator)$env:PATH"
+    }
+    
+    Write-Host "Activated virtual environment" -ForegroundColor Green
+
+    # Validate that pip is available in the virtual environment
+    Write-Host "Checking pip installation in virtual environment..." -ForegroundColor Yellow
     pip --version > $null 2>&1
     if ($LASTEXITCODE -ne 0) {
-        throw "pip is not available. Please ensure pip is installed and try again."
+        throw "pip is not available in the virtual environment."
     }
-    Write-Host "pip is available" -ForegroundColor Green
+    Write-Host "pip is available in virtual environment" -ForegroundColor Green
 
     # Install Python dependencies
     Write-Host "Installing Python dependencies from requirements.txt..." -ForegroundColor Yellow
@@ -155,6 +186,17 @@ catch {
     exit 1
 }
 finally {
+    # Deactivate virtual environment if it was activated
+    if ($env:VIRTUAL_ENV) {
+        Write-Host "Deactivating virtual environment..." -ForegroundColor Yellow
+        if (Get-Command deactivate -ErrorAction SilentlyContinue) {
+            deactivate
+        } else {
+            # Manual cleanup for cross-platform compatibility
+            $env:VIRTUAL_ENV = $null
+        }
+    }
+    
     # Restore original location
     if (Get-Location -Stack -ErrorAction SilentlyContinue) {
         Pop-Location
