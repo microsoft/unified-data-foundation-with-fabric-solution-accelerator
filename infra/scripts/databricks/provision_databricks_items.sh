@@ -48,8 +48,35 @@ if ! command -v pip &> /dev/null; then
   echo "pip is not installed. Please install pip and try again."; exit 1
 fi
 
-# Install dependencies from local requirements.txt
+# Create and activate Python virtual environment
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+venv_dir="$script_dir/.venv"
+
+echo "Setting up Python virtual environment..."
+if [ ! -d "$venv_dir" ]; then
+  python -m venv "$venv_dir"
+  if [ $? -ne 0 ]; then
+    echo "Failed to create Python virtual environment."; exit 1
+  fi
+  echo "Created virtual environment at: $venv_dir"
+else
+  echo "Using existing virtual environment at: $venv_dir"
+fi
+
+# Activate virtual environment
+source "$venv_dir/bin/activate"
+if [ $? -ne 0 ]; then
+  echo "Failed to activate virtual environment."; exit 1
+fi
+echo "Activated virtual environment"
+
+# Verify pip is available in virtual environment
+if ! command -v pip &> /dev/null; then
+  echo "pip is not available in the virtual environment."; exit 1
+fi
+echo "pip is available in virtual environment"
+
+# Install dependencies from local requirements.txt
 requirements="$script_dir/requirements.txt"
 if [ ! -f "$requirements" ]; then
   echo "Could not find requirements.txt at $requirements. Please check your repository structure."; exit 1

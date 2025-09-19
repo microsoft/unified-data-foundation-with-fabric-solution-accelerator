@@ -13,7 +13,6 @@ infra:
   parameters:
     solutionName: ${AZURE_ENV_NAME}
     location: ${AZURE_LOCATION}
-    fabricAdminMembers: ${AZURE_FABRIC_ADMIN_USER_EMAIL}
 
 hooks:
   postprovision:

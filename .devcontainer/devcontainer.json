@@ -4,8 +4,7 @@
     "features": {
         "ghcr.io/devcontainers/features/azure-cli:1": {
             "version": "latest",
-            "installBicep": true,
-            "installAzd": true
+            "installBicep": true
         },
         "ghcr.io/devcontainers/features/git:1": {
             "version": "latest"
@@ -15,7 +14,8 @@
         },
         "ghcr.io/devcontainers/features/powershell:1": {
             "version": "latest"
-        }
+        },
+        "ghcr.io/azure/azure-dev/azd:latest": {}
     },
     "customizations": {
         "vscode": {
@@ -48,16 +48,5 @@
         }
     },
     "postCreateCommand": "bash .devcontainer/post-create.sh",
-    "forwardPorts": [
-        8000,
-        8080,
-        8888
-    ],
-    "mounts": [
-        "source=${localEnv:HOME}/.azure,target=/home/vscode/.azure,type=bind,consistency=cached"
-    ],
-    "remoteUser": "vscode",
-    "containerEnv": {
-        "AZURE_CORE_COLLECT_TELEMETRY": "false"
-    }
+    "remoteUser": "vscode"
 }

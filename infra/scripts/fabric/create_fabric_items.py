@@ -797,6 +797,7 @@ for pbix_file_path in pbix_file_paths:
 print("-" * 60)
 print(f"🎉 {solution_name} deployment completed successfully!")
 print(f"✅ Workspace: {workspace_name}")
+print(f"✅ Workspace URL: https://app.fabric.microsoft.com/groups/{workspace_id}")
 print(f"✅ Lakehouses: {len(udff_lakehouses)} created (Bronze, Silver, Gold)")
 print(f"✅ Notebooks: {uploaded_count}/{len(notebook_specs)} deployed with batch processing")
 print(f"✅ Sample data: {len(csv_file_paths)} files uploaded")
