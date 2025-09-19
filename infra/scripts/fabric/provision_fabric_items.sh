@@ -9,6 +9,7 @@
 # DESCRIPTION
 #     This script automates the deployment of UDFF (Unified Data Foundation with Fabric) components 
 #     to Microsoft Fabric including folder structure, lakehouses, sample data, notebooks, and Power BI reports.
+#     The script creates a Python virtual environment for dependency isolation and runs the deployment.
 #
 # USAGE
 #     ./provision_fabric_items.sh [options]
@@ -26,7 +27,7 @@
 #
 # PREREQUISITES
 #     - Azure CLI installed and authenticated (az login)
-#     - Python 3.9+ with pip
+#     - Python 3.9+ with pip and venv module
 #     - Appropriate permissions in the Fabric capacity and workspace
 #
 
@@ -67,6 +68,22 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Function to cleanup virtual environment on exit
+cleanup_venv() {
+    if [[ -n "${VIRTUAL_ENV:-}" ]]; then
+        print_info "Deactivating virtual environment..."
+        deactivate 2>/dev/null || true
+    fi
+    
+    # Restore original location if we changed it
+    if [[ "${ORIGINAL_DIR:-}" != "$(pwd)" ]] && [[ -n "${ORIGINAL_DIR:-}" ]]; then
+        cd "$ORIGINAL_DIR" 2>/dev/null || true
+    fi
+}
+
+# Set trap to cleanup on exit
+trap cleanup_venv EXIT
+
 # Function to show usage
 show_usage() {
     echo "Usage: $0 [options]"
@@ -84,12 +101,15 @@ show_usage() {
     echo ""
     echo "Prerequisites:"
     echo "  - Azure CLI installed and authenticated (az login)"
-    echo "  - Python 3.9+ with pip"
+    echo "  - Python 3.9+ with pip and venv module"
     echo "  - Appropriate permissions in the Fabric capacity and workspace"
 }
 
 # Main script starts here
 print_success "Starting Microsoft Fabric deployment script..."
+
+# Store original directory for cleanup
+ORIGINAL_DIR="$(pwd)"
 
 # Get script directory for relative paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -177,37 +197,67 @@ fi
 python_version=$($PYTHON_CMD --version 2>&1)
 print_success "Found: $python_version"
 
-# Validate that pip is available
-print_step "Checking pip installation..."
-if ! command_exists pip && ! command_exists pip3; then
-    print_error "❌ pip is not available. Please ensure pip is installed and try again."
+# Check if venv module is available
+print_step "Checking Python venv module..."
+if ! $PYTHON_CMD -m venv --help >/dev/null 2>&1; then
+    print_error "❌ Python venv module is not available. Please install python3-venv package and try again."
+    print_info "On Ubuntu/Debian: sudo apt-get install python3-venv"
+    print_info "On RHEL/CentOS: sudo yum install python3-venv"
     exit 1
 fi
+print_success "Python venv module is available"
 
-# Use pip3 if available, otherwise pip
-PIP_CMD="pip"
-if command_exists pip3; then
-    PIP_CMD="pip3"
+# Create and activate Python virtual environment
+print_step "Setting up Python virtual environment..."
+VENV_DIR="$SCRIPT_DIR/.venv"
+
+# Create virtual environment if it doesn't exist
+if [[ ! -d "$VENV_DIR" ]]; then
+    print_info "Creating virtual environment at $VENV_DIR..."
+    if ! $PYTHON_CMD -m venv "$VENV_DIR"; then
+        print_error "❌ Failed to create virtual environment. Please ensure python3-venv is installed."
+        exit 1
+    fi
+    print_success "Created virtual environment at: $VENV_DIR"
+else
+    print_success "Using existing virtual environment at: $VENV_DIR"
 fi
 
-print_success "pip is available"
+# Activate virtual environment
+print_info "Activating virtual environment..."
+source "$VENV_DIR/bin/activate"
+print_success "Activated virtual environment"
 
-# Install Python dependencies
+# Upgrade pip in virtual environment
+print_info "Upgrading pip in virtual environment..."
+if ! python -m pip install --upgrade pip --quiet; then
+    print_warning "⚠️ Failed to upgrade pip, continuing with existing version..."
+fi
+
+# Validate that pip is available in the virtual environment
+print_step "Checking pip installation in virtual environment..."
+if ! command -v pip >/dev/null 2>&1; then
+    print_error "❌ pip is not available in the virtual environment."
+    exit 1
+fi
+print_success "pip is available in virtual environment"
+
+# Install Python dependencies in virtual environment
 print_step "Installing Python dependencies from requirements.txt..."
 if [[ ! -f "$REQUIREMENTS_PATH" ]]; then
     print_error "❌ requirements.txt not found at: $REQUIREMENTS_PATH"
     exit 1
 fi
-if ! $PIP_CMD install -r "$REQUIREMENTS_PATH" --quiet; then
+if ! pip install -r "$REQUIREMENTS_PATH" --quiet; then
     print_error "❌ Failed to install Python dependencies. Please check requirements.txt and try again."
     exit 1
 fi
-print_success "Dependencies installed successfully"
+print_success "Dependencies installed successfully in virtual environment"
 
 # Change to script directory for Python execution
 cd "$SCRIPT_DIR"
 
-# Run the Python deployment script
+# Run the Python deployment script with error handling
 print_step "Starting Fabric items deployment..."
 print_info "This may take several minutes to complete..."
 echo ""
@@ -218,8 +268,14 @@ if [[ -n "$fabricWorkspaceName" ]]; then
     python_args+=(--workspaceName "$fabricWorkspaceName")
 fi
 
-# Run Python unbuffered so prints show immediately
-if $PYTHON_CMD -u create_fabric_items.py "${python_args[@]}"; then
+# Execute Python script and capture result
+deployment_success=false
+if python -u create_fabric_items.py "${python_args[@]}"; then
+    deployment_success=true
+fi
+
+# Handle results
+if [[ "$deployment_success" == "true" ]]; then
     echo ""
     print_success "✅ Fabric deployment completed successfully!"
     echo ""
@@ -240,5 +296,6 @@ else
     echo -e "${WHITE}3. Check that the capacity name is correct and accessible${NC}"
     echo -e "${WHITE}4. Ensure Python 3.9+ and pip are properly installed${NC}"
     echo -e "${WHITE}5. Check your internet connection and Fabric API access${NC}"
+    echo -e "${WHITE}6. Check the virtual environment at $VENV_DIR${NC}"
     exit 1
 fi
