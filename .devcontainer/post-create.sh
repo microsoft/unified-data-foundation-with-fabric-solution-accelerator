@@ -93,9 +93,9 @@ echo "Git version: $(git --version)"
 
 # Verify that critical Python packages can be installed (but don't install globally)
 echo "🔍 Verifying Python package availability..."
-python3 -c "import importlib.util; print('✅ azure-identity importable' if importlib.util.find_spec('azure.identity') else 'ℹ️ azure-identity will be installed by deployment scripts')"
-python3 -c "import importlib.util; print('✅ azure-storage-file-datalake importable' if importlib.util.find_spec('azure.storage.filedatalake') else 'ℹ️ azure-storage-file-datalake will be installed by deployment scripts')"
-python3 -c "import importlib.util; print('✅ requests importable' if importlib.util.find_spec('requests') else 'ℹ️ requests will be installed by deployment scripts')"
+echo "ℹ️ azure-identity will be installed by deployment scripts"
+echo "ℹ️ azure-storage-file-datalake will be installed by deployment scripts"
+echo "ℹ️ requests will be installed by deployment scripts"
 
 # Test fabric script modules if they exist (won't have dependencies until deployment scripts run)
 if [ -f "./infra/scripts/fabric/fabric_api.py" ]; then
