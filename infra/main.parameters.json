@@ -4,11 +4,6 @@
   "parameters": {
     "solutionName": {
       "value": "${AZURE_ENV_NAME}"
-    },
-    "fabricAdminMembers": {
-      "value": [
-        "${AZURE_FABRIC_ADMIN_USER_EMAIL}"
-      ]
     }
   }
 }

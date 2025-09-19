@@ -18,8 +18,8 @@ param location string = resourceGroup().location
 @description('Optional. Enable/Disable usage telemetry for module.')
 param enableTelemetry bool = true
 
-@description('Required. An array of user object IDs or service principal object IDs that will be assigned the Fabric Capacity Admin role. This can be used to add additional admins beyond the default admin which is the user assigned managed identity created as part of this deployment.')
-param fabricAdminMembers array
+@description('Optional. An array of user object IDs or service principal object IDs that will be assigned the Fabric Capacity Admin role. This can be used to add additional admins beyond the default admin which is the user assigned managed identity created as part of this deployment.')
+param fabricAdminMembers array = []
 
 @allowed([
   'F2'
@@ -47,24 +47,28 @@ var solutionSuffix = toLower(trim(replace(
   ''
 )))
 
-var userAssignedIdentityResourceName = 'id-${solutionSuffix}'
-module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
-  name: take('avm.res.managed-identity.user-assigned-identity.${userAssignedIdentityResourceName}', 64)
-  params: {
-    name: userAssignedIdentityResourceName
-    location: location
-    enableTelemetry: enableTelemetry
-  }
-}
+// var userAssignedIdentityResourceName = 'id-${solutionSuffix}'
+// module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
+//   name: take('avm.res.managed-identity.user-assigned-identity.${userAssignedIdentityResourceName}', 64)
+//   params: {
+//     name: userAssignedIdentityResourceName
+//     location: location
+//     enableTelemetry: enableTelemetry
+//   }
+// }
 
 var fabricCapacityResourceName = 'fc${solutionSuffix}'
+var fabricCapacityDefaultAdmins = deployer().userPrincipalName == ''
+  ? [deployer().objectId]
+  : [deployer().userPrincipalName]
 module fabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = {
   name: take('avm.res.fabric.capacity.${fabricCapacityResourceName}', 64)
   params: {
-    adminMembers: union([userAssignedIdentity.outputs.principalId], fabricAdminMembers)
+    adminMembers: union(fabricCapacityDefaultAdmins, fabricAdminMembers)
     name: fabricCapacityResourceName
     location: location
     skuName: skuName
+    enableTelemetry: enableTelemetry
   }
 }
 
