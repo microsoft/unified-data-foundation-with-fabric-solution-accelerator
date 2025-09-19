@@ -48,16 +48,5 @@
         }
     },
     "postCreateCommand": "bash .devcontainer/post-create.sh",
-    "forwardPorts": [
-        8000,
-        8080,
-        8888
-    ],
-    "mounts": [
-        "source=${localEnv:HOME}/.azure,target=/home/vscode/.azure,type=bind,consistency=cached"
-    ],
-    "remoteUser": "vscode",
-    "containerEnv": {
-        "AZURE_CORE_COLLECT_TELEMETRY": "false"
-    }
+    "remoteUser": "vscode"
 }
