@@ -25,12 +25,17 @@ Please follow the [Power BI Configuration Guide](./DeploymentGuidePowerBI.md) to
 
 ### **Deploy and Configure Purview** (For Architecture Option 2)
 
+**Prerequisites**: You have deployed architecture option 1. 
+
 Please follow the instructions in [Provisioning Microsoft Purview](./SetupPurview.md) if your organization has not provisioned Purview. Otherwise, please follow the [Microsoft Purview Configuration Guide](./DeploymentGuidePurview.md) to configure Purview to work with the resources deployed to the Microsoft Fabric workspace. The guide also provides steps users can perform after successful configuration.
 
 ### **Deploy and Configure Azure Databricks** (For Architecture Option 3)
+
+**Prerequisites**: You have deployed architecture option 1. 
 
 Please follow the instructions in [Provisioning Azure Databricks](./SetupDatabricks.md) to create the Azure Databricks workspace and obtain the necessary information first, and then follow the instructions in the [Azure Databricks Deployment Guide](./DeploymentGuideDatabricks.md) to deploy resources to the Azure Databricks workspace and set up the integration with the Microsoft Fabric workspace previously created. The resources include 1 silver lakehouse, 7 notebooks, 2 SQL scripts, and sample data. For detailed information on the notebooks and SQL scripts, please see [Guide to Databricks Notebooks](./NotebooksGuideFabric.md).
 
 ### **Deploy and Configure Azure Databricks** (For Architecture Option 4)
 
-If you have deployed all the steps described for options 1, 2, and 3, you automatically get the option 4 architecture.
+If you have deployed all the steps described for options 1, 2, and 3, you will have deployed architecture option 4. 
+
