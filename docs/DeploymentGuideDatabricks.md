@@ -239,7 +239,7 @@ You can expose Databricks tables as **shortcuts** in a Fabric Lakehouse:
    ![shortcut onelake setup](./images/deployment/onelake-shortcut.png)
 7. Enter the **connection details** and select the target **schema**.
    ![shortcut onelake setup](./images/deployment/shortcut-schema2.png)
-8. Name the shortcut (e.g.adbSales).
+8. Name the shortcut (e.g. adbSales).
 9. Click **Create**.
 
 Once the schema shortcut is created, you can proceed to create **table shortcuts** within it.
