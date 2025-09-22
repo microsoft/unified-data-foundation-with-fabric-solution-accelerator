@@ -60,16 +60,13 @@ External data access is required for Fabric to mirror Databricks data. Request y
 You will need the following values for deployment process later. Be sure to record them for future reference.
 
 - **Workspace URL:**  
-  - Open your Databricks workspace in a browser.  
-  - The URL in the address bar is your Workspace URL.  
-    - Example: `https://adb-1234567890123456.7.azuredatabricks.net` 
-  
-
-    ![Get Databricks URL](./images/deployment/1-DatabricksURL.png)  
+   - Use the URL copied in Step 1 → Substep 6.
+   
 
 - **Personal Access Token (PAT):**  
-  - In Databricks workspace, click your profile icon (top-right).  
-  - Navigate to **User Settings → Access Tokens → Generate New Token**.  
+  - In Databricks workspace, click your profile icon (top-right) and select Settings. 
+  - Navigate to **Developer → Access tokens → Manage.** 
+  - Click **Generate new token**, add a comment, and set the lifetime.
   - Copy the token (it begins with `dapi...`) and store it in a secure location. You will not be able to view this token again after closing the dialog.
   
   
@@ -98,7 +95,7 @@ You will need the following values for deployment process later. Be sure to reco
   6.  Search (Ctrl + F) for "cluster_id".
   7.  Copy the value next to "cluster_id" — that’s your Cluster ID.
     ![Compute running](./images/deployment/ADB-Cluster4.png)
-
+    
 
     >Notes: Creating a cluster requires appropriate Databricks permissions. If you cannot create a cluster, ask your administrator to provision one or supply you with the Cluster ID.
 
@@ -111,7 +108,7 @@ You will need the following values for deployment process later. Be sure to reco
   - Under **External Location**, select your location to view its details.
 
 
-    ![External Location](./images/deployment/5-databricksExternalLocations.png) 
+    ![External Location](./images/deployment/5-DatabricksExternalLocations.png) 
 
   - The managed location is shown as a URL (commonly starting with `abfss://`).  
 
