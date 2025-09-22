@@ -124,8 +124,8 @@ _Note: This is not meant to outline all costs as selected SKUs, scaled use, cust
 
 | Product | Description | Cost |
 |---|---|---|
-| [Microsoft Fabric](https://learn.microsoft.com/en-us/fabric) | Core Medallion Architecture in Microsoft Fabric, and Unified Data Platform for integration with other platforms such as Azure DataBricks and Snowflakes. | [Pricing](https://learn.microsoft.com/en-us/fabric/enterprise/buy-subscription#prerequisites) |
-| [Azure Databricks](https://azure.microsoft.com/en-us/products/databricks/) | Azure DataBricks stores sales data for one channel and the data is used by Microsoft Fabric through data mirroring and shortcut. | [Pricing](https://azure.microsoft.com/en-us/pricing/details/databricks/) |
+| [Microsoft Fabric](https://learn.microsoft.com/en-us/fabric) | Core Medallion Architecture in Microsoft Fabric, and Unified Data Platform for integration with other platforms such as Azure Databricks and Snowflakes. | [Pricing](https://learn.microsoft.com/en-us/fabric/enterprise/buy-subscription#prerequisites) |
+| [Azure Databricks](https://azure.microsoft.com/en-us/products/databricks/) | Azure Databricks stores sales data for one channel and the data is used by Microsoft Fabric through data mirroring and shortcut. | [Pricing](https://azure.microsoft.com/en-us/pricing/details/databricks/) |
 | [Microsoft Purview](https://learn.microsoft.com/en-us/purview/) | Data Governance, data security, and risk management. | [Pricing](https://azure.microsoft.com/en-us/pricing/details/purview/) |
 
 <br/>
