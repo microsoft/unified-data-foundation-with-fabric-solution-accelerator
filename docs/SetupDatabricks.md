@@ -98,7 +98,7 @@ You will need the following values for deployment process later. Be sure to reco
   6.  Search (Ctrl + F) for "cluster_id".
   7.  Copy the value next to "cluster_id" — that’s your Cluster ID.
     ![Compute running](./images/deployment/ADB-Cluster4.png)
-    
+
 
     >Notes: Creating a cluster requires appropriate Databricks permissions. If you cannot create a cluster, ask your administrator to provision one or supply you with the Cluster ID.
 
