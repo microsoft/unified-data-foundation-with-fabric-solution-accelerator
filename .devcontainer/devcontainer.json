@@ -20,20 +20,21 @@
     "customizations": {
         "vscode": {
             "extensions": [
+                "GitHub.copilot-chat",
+                "GitHub.copilot",
+                "github.vscode-github-actions",
+                "ms-azuretools.azure-dev",
+                "ms-azuretools.vscode-azurecli",
+                "ms-azuretools.vscode-bicep",
+                "ms-python.black-formatter",
                 "ms-python.python",
                 "ms-python.vscode-pylance",
-                "ms-python.black-formatter",
-                "ms-vscode.vscode-json",
-                "ms-vscode.powershell",
-                "ms-azuretools.vscode-azurecli",
-                "ms-azuretools.azure-dev",
-                "ms-azuretools.vscode-bicep",
-                "redhat.vscode-yaml",
-                "GitHub.copilot",
-                "GitHub.copilot-chat",
                 "ms-toolsai.jupyter",
                 "ms-toolsai.vscode-jupyter-cell-tags",
-                "ms-toolsai.vscode-jupyter-slideshow"
+                "ms-toolsai.vscode-jupyter-slideshow",
+                "ms-vscode.powershell",
+                "ms-vscode.vscode-json",
+                "redhat.vscode-yaml"
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/usr/local/bin/python",

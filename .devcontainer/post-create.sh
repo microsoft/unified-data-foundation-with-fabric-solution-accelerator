@@ -20,35 +20,20 @@ echo "🚀 Setting up Unified Data Foundation with Fabric development environmen
 echo "📦 Updating package lists..."
 sudo apt-get update
 
+# Install python3-venv and python3-pip explicitly to avoid ensurepip issues
+echo "🐍 Installing Python venv and pip packages..."
+sudo apt-get install -y python3-venv python3-pip python3-dev
+
 # Upgrade pip
 echo "🐍 Upgrading pip..."
-python -m pip install --upgrade pip
-
-# Verify Python version meets requirements (3.9+)
-echo "🔍 Verifying Python version..."
-python_version=$(python3 --version 2>&1 | cut -d' ' -f2)
-python_major=$(echo $python_version | cut -d'.' -f1)
-python_minor=$(echo $python_version | cut -d'.' -f2)
-
-if [ "$python_major" -lt 3 ] || ([ "$python_major" -eq 3 ] && [ "$python_minor" -lt 9 ]); then
-    echo "❌ Error: Python 3.9+ is required. Found Python $python_version"
-    exit 1
-fi
-echo "✅ Python $python_version meets requirements (3.9+)"
-
-# Verify venv module is available (should be included with Python 3.11)
-echo "🔍 Verifying Python venv module..."
-if ! python3 -m venv --help >/dev/null 2>&1; then
-    echo "❌ Error: Python venv module is not available"
-    exit 1
-fi
-echo "✅ Python venv module is available"
+python3 -m pip install --upgrade pip
 
 # Install Python requirements for the project
 echo "📋 Preparing Python environment..."
 
-# Note: Project-specific requirements are installed by deployment scripts in isolated virtual environments
+# Note: Project-specific dependencies (Azure libraries, requests, etc.) are installed by deployment scripts in isolated virtual environments
 # This ensures consistency between development and deployment, avoiding version conflicts
+# Only install development tools and convenience packages globally
 
 # Verify that requirements files exist (deployment scripts will install them in venvs)
 if [ -f "./infra/scripts/fabric/requirements.txt" ]; then
@@ -71,14 +56,15 @@ fi
 
 # Install additional development tools
 echo "🛠️ Installing development tools..."
-if ! pip install \
+if ! python3 -m pip install --user \
     black \
     flake8 \
     pytest \
     mypy \
     bandit \
     jupyter \
-    jupyterlab; then
+    jupyterlab \
+    ipykernel; then
     echo "❌ Failed to install development tools"
     exit 1
 fi
@@ -90,19 +76,6 @@ echo "Azure CLI version: $(az --version | head -n 1)"
 echo "Azure Developer CLI version: $(azd version)"
 echo "Python version: $(python --version)"
 echo "Git version: $(git --version)"
-
-# Verify that critical Python packages can be installed (but don't install globally)
-echo "🔍 Verifying Python package availability..."
-echo "ℹ️ azure-identity will be installed by deployment scripts"
-echo "ℹ️ azure-storage-file-datalake will be installed by deployment scripts"
-echo "ℹ️ requests will be installed by deployment scripts"
-
-# Test fabric script modules if they exist (won't have dependencies until deployment scripts run)
-if [ -f "./infra/scripts/fabric/fabric_api.py" ]; then
-    echo "🔍 Fabric API modules found (dependencies installed by deployment scripts)"
-else
-    echo "ℹ️ Info: Fabric API modules not found (will be available after checkout)"
-fi
 
 # Set up additional git configuration (base git config handled by devcontainer feature)
 echo "📝 Setting up additional git configuration..."
@@ -135,36 +108,11 @@ fi
 # Create workspace info
 echo "📄 Creating workspace information..."
 cat > ~/WORKSPACE_INFO.md << 'EOF'
-# Unified Data Foundation with Fabric - Dev Container
-
-## Quick Start
-1. Authenticate with Azure: `az login`
-2. Login to azd: `azd auth login`
-3. Set your admin email: `azd env set AZURE_FABRIC_ADMIN_USER_EMAIL "your-email@domain.com"`
-4. Deploy: `azd up`
-
-## Fabric Provisioning
-You can also deploy Microsoft Fabric items directly:
-1. Navigate to fabric scripts: `cd infra/scripts/fabric`
-2. Run: `./provision_fabric_items.sh -c "YourCapacityName" -w "YourWorkspaceName"`
-3. Or set environment variables and run without parameters:
-   ```bash
-   export AZURE_FABRIC_CAPACITY_NAME="YourCapacityName"
-   export AZURE_FABRIC_WORKSPACE_NAME="YourWorkspaceName"
-   ./provision_fabric_items.sh
-   ```
-
-## Databricks Provisioning
-You can also deploy Databricks items directly:
-1. Navigate to databricks scripts: `cd infra/scripts/databricks`
-2. Run: `./provision_databricks_items.sh --workspaceUrl "https://adb-xxxx.azuredatabricks.net" --token "your-token"`
-
-Note: Deployment scripts create isolated virtual environments and install their own dependencies automatically.
 
 ## Available Tools
 - Azure CLI (`az`) + Bicep
 - Azure Developer CLI (`azd`)
-- Python 3.11 with pip and venv
+- Python 3.11 with pip, venv, and common dependencies pre-installed
 - PowerShell
 - Git & GitHub CLI
 - Jupyter Lab
@@ -181,11 +129,18 @@ Note: Deployment scripts create isolated virtual environments and install their 
 - `azd-env` - Show current azd environment variables
 - `azd-up` - Deploy the solution
 - `azd-down` - Clean up resources
-- `tree` - Show directory structure
+- `tree` - Show directory structure (excluding __pycache__)
+- `ll` - Detailed file listing
 - `jupyter lab` - Start Jupyter Lab server
 
 ## Port Forwarding
 - 8000, 8080, 8888 are forwarded for web applications
+
+## Virtual Environment Notes
+- Python venv module is available and configured in the container base
+- Development tools are pre-installed globally for convenience
+- Project dependencies (Azure libraries, requests, etc.) are installed by deployment scripts in isolated virtual environments
+- This approach ensures consistency between development and deployment while avoiding version conflicts
 
 Enjoy coding! 🎉
 EOF
@@ -198,3 +153,7 @@ echo "   1. Configure your Git user name and email using 'git config --global us
 echo "   2. Run 'az login' to authenticate with Azure"
 echo "   3. Run 'azd auth login' to authenticate with Azure Developer CLI"
 echo "   4. Deploy the solution: azd up"
+echo ""
+echo "🔧 Development shortcuts:"
+echo "   - Use 'azd up' to deploy the full solution"
+echo "   - Use PowerShell scripts in infra/scripts/ for component-specific deployments"

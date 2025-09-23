@@ -7,7 +7,7 @@
 #     Deploys Microsoft Fabric items (lakehouses, notebooks, folders, reports) to a Fabric workspace.
 #
 # DESCRIPTION
-#     This script automates the deployment of UDFF (Unified Data Foundation with Fabric) components 
+#     This script automates the deployment of UDFWF (Unified Data Foundation with Fabric) components 
 #     to Microsoft Fabric including folder structure, lakehouses, sample data, notebooks, and Power BI reports.
 #     The script creates a Python virtual environment for dependency isolation and runs the deployment.
 #
@@ -17,18 +17,23 @@
 # OPTIONS
 #     -c, --capacity-name <name>     Microsoft Fabric capacity name (optional, will use AZURE_FABRIC_CAPACITY_NAME env var if not provided)
 #     -w, --workspace-name <name>    Microsoft Fabric workspace name (optional, will use AZURE_FABRIC_WORKSPACE_NAME env var if not provided)
+#     -a, --fabricAdmins <json>     JSON array of administrators to add to workspace (optional, will use AZURE_FABRIC_ADMIN_MEMBERS env var if not provided)
 #     -h, --help                     Show this help message
 #
 # EXAMPLES
-#     ./provision_fabric_items.sh -c "MyCapacity" -w "UDFF-Workspace"
+#     ./provision_fabric_items.sh -c "MyCapacity" -w "UDFWF-Workspace"
 #     ./provision_fabric_items.sh -c "MyCapacity"
+#     ./provision_fabric_items.sh -c "MyCapacity" -a '["user1@contoso.com", "user2@contoso.com"]'
+#     ./provision_fabric_items.sh -c "MyCapacity" -a '["user@contoso.com", "12345678-1234-1234-1234-123456789012"]'
 #     export AZURE_FABRIC_CAPACITY_NAME="MyCapacity" && ./provision_fabric_items.sh
 #     export AZURE_FABRIC_CAPACITY_NAME="MyCapacity" AZURE_FABRIC_WORKSPACE_NAME="MyWorkspace" && ./provision_fabric_items.sh
+#     export AZURE_FABRIC_CAPACITY_NAME="MyCapacity" AZURE_FABRIC_ADMIN_MEMBERS='["admin@contoso.com"]' && ./provision_fabric_items.sh
 #
 # PREREQUISITES
 #     - Azure CLI installed and authenticated (az login)
 #     - Python 3.9+ with pip and venv module
 #     - Appropriate permissions in the Fabric capacity and workspace
+#     - jq installed for JSON parsing (optional, will warn if not available)
 #
 
 # Set strict error handling
@@ -91,18 +96,23 @@ show_usage() {
     echo "Options:"
     echo "  -c, --capacity-name <name>     Microsoft Fabric capacity name (optional, will use AZURE_FABRIC_CAPACITY_NAME env var if not provided)"
     echo "  -w, --workspace-name <name>    Microsoft Fabric workspace name (optional, will use AZURE_FABRIC_WORKSPACE_NAME env var if not provided)"
+    echo "  -a, --fabric-admins <json>     JSON array of administrators to add to workspace (optional, will use AZURE_FABRIC_ADMIN_MEMBERS env var if not provided)"
     echo "  -h, --help                     Show this help message"
     echo ""
     echo "Examples:"
-    echo "  $0 -c \"MyCapacity\" -w \"UDFF-Workspace\""
+    echo "  $0 -c \"MyCapacity\" -w \"UDFWF-Workspace\""
     echo "  $0 -c \"MyCapacity\""
+    echo "  $0 -c \"MyCapacity\" -a '[\"user1@contoso.com\", \"user2@contoso.com\"]'"
+    echo "  $0 -c \"MyCapacity\" -a '[\"user@contoso.com\", \"12345678-1234-1234-1234-123456789012\"]'"
     echo "  export AZURE_FABRIC_CAPACITY_NAME=\"MyCapacity\" && $0"
     echo "  export AZURE_FABRIC_CAPACITY_NAME=\"MyCapacity\" AZURE_FABRIC_WORKSPACE_NAME=\"MyWorkspace\" && $0"
+    echo "  export AZURE_FABRIC_CAPACITY_NAME=\"MyCapacity\" AZURE_FABRIC_ADMIN_MEMBERS='[\"admin@contoso.com\"]' && $0"
     echo ""
     echo "Prerequisites:"
     echo "  - Azure CLI installed and authenticated (az login)"
     echo "  - Python 3.9+ with pip and venv module"
     echo "  - Appropriate permissions in the Fabric capacity and workspace"
+    echo "  - jq installed for JSON parsing (optional, will warn if not available)"
 }
 
 # Main script starts here
@@ -118,6 +128,7 @@ REQUIREMENTS_PATH="$SCRIPT_DIR/requirements.txt"
 # Initialize variables
 fabricCapacityName=""
 fabricWorkspaceName=""
+fabricAdmins=""
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -128,6 +139,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -w|--workspace-name)
             fabricWorkspaceName="$2"
+            shift 2
+            ;;
+        -a|--fabric-admins)
+            fabricAdmins="$2"
             shift 2
             ;;
         -h|--help)
@@ -172,12 +187,26 @@ if [[ -z "$fabricWorkspaceName" ]]; then
     fi
 fi
 
+# Check if fabric admins is provided, otherwise use environment variable
+if [[ -z "$fabricAdmins" ]]; then
+    if [[ -n "${AZURE_FABRIC_ADMIN_MEMBERS:-}" ]]; then
+        fabricAdmins="$AZURE_FABRIC_ADMIN_MEMBERS"
+        print_info "Using Fabric admins from environment variable"
+    fi
+fi
+
 print_info "Fabric Capacity Name: $fabricCapacityName"
 if [[ -n "$fabricWorkspaceName" ]]; then
     print_info "Fabric Workspace Name: $fabricWorkspaceName"
     print_warning "Mode: Create/use workspace with specified name"
 else
     print_warning "Mode: Create workspace with auto-generated name"
+fi
+
+if [[ -n "$fabricAdmins" ]]; then
+    print_info "Fabric Admins: $fabricAdmins"
+else
+    print_warning "Fabric Admins: None specified"
 fi
 
 # Validate that Python is available
@@ -266,6 +295,37 @@ echo ""
 python_args=(--capacityName "$fabricCapacityName")
 if [[ -n "$fabricWorkspaceName" ]]; then
     python_args+=(--workspaceName "$fabricWorkspaceName")
+fi
+
+# Handle fabric admins JSON array
+if [[ -n "$fabricAdmins" ]]; then
+    # Check if jq is available for JSON parsing
+    if command_exists jq; then
+        # Parse JSON array using jq and collect admin arguments
+        admin_count=0
+        admin_list=()
+        while IFS= read -r admin; do
+            if [[ -n "$admin" ]]; then
+                admin_list+=("$admin")
+                ((admin_count++))
+            fi
+        done < <(echo "$fabricAdmins" | jq -r '.[]' 2>/dev/null || true)
+        
+        if [[ $admin_count -gt 0 ]]; then
+            print_success "Parsed $admin_count administrator(s) from JSON array"
+            # Add --fabricAdmins flag followed by all admin values
+            python_args+=(--fabricAdmins)
+            python_args+=("${admin_list[@]}")
+        else
+            print_warning "Warning: Failed to parse fabric admins JSON array, proceeding without fabric admins..."
+        fi
+    else
+        print_warning "Warning: jq not available for JSON parsing, fabric admins parameter ignored"
+        print_info "To install jq:"
+        print_info "  Ubuntu/Debian: sudo apt-get install jq"
+        print_info "  RHEL/CentOS: sudo yum install jq"
+        print_info "  macOS: brew install jq"
+    fi
 fi
 
 # Execute Python script and capture result

@@ -4,7 +4,7 @@ metadata description = '''CSA CTO Gold Standard Solution Accelerator for Unified
 @minLength(3)
 @maxLength(16)
 @description('Optional. A friendly string representing the application/solution name to give to all resource names in this deployment. This should be 3-16 characters long.')
-param solutionName string = 'udff'
+param solutionName string = 'udfwfsa'
 
 @maxLength(5)
 @description('Optional. A unique text value for the solution. This is used to ensure resource names are unique for global resources. Defaults to a 5-character substring of the unique string generated from the subscription ID, resource group name, and solution name.')
@@ -58,17 +58,18 @@ var solutionSuffix = toLower(trim(replace(
 // }
 
 var fabricCapacityResourceName = 'fc${solutionSuffix}'
-var fabricCapacityDefaultAdmins = deployer().userPrincipalName == ''
+var fabricCapacityDefaultAdmins = deployer().?userPrincipalName == null
   ? [deployer().objectId]
   : [deployer().userPrincipalName]
+var fabricTotalAdminMembers = union(fabricCapacityDefaultAdmins, fabricAdminMembers)
 module fabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = {
   name: take('avm.res.fabric.capacity.${fabricCapacityResourceName}', 64)
   params: {
-    adminMembers: union(fabricCapacityDefaultAdmins, fabricAdminMembers)
     name: fabricCapacityResourceName
     location: location
-    skuName: skuName
     enableTelemetry: enableTelemetry
+    skuName: skuName
+    adminMembers: fabricTotalAdminMembers
   }
 }
 
@@ -81,3 +82,6 @@ output AZURE_RESOURCE_GROUP string = resourceGroup().name
 
 @description('The name of the Fabric capacity resource')
 output AZURE_FABRIC_CAPACITY_NAME string = fabricCapacity.outputs.name
+
+@description('The identities added as Fabric Capacity Admin members')
+output AZURE_FABRIC_ADMIN_MEMBERS array = fabricTotalAdminMembers
