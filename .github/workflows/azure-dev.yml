@@ -38,6 +38,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Build and Static Analysis
+    environment: 'udfwf-build'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -79,9 +80,9 @@ jobs:
   deploy-dev:
     runs-on: ubuntu-latest
     name: Deploy to Development
+    environment: 'udfwf-dev'
     needs: build
     # if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/pre-deploy-alguadam' || github.event_name == 'workflow_dispatch'
-    environment: 'udfwf-dev'
     steps:
       - name: Checkout
         uses: actions/checkout@v4

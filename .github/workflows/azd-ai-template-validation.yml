@@ -18,6 +18,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     name: Validation steps
+    environment: 'udfwf-validate'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
