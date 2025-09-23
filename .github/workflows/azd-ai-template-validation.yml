@@ -1,0 +1,36 @@
+name: AZD AI Template validation
+# Run when commits are pushed to pre-deploy-alguadam
+on:
+  workflow_dispatch:
+  push:
+    # Run when commits are pushed to mainline branch (main or master)
+    # Set this to the mainline branch you are using
+    branches:
+      - "*"
+
+# Set up permissions for deploying with secretless Azure federated credentials
+# https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-portal%2Clinux#set-up-azure-login-with-openid-connect-authentication
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validation steps
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate AZD template
+        uses: microsoft/template-validation-action@Latest
+        id: validation
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: print result
+        run: cat ${{ steps.validation.outputs.resultFile }}

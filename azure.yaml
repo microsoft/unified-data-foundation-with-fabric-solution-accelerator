@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: unified-data-foundation-fabric-accelerator
+# metadata:
+#   template: unified-data-foundation-fabric-accelerator@1.0
+
+requiredVersions:
+  azd: ">1.17.1"
+
+infra:
+  provider: bicep
+  path: infra
+  parameters:
+    solutionName: ${AZURE_ENV_NAME}
+    location: ${AZURE_LOCATION}
+
+hooks:
+  postprovision:
+    windows:
+      shell: pwsh
+      run: ./infra/scripts/fabric/provision_fabric_items.ps1
+      interactive: true
+      continueOnError: false
+    posix:
+      shell: sh
+      run: ./infra/scripts/fabric/provision_fabric_items.sh
+      interactive: true
+      continueOnError: false
