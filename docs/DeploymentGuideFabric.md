@@ -26,7 +26,7 @@ You'll be prompted for:
 
 - Check out [deployment overview](#deployment-overview) to understand what gets created
 - See alternative [deployment options](#deployment-options) for this solution accelerator
-- See more [configuration options](#configuration-options) to customize your deployment
+- See more [advanced configuration options](#advanced-configuration-options) to customize your deployment
 - Review the [deployment results](#deployment-results) to see what gets created
 
 ---
@@ -59,10 +59,7 @@ Before starting, ensure your deployment identity has the following requirements.
 ### 💻 Software Requirements
 - [ ] **Python**: Install version 3.9+ as runtime environment for deployment scripts from [Download Python](https://www.python.org/downloads/)
 - [ ] **Azure CLI**: Install latest version for Azure authentication and resource management from [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
-
-
-
-
+- [ ] **Azure Developer CLI**: Install latest version for simplified deployment orchestration from [Install Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
 ---
 
 ## Deployment Overview
@@ -88,242 +85,610 @@ The deployment orchestration coordinates both phases, passing deployment paramet
 
 ## Deployment Options
 
-Check the following options to choose your preferred environment for running the deployment.
+This solution accelerator provides flexible deployment options to suit different environments and workflows.
 
-| **Environment** | **Setup Required** | **Best For** |
-|-----------------|-------------------|--------------|
-| **Local Machine** | [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) installation | Development and testing |
-| **Azure Cloud Shell** | azd installation during deployment | Quick deployment without local setup |
-| **GitHub Codespaces** | azd installation during deployment | Collaborative development |
+### Azure Developer CLI
 
-> **⚡ Permission Handling**: When using Azure Developer CLI with interactive authentication, most API permissions are handled automatically. Admin consent may be required for the first deployment in an organization.
+The **[Azure Developer CLI (azd)](https://learn.microsoft.com/azure/developer/azure-developer-cli/overview)** is Microsoft's unified command-line tool that simplifies the deployment of cloud applications. It provides an opinionated approach to deploying and managing the complete application lifecycle, from infrastructure provisioning to application deployment.
 
-Choose your preferred environment for running `azd up`:
+For this solution accelerator, `azd` orchestrates the entire deployment process with a single command, handling both Azure infrastructure provisioning and Fabric workspace configuration automatically.
 
-<div align="center">
+> **📋 Prerequisites Check**: Ensure you meet the [software requirements](#-software-requirements) and have the necessary [Azure](#-azure-permissions) and [API permissions](#-api-permissions) before proceeding.
 
-| **[🖥️ Local Environment](#local-environment)** | **[☁️ Azure Cloud Shell](#azure-cloud-shell)** | **[🚀 GitHub Codespaces](#github-codespaces)** |
-|:---:|:---:|:---:|
-| Deploy from your local machine | Deploy without local installation | Full cloud development environment |
-| Full control over environment | Pre-authenticated & configured | VS Code in browser |
-| Requires local tool installation | Always up-to-date tools | Pre-configured & collaborative |
+**Quick deployment steps:**
 
-</div>
+```bash
+# Clone and navigate to the repository
+git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
+cd unified-data-foundation-with-fabric-solution-accelerator
+
+# Authenticate with Azure services (required)
+az login
+azd auth login
+
+# Optional: Customize workspace name (defaults to "Unified Data Foundation with Fabric workspace")
+azd env set AZURE_FABRIC_WORKSPACE_NAME "My Custom Workspace Name"
+
+# Deploy everything with one command
+azd up
+```
+
+During `azd up`, you'll be prompted to configure:
+- **Environment name**: Logical name for your deployment (e.g., "dev", "test", "prod")
+- **Azure subscription**: Target subscription for resource deployment
+- **Azure region**: Geographic location for resources (e.g., "eastus", "westus2", "westeurope")
+
+> **💡 Tip**: Use `azd env list` to view existing environments and `azd env select` to switch between them. Learn more about [azd environments](https://learn.microsoft.com/azure/developer/azure-developer-cli/manage-environment-variables).
+
+**Choose your deployment environment:**
+
+Azure Developer CLI can be used from multiple environments. Choose the one that best fits your workflow and requirements:
+
+| Environment | Best For | Prerequisites | Azure CLI | Python |
+|-------------|----------|---------------|-----------|---------|
+| **🖥️ Local Machine** | Full control, custom tooling, offline development | Install all [software requirements](#-software-requirements) | ✅ Required | ✅ 3.9+ |
+| **☁️ Azure Cloud Shell** | Quick start, no local installation | Azure account with [required permissions](#prerequisites) | ✅ Pre-installed | ✅ Pre-installed |
+| **🚀 GitHub Codespaces** | Cloud development, team consistency | GitHub account + Azure account | ✅ Pre-configured | ✅ Pre-configured |
+| **📦 VS Code Dev Container** | Containerized consistency across teams | [Docker Desktop](https://www.docker.com/products/docker-desktop) + [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) | ✅ Containerized | ✅ Containerized |
+
+**Environment-specific setup:**
 
 <details>
-<summary><b>🖥️ Local Environment</b></summary>
+<summary><strong>🖥️ Local Machine</strong> - Full control and customization</summary>
 
-<div id="local-environment">
+Deploy from your local development environment with complete control over tools, configuration, and customization capabilities.
 
-### Local Environment
+**Prerequisites:**
+Ensure you have all the [software requirements](#-software-requirements) installed:
+- **[Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)** - Main deployment orchestration tool
+- **[Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)** - Azure authentication and resource management
+- **[Python 3.9+](https://www.python.org/downloads/)** - Runtime for Fabric deployment scripts
+- **[Git](https://git-scm.com/downloads/)** - Version control and repository cloning
 
-Deploy from your local machine with full control over the environment.
+**Deployment Steps:**
+1. **Install Prerequisites**: Follow the [Azure Developer CLI installation guide](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) for your operating system
 
-#### Prerequisites:
-- [Azure Developer CLI (azd)](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
-- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
-- [Python 3.9+](https://www.python.org/downloads/)
-- [Git](https://git-scm.com/downloads)
-
-#### Installation Steps:
-
-**Windows (PowerShell):**
-```powershell
-# Install Azure Developer CLI
-winget install microsoft.azd
-
-# Verify installation
-azd version
-```
-
-**macOS:**
-```bash
-# Install Azure Developer CLI
-brew tap azure/azd && brew install azd
-
-# Verify installation
-azd version
-```
-
-**Linux:**
-```bash
-# Install Azure Developer CLI
-curl -fsSL https://aka.ms/install-azd.sh | bash
-
-# Verify installation
-azd version
-```
-
-#### Deployment Steps:
-
-1. **Clone the repository:**
+2. **Verify Installations and Clone Repository**:
    ```bash
+   # Verify installations
+   azd version         # Should show azd version (minimum supported version)
+   az version          # Should show Azure CLI version
+   python --version    # Should show Python 3.9+
+   git --version       # Should show Git version
+   
+   # Clone repository
    git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
    cd unified-data-foundation-with-fabric-solution-accelerator
    ```
 
-2. **Authenticate with Azure:**
+3. **Authenticate**: Ensure you have the required [Azure](#-azure-permissions) and [API permissions](#-api-permissions)
+
+4. **Configure and Deploy**:
    ```bash
+   # Azure CLI authentication
    az login
+   
+   # Azure Developer CLI authentication
    azd auth login
-   ```
-
-3. **Initialize the project:**
-   ```bash
-   azd init
-   ```
-
-4. **Optional: Set custom workspace name:**
-   ```bash
-   azd env set AZURE_FABRIC_WORKSPACE_NAME "My Production Workspace"
-   ```
-
-5. **Deploy everything:**
-   ```bash
+   
+   # Optional: Customize workspace name
+   azd env set AZURE_FABRIC_WORKSPACE_NAME "My Custom Workspace Name"
+   
+   # Deploy infrastructure + Fabric workspace
    azd up
    ```
 
-   You'll be prompted for:
-   - Environment name (e.g., "production", "dev", "test")
-   - Azure location (e.g., "eastus", "westus2")
+**References:**
+- [Azure Developer CLI Reference](https://learn.microsoft.com/azure/developer/azure-developer-cli/reference)
+- [Manage environments and variables](https://learn.microsoft.com/azure/developer/azure-developer-cli/manage-environment-variables)
 
 </details>
 
 <details>
-  <summary><b>☁️ Azure Cloud Shell</b></summary>
+<summary><strong>☁️ Azure Cloud Shell</strong> - Zero-setup cloud deployment</summary>
 
-### Azure Cloud Shell
+Deploy directly from Azure's cloud-based terminal environment with pre-installed tools and automatic Azure authentication. Azure Cloud Shell provides a browser-accessible shell experience with [pre-configured tools](https://learn.microsoft.com/azure/cloud-shell/features) including Azure CLI and Python.
 
-Deploy directly from Azure Cloud Shell without installing anything locally.
+**Prerequisites:** 
+- Azure account with the required [Azure permissions](#-azure-permissions) and [API permissions](#-api-permissions)
+- Web browser with access to Azure portal
 
-#### Benefits:
-- **No local installation required**: Azure CLI and Python are pre-installed
-- **Always up-to-date**: Latest tools are maintained automatically
-- **Secure authentication**: Automatically authenticated with your Azure account
-- **Persistent storage**: Files persist across sessions
+**Deployment Steps:**
+1. **Access Cloud Shell**: 
+   - Open [Azure Cloud Shell](https://shell.azure.com) directly, or
+   - Navigate to [Azure Portal](https://portal.azure.com) and click the Cloud Shell icon (>_)
+   - Choose **Bash** or **PowerShell** environment (both supported)
 
-#### Deployment Steps:
-
-1. **Open Azure Cloud Shell:**
-   - Navigate to [Azure Cloud Shell](https://portal.azure.com/#cloudshell/)
-   - Choose **Bash** as your shell environment
-
-2. **Install Azure Developer CLI:**
+2. **Install and Deploy**:
    ```bash
-   # Install azd in Cloud Shell
+   # Install latest azd version
    curl -fsSL https://aka.ms/install-azd.sh | bash
+   exec bash  # Restart shell to make azd available
    
-   # Restart your shell or reload PATH
-   exec bash
+   # Verify installation and authentication
+   azd version          # Confirm azd is installed
+   az account show      # Verify Azure authentication (pre-authenticated)
+   azd auth login       # Follow device code flow if needed
    
-   # Verify installation
-   azd version
-   ```
-
-3. **Clone the repository:**
-   ```bash
+   # Clone repository and deploy
    git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
    cd unified-data-foundation-with-fabric-solution-accelerator
-   ```
-
-4. **Initialize and deploy:**
-   ```bash
-   # Initialize the project
-   azd init
    
-   # Optional: Set custom workspace name
-   azd env set AZURE_FABRIC_WORKSPACE_NAME "Cloud Shell Deployment"
+   # Optional: Customize workspace name
+   azd env set AZURE_FABRIC_WORKSPACE_NAME "My Custom Workspace Name"
    
    # Deploy everything
    azd up
    ```
 
-   During deployment, you'll be prompted for:
-   - Environment name
-   - Azure location
+**Cloud Shell Features:**
+- **Pre-authenticated**: Automatically uses your Azure portal credentials
+- **Persistent Storage**: 5GB of persistent storage in `$HOME` directory
+- **Pre-installed Tools**: Azure CLI, Git, Python, and many development tools
+- **Cross-Platform**: Works from any modern web browser
 
-> **💡 Tip**: Cloud Shell sessions last 20 minutes. For longer deployments, periodically interact with the shell to keep it active.
+**Troubleshooting:**
+- If azd installation fails, try the [alternative installation methods](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd#other-install-methods)
+- Cloud Shell sessions timeout after 20 minutes of inactivity; use `azd env list` to check existing environments after reconnection
+
+**References:**
+- [Azure Cloud Shell Overview](https://learn.microsoft.com/azure/cloud-shell/overview)
+- [Azure Cloud Shell Features](https://learn.microsoft.com/azure/cloud-shell/features)
+- [Troubleshooting Azure Cloud Shell](https://learn.microsoft.com/azure/cloud-shell/troubleshooting)
+
 </details>
 
 <details>
-  <summary><b>🚀 GitHub Codespaces</b></summary>
+<summary><strong>🚀 GitHub Codespaces</strong> - Complete cloud development environment</summary>
 
-### GitHub Codespaces
+Deploy from a comprehensive cloud-based development environment running [Visual Studio Code in the browser](https://docs.github.com/codespaces/the-codespace-lifecycle/using-the-vs-code-command-palette-in-codespaces). GitHub Codespaces provides a complete development environment with pre-configured tools and dependencies.
 
-Deploy using GitHub Codespaces for a complete cloud development environment.
+**Prerequisites:** 
+- [GitHub account](https://github.com/signup) with access to GitHub Codespaces
+- Azure account with the required [Azure permissions](#-azure-permissions) and [API permissions](#-api-permissions)
 
-#### Benefits:
-- **Full development environment**: VS Code in the browser with all extensions
-- **Pre-configured**: Development environment is ready to use
-- **Collaborative**: Easy to share and collaborate
-- **No local setup**: Everything runs in the cloud
+**Deployment Steps:**
+1. **Create Codespace**:
+   - Navigate to the [solution accelerator repository](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator)
+   - Click **Code** → **Codespaces** → **Create codespace on main**
+   - Wait for the environment to initialize (typically 2-3 minutes)
 
-#### Deployment Steps:
-
-1. **Fork the repository:**
-   - Navigate to [the repository](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator) on GitHub
-   - Click the **Fork** button in the top-right corner
-   - Select your account to create a fork
-
-2. **Open GitHub Codespaces:**
-   - In your forked repository, click the **Code** button
-   - Select the **Codespaces** tab
-   - Click **Create codespace on main**
-   
-   Alternatively, use this direct link with your GitHub username:
-   ```
-   https://codespaces.new/YOUR-GITHUB-USERNAME/unified-data-foundation-with-fabric-solution-accelerator
-   ```
-
-3. **Wait for environment setup:**
-   - Codespaces will automatically set up the development environment
-   - This typically takes 2-3 minutes
-
-4. **Open terminal in Codespaces:**
-   - Press `Ctrl+`` (backtick) or go to **Terminal > New Terminal**
-
-5. **Install Azure Developer CLI:**
+2. **Install Tools and Deploy**:
    ```bash
-   # Install azd
-   curl -fsSL https://aka.ms/install-azd.sh | bash
+   # Check if Azure Developer CLI is available, install if needed
+   azd version || {
+       curl -fsSL https://aka.ms/install-azd.sh | bash
+       exec bash  # Restart shell
+   }
    
-   # Reload PATH
-   source ~/.bashrc
-   
-   # Verify installation
-   azd version
-   ```
-
-6. **Authenticate with Azure:**
-   ```bash
-   # Login to Azure CLI
+   # Use device code authentication (required in Codespaces)
    az login --use-device-code
-   
-   # Login to azd (will use the same authentication)
    azd auth login --use-device-code
-   ```
-
-7. **Initialize and deploy:**
-   ```bash
-   # Initialize the project
-   azd init
    
-   # Optional: Set custom workspace name
-   azd env set AZURE_FABRIC_WORKSPACE_NAME "Codespaces Deployment"
+   # Optional: Customize workspace name  
+   azd env set AZURE_FABRIC_WORKSPACE_NAME "My Custom Workspace Name"
    
-   # Deploy everything
+   # Deploy the solution
    azd up
    ```
 
-> **💡 Tip**: Use device code authentication (`--use-device-code`) in Codespaces for the most reliable authentication experience.
+**Note**: Repository forking is only required if you plan to:
+- Modify the solution accelerator code
+- Set up automated CI/CD pipelines  
+- Contribute changes back to the project
 
+**References:**
+- [GitHub Codespaces Documentation](https://docs.github.com/codespaces)
+- [Creating a codespace for a repository](https://docs.github.com/codespaces/developing-in-codespaces/creating-a-codespace-for-a-repository)
+- [Managing billing for GitHub Codespaces](https://docs.github.com/billing/managing-billing-for-github-codespaces)
 
 </details>
+
+<details>
+<summary><strong>📦 VS Code Dev Container</strong> - Containerized development consistency</summary>
+
+Deploy from a containerized development environment that provides consistent tooling across teams, machines, and operating systems. [Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers) ensure that every developer has exactly the same development environment.
+
+**Prerequisites:**
+- **[Docker Desktop](https://www.docker.com/products/docker-desktop)** - Container runtime engine
+- **[Visual Studio Code](https://code.visualstudio.com/)** - Code editor
+- **[Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)** - VS Code extension for container development
+- Azure account with the required [Azure permissions](#-azure-permissions) and [API permissions](#-api-permissions)
+
+**Initial Setup:**
+1. **Install Prerequisites**:
+   - Download and install Docker Desktop for your OS ([Windows](https://docs.docker.com/desktop/install/windows-install/), [macOS](https://docs.docker.com/desktop/install/mac-install/), [Linux](https://docs.docker.com/desktop/install/linux-install/))
+   - Install [Visual Studio Code](https://code.visualstudio.com/download)
+   - Install the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+
+2. **Verify and Deploy**:
+   ```bash
+   # Verify Docker installation
+   docker --version          # Verify Docker is installed
+   docker run hello-world    # Test Docker functionality
+   
+   # Clone repository
+   git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
+   ```
+
+**Deployment Steps:**
+1. **Open in Container**:
+   - Open the cloned folder in VS Code
+   - When prompted, click **Reopen in Container**
+   - **Alternative**: Use Command Palette (`Ctrl+Shift+P`) → "Dev Containers: Reopen in Container"
+   - Wait for container to build and initialize (may take several minutes on first run)
+
+2. **Authenticate and Deploy**:
+   ```bash
+   # All tools should be pre-installed in the container
+   azd version              # Azure Developer CLI
+   az version               # Azure CLI  
+   python --version         # Python runtime
+   
+   # Azure authentication
+   az login                 # Azure CLI authentication
+   azd auth login          # Azure Developer CLI authentication
+   
+   # Optional: Customize workspace name
+   azd env set AZURE_FABRIC_WORKSPACE_NAME "My Custom Workspace Name"
+   
+   # Deploy the complete solution
+   azd up
+   ```
+
+**Container Environment Includes:**
+- **Azure CLI** - Azure resource management and authentication
+- **Azure Developer CLI** - Application lifecycle management
+- **Python 3.11+** - Runtime for deployment scripts and Fabric APIs
+- **Git** - Version control operations
+- **PowerShell** - Cross-platform shell for automation scripts
+- **All project dependencies** - Pre-installed Python packages and requirements
+
+**References:**
+- [Developing inside a Container](https://code.visualstudio.com/docs/devcontainers/containers)
+- [Dev Container specification](https://containers.dev/)
+- [Docker Desktop documentation](https://docs.docker.com/desktop/)
+- [Container configuration reference](https://code.visualstudio.com/docs/devcontainers/devcontainer-cli)
+
+</details>
+
+### GitHub Actions (CI/CD)
+
+For automated deployments, use the included [GitHub Actions workflow](../.github/workflows/azure-dev.yml) that provides enterprise-grade CI/CD capabilities.
+
+**Key Features:**
+- **Automated Deployment**: Triggered on push to main branch or manual dispatch
+- **Environment Management**: Support for multiple deployment stages (dev, staging, prod)
+- **Federated Authentication**: Secure, secretless authentication with Azure
+- **Static Code Analysis**: Automated Bicep validation and linting
+
+**Trigger Options:**
+- Push to main branch
+- Manual workflow dispatch  
+- Pull request validation (infrastructure validation only)
+
+<details>
+<summary><strong>📋 Required GitHub Variables Configuration</strong></summary>
+
+Configure these repository variables in **Settings → Secrets and variables → Actions → Variables**:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `AZURE_CLIENT_ID` | Service Principal (App Registration) client ID for federated authentication | `12345678-1234-1234-1234-123456789012` |
+| `AZURE_TENANT_ID` | Azure Active Directory tenant ID where the service principal resides | `87654321-4321-4321-4321-210987654321` |
+| `AZURE_SUBSCRIPTION_ID` | Target Azure subscription ID for resource deployment | `abcdef01-2345-6789-abcd-ef0123456789` |
+| `AZURE_LOCATION` | Azure region for resource deployment | `eastus`, `westus2`, `westeurope` |
+| `AZURE_ENV_NAME` | Environment name used for resource naming and identification | `dev`, `test`, `prod` |
+| `AZURE_RESOURCE_GROUP_NAME` | Target resource group name for deployment | `rg-unified-data-foundation-dev` |
+
+</details>
+
+<details>
+<summary><strong>🔧 Setup Requirements</strong></summary>
+
+**Service Principal Setup:**
+1. Create a [service principal with federated credentials](https://learn.microsoft.com/azure/developer/github/connect-from-azure) for GitHub Actions
+2. Assign appropriate Azure RBAC permissions (Contributor role on target Resource Group)
+
+**GitHub Repository Configuration:**
+3. Configure GitHub repository variables with the values from the table above
+4. Set up GitHub environments (`udfwf-build`, `udfwf-dev`) for deployment approval workflows
+
+**Security Best Practices:**
+- Use federated authentication instead of storing secrets
+- Limit service principal permissions to minimum required scope
+- Enable environment protection rules for production deployments
+
+</details>
+
+**What happens during `azd up`:**
+
+The Azure Developer CLI orchestrates a complete deployment process:
+
+1. **Infrastructure Provisioning**: Creates Azure resources using [`main.bicep`](../infra/main.bicep)
+2. **Environment Configuration**: Sets up deployment parameters and variables  
+3. **Fabric Workspace Setup**: Runs [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) to create Fabric workspace, lakehouses, and notebooks
+4. **Data Deployment**: Uploads sample data and configures the medallion architecture
+5. **Validation**: Verifies successful deployment of all components
+
+**Common Deployment Scripts:**
+
+All deployment environments execute the same underlying infrastructure and application deployment scripts:
+- **[`main.bicep`](../infra/main.bicep)** - Azure infrastructure provisioning using Bicep templates
+- **[`run_python_script_fabric.ps1`](../infra/scripts/utils/run_python_script_fabric.ps1)** - PowerShell orchestrator for cross-platform execution
+- **[`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py)** - Python deployment script for Fabric workspace configuration
+
+> **🎯 Environment Selection Guide**: 
+> - **First-time users**: Start with **Azure Cloud Shell** for zero-setup experience
+> - **Active developers**: Use **Local Machine** for full development capabilities  
+> - **Team collaboration**: Choose **GitHub Codespaces** for consistent cloud environments
+> - **Enterprise consistency**: Implement **VS Code Dev Container** for standardized tooling
+>
+> For detailed feature comparison, see the [Azure Developer CLI documentation](https://learn.microsoft.com/azure/developer/azure-developer-cli/overview).
+
+**Next Steps:**
+- Review the [deployment results](#deployment-results) to understand what gets created
+- Explore [advanced configuration options](#advanced-configuration-options) to customize your deployment
+- Check the [FAQs](./FAQs.md) for common questions and troubleshooting tips
 
 ---
 
+## Advanced Configuration Options
 
-## Configuration options
+The solution accelerator provides flexible configuration options to customize your deployment. Parameters can be configured through **Azure Developer CLI environment variables** (`azd env set`) for local deployments or through **GitHub repository variables** for CI/CD deployments.
+
+> **📁 Configuration Files Reference:**
+> - Infrastructure: [`infra/main.bicep`](../infra/main.bicep) - Azure resource definitions
+> - Deployment orchestration: [`azure.yaml`](../azure.yaml) - AZD project configuration  
+> - CI/CD workflow: [`.github/workflows/azure-dev.yml`](../.github/workflows/azure-dev.yml) - GitHub Actions pipeline
+> - Fabric deployment: [`infra/scripts/fabric/create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) - Fabric workspace setup
+
+### 🏗️ Infrastructure Configuration
+
+Configure the Azure infrastructure components through Bicep template parameters defined in [`main.bicep`](../infra/main.bicep).
+
+<details>
+<summary><strong>Azure Resources</strong></summary>
+
+| Parameter | AZD Environment Variable | GitHub Actions Variable | Description | Default | Example |
+|-----------|-------------------------|------------------------|-------------|---------|---------|
+| **Solution Name** | `solutionName` | `AZURE_ENV_NAME` | Friendly name for the application/solution (3-20 chars) | `udfwfsa` | `mycompany-fabric` |
+| **Location** | `AZURE_LOCATION` | `AZURE_LOCATION` | Azure region for resource deployment | Resource group location | `eastus`, `westus2`, `westeurope` |
+| **Fabric Capacity SKU** | `skuName` | Not directly supported* | Fabric capacity tier and performance level | `F2` | `F4`, `F8`, `F16`, `F32`, `F64`, `F128`, `F256`, `F512`, `F1024`, `F2048` |
+| **Enable Telemetry** | `enableTelemetry` | Not directly supported* | Enable/disable usage telemetry collection | `true` | `false` |
+
+*_GitHub Actions can use additional parameters through Bicep parameter files or workflow modifications._
+
+**Configuration Examples:**
+
+<details>
+<summary><strong>🖥️ Azure Developer CLI</strong></summary>
+
+```bash
+# Set environment variables (used by main.parameters.json)
+azd env set AZURE_LOCATION "westeurope"
+azd env set skuName "F8"
+azd env set enableTelemetry false
+azd up
+```
+
+</details>
+
+<details>
+<summary><strong>🚀 GitHub Actions</strong></summary>
+
+Modify [`azure-dev.yml`](../.github/workflows/azure-dev.yml) Deploy Infrastructure step:
+
+```yaml
+- name: Deploy Infrastructure
+  uses: azure/bicep-deploy@v2
+  with:
+    parameters: |
+      {
+        "solutionName": "${{ env.AZURE_ENV_NAME_DEV }}",
+        "skuName": "F8",
+        "enableTelemetry": false
+      }
+```
+
+</details>
+
+**Fabric Capacity SKU Selection Guide:**
+- **F2-F4**: Development and testing environments
+- **F8-F32**: Small to medium production workloads
+- **F64-F256**: Large enterprise production workloads  
+- **F512-F2048**: High-performance analytics and data science workloads
+
+For detailed capacity planning, see [Fabric capacity planning](https://learn.microsoft.com/fabric/admin/capacity-planning).
+
+</details>
+
+### 🏢 Fabric Workspace Configuration
+
+Customize the Fabric workspace setup and naming conventions. These parameters are used by the [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) script during post-provisioning.
+
+<details>
+<summary><strong>Workspace Settings</strong></summary>
+
+| Parameter | AZD Environment Variable | GitHub Actions Variable | Description | Default | Example |
+|-----------|-------------------------|------------------------|-------------|---------|---------|
+| **Capacity Name** | `AZURE_FABRIC_CAPACITY_NAME` | Bicep output | Microsoft Fabric capacity name (auto-generated from deployment) | Generated from Bicep | `fc-udfwfsa-abc123` |
+| **Workspace Name** | `AZURE_FABRIC_WORKSPACE_NAME` | `AZURE_FABRIC_WORKSPACE_NAME_DEV` | Custom name for the Fabric workspace | `Unified Data Foundation with Fabric workspace` | `"MyCompany Data Foundation"`, `"Analytics Platform - DEV"` |
+
+**Configuration Examples:**
+
+<details>
+<summary><strong>🖥️ Azure Developer CLI</strong></summary>
+
+```bash
+azd env set AZURE_FABRIC_WORKSPACE_NAME "Analytics Platform - DEV"
+azd up
+```
+
+</details>
+
+<details>
+<summary><strong>🚀 GitHub Actions</strong></summary>
+
+Modify [`azure-dev.yml`](../.github/workflows/azure-dev.yml) environment variables:
+
+```yaml
+env:
+  AZURE_FABRIC_WORKSPACE_NAME_DEV: "Analytics Platform (dev)"
+```
+
+</details>
+
+**Workspace Naming Best Practices:**
+- Use descriptive names that indicate purpose and environment
+- Consider organizational naming conventions
+- Include environment indicators for multi-environment deployments (Dev, Test, Prod)
+- Avoid special characters that might cause conflicts with Fabric APIs
+
+</details>
+
+### 👥 Administrator Configuration
+
+Manage workspace administrators and security permissions for the Fabric workspace. These parameters are processed by both the Bicep template ([`main.bicep`](../infra/main.bicep)) for capacity-level admins and the Fabric deployment script ([`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py)) for workspace-level admins.
+
+<details>
+<summary><strong>Admin Assignment Options</strong></summary>
+
+| Parameter | AZD Environment Variable | GitHub Actions Support | Description | Format | Example |
+|-----------|-------------------------|------------------------|-------------|--------|---------|
+| **Fabric Admins** | `AZURE_FABRIC_ADMIN_MEMBERS` | Bicep output | List of administrators (UPNs and Service Principal IDs) | JSON array | `["user1@contoso.com", "12345678-1234-1234-1234-123456789012"]` |
+| **Admins by Object ID** | `AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID` | Not directly supported* | List of object IDs with fallback user/service principal detection | JSON array | `["87654321-4321-4321-4321-210987654321"]` |
+
+*_GitHub Actions workflow uses Bicep output for admin configuration. See examples below for customization._
+
+**Administrator Types Supported:**
+- **User Principal Names (UPNs)**: `user@domain.com` format for individual users
+- **Service Principal IDs**: GUID format for application registrations  
+- **Object IDs**: Direct Azure AD object identifiers with automatic type detection
+
+**Configuration Examples:**
+
+<details>
+<summary><strong>🖥️ Azure Developer CLI</strong></summary>
+
+```bash
+azd env set AZURE_FABRIC_ADMIN_MEMBERS '["user@contoso.com", "sp-guid"]'
+azd env set AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID '["object-id-guid"]'
+azd up
+```
+
+</details>
+
+<details>
+<summary><strong>🚀 GitHub Actions</strong></summary>
+
+**Option A**: Update [`main.parameters.json`](../infra/main.parameters.json):
+
+```json
+{
+  "parameters": {
+    "solutionName": { "value": "${AZURE_ENV_NAME}" },
+    "fabricAdminMembers": { "value": ["user@contoso.com"] }
+  }
+}
+```
+
+**Option B**: Override in workflow [`azure-dev.yml`](../.github/workflows/azure-dev.yml):
+
+```yaml
+- name: Deploy Infrastructure  
+  uses: azure/bicep-deploy@v2
+  with:
+    parameters: |
+      {
+        "fabricAdminMembers": ["user@contoso.com", "sp-guid"]
+      }
+```
+
+</details>
+
+**Administrator Assignment Behavior:**
+- **Automatic Default Admin**: The deployment identity (user or service principal) is automatically added as a Fabric capacity admin
+- **Duplicate Detection**: Prevents adding the same principal multiple times
+- **Fallback Logic**: Object ID method tries both User and ServicePrincipal types automatically
+- **Graph API Resolution**: UPN method uses Microsoft Graph API for identity resolution
+
+**Permission Requirements:**
+Administrators configured through these parameters will have **Admin** role on the Fabric workspace, providing:
+- Full workspace management capabilities
+- Ability to manage workspace items (lakehouses, notebooks, reports)
+- User and permission management within the workspace
+- Workspace settings configuration
+
+</details>
+
+### 🐍 Environment Configuration Options
+
+Configure deployment behavior and troubleshooting options. These parameters are handled by the PowerShell orchestration script ([`run_python_script_fabric.ps1`](../infra/scripts/utils/run_python_script_fabric.ps1)).
+
+<details>
+<summary><strong>Deployment Customization</strong></summary>
+
+These options are primarily used for configuring the appropriate environment for each deployment process based on elements such as underlying operating system or specialized environments such as containerized deployments or GitHub-hosted runners.
+
+| Parameter | PowerShell Switch | AZD Support | GitHub Actions Support | Description | Use Case |
+|-----------|-------------------|-------------|------------------------|-------------|----------|
+| **Skip Virtual Environment** | `-SkipPythonVirtualEnvironment` | Manual override | ✅ Used in workflow | Use system Python instead of virtual environment | System-wide Python management, containerized environments |
+| **Skip Dependencies** | `-SkipPythonDependencies` | Manual override | ✅ Used in workflow | Skip installing Python packages (assume pre-installed) | Pre-configured environments, repeated deployments |
+| **Skip Pip Upgrade** | `-SkipPipUpgrade` | Manual override | ✅ Used in workflow | Skip upgrading pip to latest version | Environments with controlled pip versions |
+
+**Configuration Examples:**
+
+<details>
+<summary><strong>🖥️ Azure Developer CLI</strong></summary>
+
+These parameters are automatically optimized in [`azure.yml`](../azure.yaml):
+
+```yaml
+hooks:
+  postprovision:
+    windows:
+      shell: pwsh
+      run: ./infra/scripts/utils/run_python_script_fabric.ps1
+      interactive: true
+      continueOnError: false
+    posix:
+      shell: pwsh
+      run: ./infra/scripts/utils/run_python_script_fabric.ps1 -SkipPythonVirtualEnvironment
+      interactive: true
+      continueOnError: false
+  predown:
+    windows:
+      shell: pwsh
+      run: ./infra/scripts/utils/run_python_script_fabric_remove.ps1
+      interactive: true
+      continueOnError: false
+    posix:
+      shell: pwsh
+      run: ./infra/scripts/utils/run_python_script_fabric_remove.ps1 -SkipPythonVirtualEnvironment
+      interactive: true
+      continueOnError: false
+```
+
+</details>
+
+<details>
+<summary><strong>🚀 GitHub Actions</strong></summary>
+
+These parameters are automatically optimized in [`azure-dev.yml`](../.github/workflows/azure-dev.yml):
+
+```yaml
+- name: Run Fabric Provisioning Script
+  run: |
+    pwsh ./run_python_script_fabric.ps1 \
+      -SkipPythonVirtualEnvironment \
+      -SkipPythonDependencies \
+      -SkipPipUpgrade
+```
+
+</details>
+
+</details>
 
 ---
 
