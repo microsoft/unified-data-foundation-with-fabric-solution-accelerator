@@ -83,6 +83,108 @@ The deployment orchestration coordinates both phases, passing deployment paramet
 
 ---
 
+## Deployment Results
+
+### Fabric Components Created
+
+The deployment creates a complete medallion architecture with:
+
+- **Infrastructure**: Automated provisioning of Fabric capacity and workspace
+- **Folder Structure**: Organized folders for lakehouses, notebooks, and reports
+- **Lakehouses**: Three-tier architecture (Bronze, Silver, Gold) with schema support
+- **Sample Data**: Representative CSV files uploaded to the bronze lakehouse
+- **Notebooks**: Complete set of data transformation and management notebooks
+- **Automated Processing**: Initial data pipeline execution
+- **Power BI Reports**: Automated deployment of Power BI reports (.pbix files) to the workspace
+- **User-Assigned Managed Identity**: Automatically created for secure access to Azure resources
+
+### Azure Infrastructure
+
+| Resource | Type | Purpose |
+|----------|------|---------|
+| [**Fabric Capacity**](https://learn.microsoft.com/fabric/admin/capacity-settings?tabs=power-bi-premium) | `Microsoft.Fabric/capacities` | Dedicated compute capacity for Fabric workloads |
+| [**User-Assigned Managed Identity**](https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview) | `Microsoft.ManagedIdentity/userAssignedIdentities` | Secure authentication for automated operations |
+
+![Screenshot of deployed Azure resources](./images/deployment/fabric/azure_resources.png)
+
+### Fabric items
+
+#### Fabric Workspace
+
+Workspace created with the specified or default name.
+
+![Screenshot of resulting Fabric workspace](./images/deployment/fabric/fabric_workspace.png)
+
+#### Folder Structure
+
+```
+workspace/
+├── lakehouses/
+├── notebooks/
+│   ├── bronze_to_silver/
+│   ├── data_management/
+│   ├── schema/
+│   └── silver_to_gold/
+└── reports/
+```
+
+![Screenshot of resulting Fabric workspace folder structure](./images/deployment/fabric/fabric_workspace_folders.png)
+
+#### Lakehouses
+
+| Name | Purpose | Schema Support |
+|------|---------|----------------|
+| `maag_bronze` | Raw data ingestion | Enabled |
+| `maag_silver` | Cleaned, standardized data | Enabled |
+| `maag_gold` | Business-ready aggregated data | Enabled |
+
+![Screenshot of resulting Fabric lakehouses](./images/deployment/fabric/fabric_lakehouses.png)
+
+#### Sample Data
+
+The solution includes sample data for:
+- **Finance data**: accounts, invoices, payments
+- **Sales data**: orders, order lines, payments from multiple sources
+- **Shared reference data**: customers, products, locations, categories
+
+![Screenshot of resulting Fabric sample data](./images/deployment/fabric/fabric_sample_data.png)
+
+#### Jupyter Notebooks
+
+![Screenshot of resulting Fabric notebooks](./images/deployment/fabric/fabric_notebooks.png)
+
+#### Main Orchestration
+- `run_bronze_to_silver` - Orchestrates bronze to silver transformation
+- `run_silver_to_gold` - Orchestrates silver to gold transformation
+
+#### Bronze to Silver Transformation
+- Domain-specific transformation notebooks for each data entity
+- Handles data cleansing and standardization
+
+#### Data Management
+- Table management utilities (drop, truncate)
+- Troubleshooting and maintenance notebooks
+
+#### Schema Definition
+- Data model definitions for each layer
+- Schema creation and management
+
+#### Silver to Gold Processing
+- Business logic implementation
+- Data aggregation and enrichment
+
+#### Power BI Report
+
+Any `.pbix` files found in the `reports/` directory will be automatically deployed to the workspace's reports folder. The deployment process:
+- Scans recursively through the reports directory
+- Uploads each Power BI report with conflict resolution (Create or Overwrite)
+- Assigns reports to the appropriate folder within the workspace
+- Provides deployment tracking and verification
+
+![Screenshot of resulting PowerBI reports](./images/deployment/fabric/fabric_powerbi_reports.png)
+
+---
+
 ## Deployment Options
 
 This solution accelerator provides flexible deployment options to suit different environments and workflows.
@@ -692,107 +794,6 @@ These parameters are automatically optimized in [`azure-dev.yml`](../.github/wor
 
 ---
 
-## Deployment Results
-
-### Fabric Components Created
-
-The deployment creates a complete medallion architecture with:
-
-- **Infrastructure**: Automated provisioning of Fabric capacity and workspace
-- **Folder Structure**: Organized folders for lakehouses, notebooks, and reports
-- **Lakehouses**: Three-tier architecture (Bronze, Silver, Gold) with schema support
-- **Sample Data**: Representative CSV files uploaded to the bronze lakehouse
-- **Notebooks**: Complete set of data transformation and management notebooks
-- **Automated Processing**: Initial data pipeline execution
-- **Power BI Reports**: Automated deployment of Power BI reports (.pbix files) to the workspace
-- **User-Assigned Managed Identity**: Automatically created for secure access to Azure resources
-
-### Azure Infrastructure
-
-| Resource | Type | Purpose |
-|----------|------|---------|
-| [**Fabric Capacity**](https://learn.microsoft.com/fabric/admin/capacity-settings?tabs=power-bi-premium) | `Microsoft.Fabric/capacities` | Dedicated compute capacity for Fabric workloads |
-| [**User-Assigned Managed Identity**](https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview) | `Microsoft.ManagedIdentity/userAssignedIdentities` | Secure authentication for automated operations |
-
-![Screenshot of deployed Azure resources](./images/deployment/fabric/azure_resources.png)
-
-### Fabric items
-
-#### Fabric Workspace
-
-Workspace created with the specified or default name.
-
-![Screenshot of resulting Fabric workspace](./images/deployment/fabric/fabric_workspace.png)
-
-#### Folder Structure
-
-```
-workspace/
-├── lakehouses/
-├── notebooks/
-│   ├── bronze_to_silver/
-│   ├── data_management/
-│   ├── schema/
-│   └── silver_to_gold/
-└── reports/
-```
-
-![Screenshot of resulting Fabric workspace folder structure](./images/deployment/fabric/fabric_workspace_folders.png)
-
-#### Lakehouses
-
-| Name | Purpose | Schema Support |
-|------|---------|----------------|
-| `maag_bronze` | Raw data ingestion | Enabled |
-| `maag_silver` | Cleaned, standardized data | Enabled |
-| `maag_gold` | Business-ready aggregated data | Enabled |
-
-![Screenshot of resulting Fabric lakehouses](./images/deployment/fabric/fabric_lakehouses.png)
-
-#### Sample Data
-
-The solution includes sample data for:
-- **Finance data**: accounts, invoices, payments
-- **Sales data**: orders, order lines, payments from multiple sources
-- **Shared reference data**: customers, products, locations, categories
-
-![Screenshot of resulting Fabric sample data](./images/deployment/fabric/fabric_sample_data.png)
-
-#### Jupyter Notebooks
-
-![Screenshot of resulting Fabric notebooks](./images/deployment/fabric/fabric_notebooks.png)
-
-#### Main Orchestration
-- `run_bronze_to_silver` - Orchestrates bronze to silver transformation
-- `run_silver_to_gold` - Orchestrates silver to gold transformation
-
-#### Bronze to Silver Transformation
-- Domain-specific transformation notebooks for each data entity
-- Handles data cleansing and standardization
-
-#### Data Management
-- Table management utilities (drop, truncate)
-- Troubleshooting and maintenance notebooks
-
-#### Schema Definition
-- Data model definitions for each layer
-- Schema creation and management
-
-#### Silver to Gold Processing
-- Business logic implementation
-- Data aggregation and enrichment
-
-#### Power BI Report
-
-Any `.pbix` files found in the `reports/` directory will be automatically deployed to the workspace's reports folder. The deployment process:
-- Scans recursively through the reports directory
-- Uploads each Power BI report with conflict resolution (Create or Overwrite)
-- Assigns reports to the appropriate folder within the workspace
-- Provides deployment tracking and verification
-
-![Screenshot of resulting PowerBI reports](./images/deployment/fabric/fabric_powerbi_reports.png)
-
----
 
 ## Additional Resources
 
