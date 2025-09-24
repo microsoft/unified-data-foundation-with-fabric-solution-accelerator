@@ -4,13 +4,90 @@ This guide describes how to deploy the **Unified Data Foundation with Fabric** s
 
 ## Prerequisites
 
-Before starting, ensure you have:
+Before starting, ensure you have the following requirements. **All permissions must be granted to the deployment identity**, which can be a user account, managed identity, or service principal depending on your deployment approach.
 
-- **Azure subscription** with appropriate permissions to create Fabric resources
-- One of the following environments:
-  - **Local machine** with [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) installed
-  - **Azure Cloud Shell** (azd can be installed during deployment)
-  - **GitHub Codespaces** (azd can be installed during deployment)
+> **📋 Deployment Identity Types**
+> 
+> The deployment can be executed using different identity types:
+> - **User Account**: Interactive deployment using your Azure AD credentials
+> - **Service Principal**: Application identity for automated/CI-CD scenarios  
+> - **Managed Identity**: Azure-managed identity for secure automated deployments
+>
+> For more details, see [Fabric Identity Support](https://learn.microsoft.com/rest/api/fabric/articles/identity-support)
+
+### 🔑 Required Permissions
+
+#### Azure Resource Management Permissions
+
+| **Permission Type** | **Required Role** | **Scope** | **Purpose** |
+|---------------------|-------------------|-----------|-------------|
+| Resource Group Access | [Contributor](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#contributor) or [Owner](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#owner) | Target Resource Group | Deploy Bicep templates and create Azure resources |
+| Fabric Capacity Creation | Contributor/Owner | Subscription or Resource Group | Create [Microsoft Fabric capacity](https://learn.microsoft.com/fabric/enterprise/licenses#capacity) |
+| Managed Identity Creation | Contributor/Owner | Subscription or Resource Group | Create [User-Assigned Managed Identity](https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview) |
+
+#### Microsoft Graph API Permissions
+
+| **Permission Name** | **Type** | **Purpose** | **Documentation** |
+|---------------------|----------|-------------|-------------------|
+| `User.Read` | Delegated | Read signed-in user profile information | [Microsoft Graph User permissions](https://learn.microsoft.com/graph/permissions-reference#user-permissions) |
+| `openid` | Delegated | Sign in and read user profile for authentication | [OpenID Connect scopes](https://learn.microsoft.com/entra/identity-platform/scopes-oidc) |
+
+#### Microsoft Fabric REST API Permissions
+
+| **Permission Area** | **Required Access** | **Purpose** | **Documentation** |
+|---------------------|---------------------|-------------|-------------------|
+| Workspace Management | Create and manage Fabric workspaces | Deploy and configure workspace structure | [Fabric workspace APIs](https://learn.microsoft.com/rest/api/fabric/core/workspaces) |
+| Item Creation | Create lakehouses, notebooks, and reports | Deploy Fabric items and content | [Fabric item APIs](https://learn.microsoft.com/rest/api/fabric/core/items) |
+| Content Upload | Upload files and manage workspace content | Deploy sample data and notebooks | [Fabric REST API scopes](https://learn.microsoft.com/rest/api/fabric/articles/scopes) |
+
+> **💡 Fabric Permission Setup**: For detailed guidance on creating an Entra app with appropriate Fabric permissions, see [Create Entra app with Fabric permissions](https://learn.microsoft.com/rest/api/fabric/articles/get-started/create-entra-app)
+
+#### Power BI Service API Permissions
+
+| **Permission Name** | **Type** | **Purpose** | **Documentation** |
+|---------------------|----------|-------------|-------------------|
+| `Tenant.Read.All` | Delegated | Read organization's Power BI tenant information | [Power BI REST API permissions](https://learn.microsoft.com/rest/api/power-bi/#scopes) |
+
+### � Software Prerequisites
+
+#### Required Tools
+
+| **Tool** | **Minimum Version** | **Purpose** | **Installation Guide** |
+|----------|---------------------|-------------|------------------------|
+| Python | 3.9+ | Runtime environment for deployment scripts | [Download Python](https://www.python.org/downloads/) |
+| Azure CLI | Latest | Azure authentication and resource management | [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) |
+
+#### Python Dependencies (automatically installed)
+
+| **Package** | **Version** | **Purpose** |
+|-------------|-------------|-------------|
+| `azure-identity` | ≥1.15.0 | Azure authentication |
+| `azure-core` | ≥1.29.0 | Azure SDK core functionality |
+| `azure-storage-file-datalake` | ≥12.14.0 | Data Lake storage operations |
+| `requests` | ≥2.31.0 | HTTP client for REST API calls |
+| `python-dateutil` | ≥2.8.2 | Date/time utilities |
+
+> **📦 Complete Dependencies**: See [requirements.txt](../infra/scripts/fabric/requirements.txt) for the full dependency list
+
+### 🏢 Microsoft Fabric Licensing Requirements
+
+| **Component** | **License Requirement** | **Notes** |
+|---------------|-------------------------|-----------|
+| Fabric Capacity | [F-SKU or P-SKU capacity](https://learn.microsoft.com/fabric/enterprise/licenses#capacity) | Required to host Fabric workspaces and items |
+| User Access | [Microsoft Fabric (Free) license](https://learn.microsoft.com/fabric/enterprise/licenses#per-user-licenses) minimum | Users need appropriate licenses to access deployed content |
+| Power BI Content | Pro/PPU license for F2-F32 capacities | F64+ capacities support Free license users with viewer role |
+
+> **📚 License Details**: For comprehensive licensing information, see [Microsoft Fabric Licenses](https://learn.microsoft.com/fabric/enterprise/licenses)
+
+## 🚀 Deployment Environment Options
+
+| **Environment** | **Setup Required** | **Best For** |
+|-----------------|-------------------|--------------|
+| **Local Machine** | [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) installation | Development and testing |
+| **Azure Cloud Shell** | azd installation during deployment | Quick deployment without local setup |
+| **GitHub Codespaces** | azd installation during deployment | Collaborative development |
+
+> **⚡ Permission Handling**: When using Azure Developer CLI with interactive authentication, most API permissions are handled automatically. Admin consent may be required for the first deployment in an organization.
 
 ---
 
