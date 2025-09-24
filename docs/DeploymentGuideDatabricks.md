@@ -69,7 +69,7 @@ You can run the Databricks deployment directly from Azure Cloud Shell without ne
 
 3. Navigate to the deployment directory:
    ```bash
-   cd infra/deploy/databricks
+   cd infra/scripts/databricks
    ```
 
 4. Continue with the [Databricks Items Deployment](#databricks-items-deployment) steps using the bash script.
@@ -129,7 +129,7 @@ Required values (collect these before running the script):
 ### 2. Navigate to Deployment Directory
 
 ```bash
-cd infra/deploy/databricks
+cd infra/scripts/databricks
 ```
 
 ### 3. Run Deployment Script
@@ -158,7 +158,7 @@ chmod +x provision_databricks_items.sh
 ```bash
 # Codespaces comes with Python and Azure CLI pre-installed
 # Navigate to the databricks deployment directory
-cd infra/deploy/databricks
+cd infra/scripts/databricks
 
 # Make the script executable
 chmod +x provision_databricks_items.sh
