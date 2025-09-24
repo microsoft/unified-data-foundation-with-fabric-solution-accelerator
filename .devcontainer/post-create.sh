@@ -8,7 +8,7 @@ set -e
 echo "🚀 Setting up Unified Data Foundation with Fabric development environment..."
 
 # Note: Core tools already provided by devcontainer.json:
-# - Python 3.11 (base image)
+# - Python 3.x (base image) with pip and venv
 # - Azure CLI + Bicep (azure-cli feature)
 # - Git (git feature)  
 # - GitHub CLI (github-cli feature)
@@ -20,9 +20,14 @@ echo "🚀 Setting up Unified Data Foundation with Fabric development environmen
 echo "📦 Updating package lists..."
 sudo apt-get update
 
-# Install python3-venv and python3-pip explicitly to avoid ensurepip issues
-echo "🐍 Installing Python venv and pip packages..."
-sudo apt-get install -y python3-venv python3-pip python3-dev
+# Note: python3-venv, python3-pip, and python3-dev are not available as separate packages
+# in the Python dev container base image. The venv module is built into Python 3.3+
+# and pip is already pre-installed.
+
+# Verify Python and pip are available
+echo "🐍 Verifying Python installation..."
+python3 --version
+python3 -m pip --version
 
 # Upgrade pip
 echo "🐍 Upgrading pip..."
@@ -112,7 +117,7 @@ cat > ~/WORKSPACE_INFO.md << 'EOF'
 ## Available Tools
 - Azure CLI (`az`) + Bicep
 - Azure Developer CLI (`azd`)
-- Python 3.11 with pip, venv, and common dependencies pre-installed
+- Python 3.11+ with pip, venv, and common dependencies pre-installed
 - PowerShell
 - Git & GitHub CLI
 - Jupyter Lab
