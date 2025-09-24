@@ -1,7 +1,7 @@
 metadata name = 'Unified data foundation with Fabric solution accelerator'
 metadata description = '''CSA CTO Gold Standard Solution Accelerator for Unified Data Foundation with Fabric.
 '''
-@minLength(2)
+@minLength(1)
 @maxLength(20)
 @description('Optional. A friendly string representing the application/solution name to give to all resource names in this deployment. This should be 3-16 characters long.')
 param solutionName string = 'udfwfsa'
