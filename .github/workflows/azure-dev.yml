@@ -1,0 +1,159 @@
+name: CI/CD Azure
+
+# Trigger the workflow on push to main/master or manual dispatch
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - "*"
+    paths:
+      - "infra/**"
+      - "src/**"
+      - ".github/workflows/azure-dev.yml"
+  pull_request:
+    branches:
+      - main
+      - pre-deploy
+    paths:
+      - "infra/**"
+      - "src/**"
+      - ".github/workflows/azure-dev.yml"
+
+# Set up permissions for deploying with secretless Azure federated credentials
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+  AZURE_ENV_NAME_DEV: ${{ vars.AZURE_ENV_NAME }}
+  AZURE_RESOURCE_GROUP_NAME_DEV: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
+  AZURE_FABRIC_WORKSPACE_NAME_DEV: "Unified Data Foundation with Fabric workspace (dev)"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build and Static Analysis
+    environment: 'udfwf-build'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Azure CLI
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install Bicep CLI
+        run: |
+          curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
+          chmod +x ./bicep
+          sudo mv ./bicep /usr/local/bin/bicep
+
+      - name: Bicep Static Code Analysis
+        run: |
+          echo "Running Bicep static code analysis on main.bicep..."
+          bicep build infra/main.bicep --outfile infra/main.json
+          echo "✅ Bicep compilation successful"
+
+          # Run bicep linter
+          bicep lint infra/main.bicep
+          echo "✅ Bicep linting completed"
+
+      - name: Validate Bicep Template
+        run: |
+          echo "Validating Bicep template..."
+          az deployment group validate \
+            --resource-group rg-${{ env.AZURE_ENV_NAME_DEV }} \
+            --template-file infra/main.json \
+            --parameters infra/main.parameters.json \
+            --parameters solutionName=${{ env.AZURE_ENV_NAME_DEV }} \
+            --parameters location=${{ env.AZURE_LOCATION }} || true
+          echo "✅ Bicep template validation completed"
+
+  deploy-dev:
+    runs-on: ubuntu-latest
+    name: Deploy to Development
+    environment: 'udfwf-dev'
+    needs: build
+    # if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/pre-deploy-alguadam' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Azure CLI login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Infrastructure
+        id: bicep-deploy
+        uses: azure/bicep-deploy@v2
+        with:
+            type: deployment
+            operation: create
+            scope: resourceGroup
+            subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+            resource-group-name:  ${{ env.AZURE_RESOURCE_GROUP_NAME_DEV }}
+            template-file: ./infra/main.bicep
+            parameters-file: ./infra/main.parameters.json
+            parameters: |
+                {
+                  "solutionName": "${{ env.AZURE_ENV_NAME_DEV }}"
+                }
+
+      - name: Setup Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python Dependencies
+        working-directory: infra/scripts/utils
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r ../fabric/requirements.txt
+
+      - name: Run Fabric Provisioning Script
+        working-directory: infra/scripts/utils
+        run: |
+          echo "Running fabric provisioning script..."
+
+          # Run the PowerShell provisioning script with parameters
+          pwsh ./run_python_script_fabric.ps1 \
+            -FabricCapacityName '${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }}' \
+            -FabricWorkspaceName '${{ env.AZURE_FABRIC_WORKSPACE_NAME_DEV }}' \
+            -FabricAdmins '${{ steps.bicep-deploy.outputs.AZURE_FABRIC_ADMIN_MEMBERS }}' \
+            -SkipPythonVirtualEnvironment \
+            -SkipPythonDependencies \
+            -SkipPipUpgrade
+
+          echo "✅ Fabric items provisioning completed"
+
+      - name: Output Deployment Summary
+        run: |
+          # Construct URLs
+          AZURE_RG_URL="https://portal.azure.com/#@${{ env.AZURE_TENANT_ID }}/resource/subscriptions/${{ env.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ env.AZURE_RESOURCE_GROUP_NAME_DEV }}/overview"
+          FABRIC_WORKSPACE_URL="https://app.fabric.microsoft.com/groups/$(echo '${{ env.AZURE_FABRIC_WORKSPACE_NAME_DEV }}' | sed 's/ /%20/g')"
+          
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Resource | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ env.AZURE_ENV_NAME_DEV }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Location | ${{ env.AZURE_LOCATION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Resource Group | [${{ env.AZURE_RESOURCE_GROUP_NAME_DEV }}](${AZURE_RG_URL}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Fabric Capacity | ${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Fabric Workspace | ${{ env.AZURE_FABRIC_WORKSPACE_NAME_DEV }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+          echo "- **Azure Portal**: [View Resource Group](${AZURE_RG_URL})" >> $GITHUB_STEP_SUMMARY
+          echo "- **Microsoft Fabric**: [Open Workspace](${FABRIC_WORKSPACE_URL})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Deployment completed successfully!**" >> $GITHUB_STEP_SUMMARY

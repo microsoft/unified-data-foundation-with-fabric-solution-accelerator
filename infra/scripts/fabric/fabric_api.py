@@ -6,7 +6,7 @@ It focuses on core API operations including authentication, request management, 
 low-level methods for Fabric resources (workspaces, folders, notebooks, items).
 
 This library adheres strictly to Fabric API operations and does not contain business logic
-or project-specific transformations. For UDFF-specific functionality, see udff_utils.py.
+or project-specific transformations. For UDFWF-specific functionality, see udfwf_utils.py.
 
 Core Features:
 - Authentication management with Azure CLI credentials
@@ -18,7 +18,7 @@ Core Features:
 Dependencies:
     pip install requests azure-identity azure-storage-file-datalake
 
-Author: Generated for Unified Data Foundation with Fabric (UDFF) project
+Author: Generated for Unified Data Foundation with Fabric (UDFWF) project
 """
 
 import time
@@ -444,6 +444,213 @@ class FabricApiClient:
             self._log(f"Successfully assigned workspace to capacity")
         else:
             raise FabricApiError(f"Failed to assign workspace to capacity: {response.status_code}")
+    
+    def add_workspace_role_assignment(self, 
+                                    workspace_id: str, 
+                                    principal_id: str, 
+                                    principal_type: str, 
+                                    role: str,
+                                    display_name: Optional[str] = None,
+                                    user_principal_name: Optional[str] = None,
+                                    aad_app_id: Optional[str] = None,
+                                    group_type: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Add a workspace role assignment to grant permissions to a user, service principal, or group.
+        
+        Args:
+            workspace_id: Target workspace ID
+            principal_id: The principal's ID (user object ID, service principal ID, or group ID)
+            principal_type: Type of principal ("User", "ServicePrincipal", "Group", "ServicePrincipalProfile", "EntireTenant")
+            role: Workspace role ("Admin", "Member", "Contributor", "Viewer")
+            display_name: Optional display name of the principal
+            user_principal_name: Optional user principal name (required for User type)
+            aad_app_id: Optional Azure AD App ID (required for ServicePrincipal type)
+            group_type: Optional group type ("SecurityGroup", "DistributionList", "Unknown") for Group type
+            
+        Returns:
+            WorkspaceRoleAssignment object containing:
+            - id: Role assignment ID
+            - principal: Principal object with ID, type, and details
+            - role: Assigned workspace role
+            
+        Raises:
+            FabricApiError: If role assignment fails
+            
+        Required Scopes:
+            Workspace.ReadWrite.All
+            
+        Reference:
+            https://learn.microsoft.com/en-us/rest/api/fabric/core/workspaces/add-workspace-role-assignment
+        """
+        valid_principal_types = ["User", "ServicePrincipal", "Group", "ServicePrincipalProfile", "EntireTenant"]
+        valid_roles = ["Admin", "Member", "Contributor", "Viewer"]
+        valid_group_types = ["SecurityGroup", "DistributionList", "Unknown"]
+        
+        # Validate inputs
+        if principal_type not in valid_principal_types:
+            raise FabricApiError(f"Invalid principal_type '{principal_type}'. Must be one of: {valid_principal_types}")
+        
+        if role not in valid_roles:
+            raise FabricApiError(f"Invalid role '{role}'. Must be one of: {valid_roles}")
+        
+        if group_type and group_type not in valid_group_types:
+            raise FabricApiError(f"Invalid group_type '{group_type}'. Must be one of: {valid_group_types}")
+        
+        self._log(f"Adding {principal_type} role assignment '{role}' for principal {principal_id} to workspace {workspace_id}")
+        
+        # Build principal object
+        principal = {
+            "id": principal_id,
+            "type": principal_type
+        }
+        
+        # Add optional display name
+        if display_name:
+            principal["displayName"] = display_name
+        
+        # Add type-specific details
+        if principal_type == "User" and user_principal_name:
+            principal["userDetails"] = {
+                "userPrincipalName": user_principal_name
+            }
+        elif principal_type == "ServicePrincipal" and aad_app_id:
+            principal["servicePrincipalDetails"] = {
+                "aadAppId": aad_app_id
+            }
+        elif principal_type == "Group" and group_type:
+            principal["groupDetails"] = {
+                "groupType": group_type
+            }
+        
+        # Build request data
+        data = {
+            "principal": principal,
+            "role": role
+        }
+        
+        # Make the API request
+        response = self._make_request(
+            f"workspaces/{workspace_id}/roleAssignments", 
+            method="POST", 
+            data=data
+        )
+        
+        if response.status_code == 201:
+            role_assignment = response.json()
+            self._log(f"Successfully added {role} role assignment for {principal_type} {principal_id}")
+            return role_assignment
+        else:
+            raise FabricApiError(f"Failed to add workspace role assignment: {response.status_code}")
+    
+    def get_workspace_role_assignments(self, 
+                                     workspace_id: str,
+                                     continuation_token: Optional[str] = None,
+                                     get_all: bool = True) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+        """
+        Get workspace role assignments with support for pagination.
+        
+        Args:
+            workspace_id: Target workspace ID
+            continuation_token: Optional token for retrieving the next page of results
+            get_all: If True, retrieves all role assignments across all pages. 
+                    If False, returns the raw API response with pagination info.
+            
+        Returns:
+            If get_all=True: List of WorkspaceRoleAssignment objects
+            If get_all=False: Raw API response containing:
+            - value: List of WorkspaceRoleAssignment objects
+            - continuationToken: Token for next page (if more results exist)
+            - continuationUri: URI for next page (if more results exist)
+            
+            Each WorkspaceRoleAssignment contains:
+            - id: Role assignment ID
+            - principal: Principal object with ID, type, display name, and type-specific details
+            - role: Workspace role ("Admin", "Member", "Contributor", "Viewer")
+            
+        Raises:
+            FabricApiError: If request fails
+            
+        Required Scopes:
+            Workspace.Read.All or Workspace.ReadWrite.All
+            
+        Reference:
+            https://learn.microsoft.com/en-us/rest/api/fabric/core/workspaces/list-workspace-role-assignments
+        """
+        self._log(f"Getting workspace role assignments for workspace {workspace_id}")
+        
+        # Build query parameters
+        params = []
+        if continuation_token:
+            params.append(f"continuationToken={continuation_token}")
+        
+        query_string = f"?{'&'.join(params)}" if params else ""
+        uri = f"workspaces/{workspace_id}/roleAssignments{query_string}"
+        
+        # Make the API request
+        response = self._make_request(uri)
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            
+            if get_all:
+                # Collect all role assignments across all pages
+                all_role_assignments = response_data.get('value', [])
+                
+                # Continue fetching pages if continuation token exists
+                while 'continuationToken' in response_data:
+                    next_token = response_data['continuationToken']
+                    self._log(f"Fetching next page of role assignments (token: {next_token[:20]}...)")
+                    
+                    next_params = [f"continuationToken={next_token}"]
+                    next_query = f"?{'&'.join(next_params)}"
+                    next_uri = f"workspaces/{workspace_id}/roleAssignments{next_query}"
+                    
+                    next_response = self._make_request(next_uri)
+                    if next_response.status_code == 200:
+                        next_data = next_response.json()
+                        all_role_assignments.extend(next_data.get('value', []))
+                        response_data = next_data
+                    else:
+                        raise FabricApiError(f"Failed to fetch next page of role assignments: {next_response.status_code}")
+                
+                self._log(f"Retrieved {len(all_role_assignments)} total role assignment(s)")
+                return all_role_assignments
+            else:
+                # Return raw response with pagination info
+                role_assignments = response_data.get('value', [])
+                self._log(f"Retrieved {len(role_assignments)} role assignment(s) in current page")
+                return response_data
+        else:
+            raise FabricApiError(f"Failed to get workspace role assignments: {response.status_code}")
+    
+    def get_workspace_role_assignment_by_principal(self, 
+                                                  workspace_id: str, 
+                                                  principal_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get a specific workspace role assignment by principal ID.
+        
+        Args:
+            workspace_id: Target workspace ID
+            principal_id: Principal ID to search for
+            
+        Returns:
+            WorkspaceRoleAssignment object if found, None otherwise
+            
+        Raises:
+            FabricApiError: If request fails
+        """
+        self._log(f"Searching for role assignment for principal {principal_id} in workspace {workspace_id}")
+        
+        role_assignments = self.get_workspace_role_assignments(workspace_id, get_all=True)
+        
+        # Search for the specific principal
+        for assignment in role_assignments:
+            if assignment.get('principal', {}).get('id') == principal_id:
+                self._log(f"Found role assignment: {assignment.get('role')} for principal {principal_id}")
+                return assignment
+        
+        self._log(f"No role assignment found for principal {principal_id}")
+        return None
     
     # Folder operations
     def get_folders(self, workspace_id: str) -> List[Dict[str, Any]]:
