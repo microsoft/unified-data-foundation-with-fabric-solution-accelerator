@@ -29,19 +29,19 @@ echo "🐍 Upgrading pip..."
 python3 -m pip install --upgrade pip
 
 # Install Python requirements for the project
-echo "📋 Preparing Python environment..."
+echo "📋 Installing Python dependencies globally..."
 
-# Note: Project-specific dependencies (Azure libraries, requests, etc.) are installed by deployment scripts in isolated virtual environments
-# This ensures consistency between development and deployment, avoiding version conflicts
-# Only install development tools and convenience packages globally
-
-# Verify that requirements files exist (deployment scripts will install them in venvs)
+# Install Fabric requirements globally so they're pre-installed for deployment scripts
+# This improves deployment script performance by avoiding repeated installations
 if [ -f "./infra/scripts/fabric/requirements.txt" ]; then
-    echo "✅ Fabric script requirements.txt found"
+    echo "📦 Installing Fabric script requirements globally..."
+    python3 -m pip install -r "./infra/scripts/fabric/requirements.txt"
+    echo "✅ Fabric script requirements installed successfully"
 else
     echo "⚠️ Warning: ./infra/scripts/fabric/requirements.txt not found"
 fi
 
+# Verify that other requirements files exist (for reference)
 if [ -f "./src/requirements.txt" ]; then
     echo "✅ Source requirements.txt found"
 else
@@ -139,8 +139,9 @@ cat > ~/WORKSPACE_INFO.md << 'EOF'
 ## Virtual Environment Notes
 - Python venv module is available and configured in the container base
 - Development tools are pre-installed globally for convenience
-- Project dependencies (Azure libraries, requests, etc.) are installed by deployment scripts in isolated virtual environments
-- This approach ensures consistency between development and deployment while avoiding version conflicts
+- Fabric deployment dependencies (Azure libraries, requests, etc.) are pre-installed globally for improved performance
+- Additional project dependencies can be installed by deployment scripts in isolated virtual environments
+- This approach balances convenience with flexibility while avoiding version conflicts
 
 Enjoy coding! 🎉
 EOF
