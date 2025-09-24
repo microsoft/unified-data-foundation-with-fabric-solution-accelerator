@@ -112,16 +112,14 @@ pwsh ./run_python_script_fabric.ps1
 
 ### Step 3: Execute Deployment
 
-#### Option A: Cross-Platform Shell Script (Recommended)
+#### PowerShell Script (Cross-Platform)
 
 **For Linux/macOS/Cloud Shell:**
 ```bash
 cd infra/scripts/utils
 chmod +x run_python_script_fabric.ps1
-./run_python_script_fabric.ps1
+pwsh ./run_python_script_fabric.ps1
 ```
-
-#### Option B: PowerShell Script
 
 **For Windows PowerShell:**
 ```powershell
@@ -251,7 +249,7 @@ In your Fabric workspace, verify:
 
 #### GitHub Codespaces
 - **Issue**: Permission errors accessing files
-- **Solution**: Ensure proper file permissions with `chmod +x` for shell scripts
+- **Solution**: Ensure proper file permissions with `chmod +x` for PowerShell scripts on Linux/macOS
 - **Issue**: Azure authentication challenges
 - **Solution**: Use device code authentication: `az login --use-device-code`
 
@@ -265,12 +263,12 @@ In your Fabric workspace, verify:
 
 #### Enable Verbose Output
 
-**For Shell Script:**
+**For Linux/macOS/Cloud Shell:**
 ```bash
 pwsh -c './run_python_script_fabric.ps1 -Verbose'
 ```
 
-**For PowerShell:**
+**For Windows PowerShell:**
 ```powershell
 $VerbosePreference = "Continue"
 .\run_python_script_fabric.ps1 -Verbose
