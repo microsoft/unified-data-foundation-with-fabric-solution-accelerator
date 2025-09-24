@@ -52,7 +52,7 @@ jobs:
 
           # Run the PowerShell script to add administrators to all workspaces
           pwsh ./run_python_script_fabric_admins.ps1 \
-            -FabricAdmins '${{ env.AZURE_FABRIC_WORKSPACE_ADMINISTRATORS }}' \
+            -FabricAdminsByObjectId '${{ env.AZURE_FABRIC_WORKSPACE_ADMINISTRATORS }}' \
             -SkipPythonVirtualEnvironment \
             -SkipPythonDependencies \
             -SkipPipUpgrade
