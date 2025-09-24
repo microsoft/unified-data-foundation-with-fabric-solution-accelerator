@@ -14,7 +14,6 @@ on:
   pull_request:
     branches:
       - main
-      - pre-deploy
     paths:
       - "infra/**"
       - "src/**"
@@ -131,6 +130,7 @@ jobs:
             -FabricCapacityName '${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }}' \
             -FabricWorkspaceName '${{ env.AZURE_FABRIC_WORKSPACE_NAME_DEV }}' \
             -FabricAdmins '${{ steps.bicep-deploy.outputs.AZURE_FABRIC_ADMIN_MEMBERS }}' \
+            -FabricAdminsByObjectId '["47369fa5-b1de-4e63-b4f0-5fac0ab317ce"]' \
             -SkipPythonVirtualEnvironment \
             -SkipPythonDependencies \
             -SkipPipUpgrade
