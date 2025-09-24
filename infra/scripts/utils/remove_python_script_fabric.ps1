@@ -85,9 +85,11 @@ function Get-PythonCommand {
     $pythonCommands = @("python3", "python")
     foreach ($cmd in $pythonCommands) {
         try {
-            & $cmd --version *>$null
+            $null = & $cmd --version 2>$null
             if ($LASTEXITCODE -eq 0) { return $cmd }
-        } catch { }
+        } catch { 
+            # Ignore errors and try next command
+        }
     }
     throw "Python is not installed or not available in PATH. Please install Python 3.9+ and try again."
 }
@@ -110,23 +112,23 @@ function Initialize-PythonEnvironment {
         $pythonExec = $pythonCmd
     } else {
         Write-Info "Creating Python virtual environment..."
-        $venvPath = Join-Path $RepoRoot ".venv"
+        $venvPath = Join-Path -Path $RepoRoot -ChildPath ".venv"
         
         if (Test-Path $venvPath) {
             Write-Info "Virtual environment already exists, using existing one"
         } else {
-            & $pythonCmd -m venv $venvPath
+            & $pythonCmd -m venv $venvPath | Out-Null
             if ($LASTEXITCODE -ne 0) { throw "Failed to create Python virtual environment." }
         }
         
         # Activate virtual environment
         if ($IsWindows -or ($null -eq $IsWindows)) {
-            $pythonExec = Join-Path $venvPath "Scripts" "python.exe"
-            $activateScript = Join-Path $venvPath "Scripts" "Activate.ps1"
+            $pythonExec = Join-Path -Path $venvPath -ChildPath "Scripts\python.exe"
+            $activateScript = Join-Path -Path $venvPath -ChildPath "Scripts\Activate.ps1"
             if (Test-Path $activateScript) { & $activateScript }
         } else {
-            $pythonExec = Join-Path $venvPath "bin" "python"
-            $env:PATH = "$(Join-Path $venvPath 'bin'):$env:PATH"
+            $pythonExec = Join-Path -Path $venvPath -ChildPath "bin/python"
+            $env:PATH = "$(Join-Path -Path $venvPath -ChildPath 'bin'):$env:PATH"
         }
         Write-Success "Virtual environment activated: $venvPath"
     }
@@ -134,7 +136,8 @@ function Initialize-PythonEnvironment {
     # Upgrade pip if not skipped
     if (-not $SkipPipUpgrade) {
         Write-Info "Upgrading pip..."
-        & $pythonExec -m pip install --upgrade pip *>$null
+        & $pythonExec -m pip install --upgrade pip | Out-Null
+        if ($LASTEXITCODE -ne 0) { Write-Warning "Failed to upgrade pip, continuing..." }
     } else {
         Write-Info "Skipping pip upgrade"
     }
@@ -145,7 +148,7 @@ function Initialize-PythonEnvironment {
         if (-not (Test-Path $RequirementsPath)) {
             throw "Requirements file not found: $RequirementsPath"
         }
-        & $pythonExec -m pip install -r $RequirementsPath
+        & $pythonExec -m pip install -r $RequirementsPath | Out-Null
         if ($LASTEXITCODE -ne 0) { throw "Failed to install Python dependencies." }
     } else {
         Write-Info "Skipping Python dependencies installation"
@@ -185,9 +188,9 @@ if ($FabricWorkspaceName) {
 try {
     # Calculate paths - script is now in utils, but fabric scripts are in ../fabric
     $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-    $FabricScriptsDir = Join-Path (Split-Path -Parent $ScriptDir) "fabric"
+    $FabricScriptsDir = Join-Path -Path (Split-Path -Parent $ScriptDir) -ChildPath "fabric"
     $RepoRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $ScriptDir))
-    $RequirementsPath = Join-Path $FabricScriptsDir "requirements.txt"
+    $RequirementsPath = Join-Path -Path $FabricScriptsDir -ChildPath "requirements.txt"
     
     # Initialize Python environment
     $pythonExec = Initialize-PythonEnvironment -RepoRoot $RepoRoot -SkipVirtualEnv:$SkipPythonVirtualEnvironment -SkipDependencies:$SkipPythonDependencies -SkipPipUpgrade:$SkipPipUpgrade -RequirementsPath $RequirementsPath

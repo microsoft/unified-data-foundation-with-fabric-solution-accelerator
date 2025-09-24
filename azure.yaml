@@ -26,7 +26,7 @@ hooks:
       run: ./infra/scripts/utils/run_python_script_fabric.ps1 -SkipPythonVirtualEnvironment
       interactive: true
       continueOnError: false
-  postdown:
+  predown:
     windows:
       shell: pwsh
       run: ./infra/scripts/utils/remove_python_script_fabric.ps1
