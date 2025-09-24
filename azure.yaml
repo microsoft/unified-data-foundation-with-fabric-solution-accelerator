@@ -17,6 +17,6 @@ infra:
 hooks:
   postprovision:
     shell: pwsh
-    run: ./infra/scripts/fabric/provision_fabric_items.ps1
+    run: ./infra/scripts/utils/run_python_script_fabric.ps1
     interactive: true
     continueOnError: false

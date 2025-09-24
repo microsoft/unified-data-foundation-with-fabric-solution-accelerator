@@ -29,8 +29,8 @@ env:
   AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
   AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
   AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
-  AZURE_ENV_NAME_DEV: ${{ vars.AZURE_ENV_NAME_DEV }}
-  AZURE_RESOURCE_GROUP_NAME_DEV: "rg-udfwfsa-dev"
+  AZURE_ENV_NAME_DEV: ${{ vars.AZURE_ENV_NAME }}
+  AZURE_RESOURCE_GROUP_NAME_DEV: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
   AZURE_FABRIC_WORKSPACE_NAME_DEV: "Unified Data Foundation with Fabric workspace (dev)"
 
 jobs:
@@ -115,22 +115,25 @@ jobs:
           python-version: "3.11"
 
       - name: Install Python Dependencies
-        working-directory: infra/scripts/fabric
+        working-directory: infra/scripts/utils
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          python -m pip install -r ../fabric/requirements.txt
 
       - name: Run Fabric Provisioning Script
-        working-directory: infra/scripts/fabric
+        working-directory: infra/scripts/utils
         run: |
           echo "Running fabric provisioning script..."
 
           # Run the PowerShell provisioning script with parameters
-          pwsh ./provision_fabric_items.ps1 \
+          pwsh ./run_python_script_fabric.ps1 \
             -FabricCapacityName '${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }}' \
             -FabricWorkspaceName '${{ env.AZURE_FABRIC_WORKSPACE_NAME_DEV }}' \
             -FabricAdmins '${{ steps.bicep-deploy.outputs.AZURE_FABRIC_ADMIN_MEMBERS }}' \
-            -FabricAdminsByObjectId '["47369fa5-b1de-4e63-b4f0-5fac0ab317ce"]'
+            -FabricAdminsByObjectId '["47369fa5-b1de-4e63-b4f0-5fac0ab317ce"]' \
+            -SkipPythonVirtualEnvironment \
+            -SkipPythonDependencies \
+            -SkipPipUpgrade
 
           echo "✅ Fabric items provisioning completed"
 
@@ -147,7 +150,7 @@ jobs:
           echo "| Location | ${{ env.AZURE_LOCATION }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Resource Group | [${{ env.AZURE_RESOURCE_GROUP_NAME_DEV }}](${AZURE_RG_URL}) |" >> $GITHUB_STEP_SUMMARY
           echo "| Fabric Capacity | ${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Fabric Workspace | [${{ env.AZURE_FABRIC_WORKSPACE_NAME_DEV }}](${FABRIC_WORKSPACE_URL}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Fabric Workspace | ${{ env.AZURE_FABRIC_WORKSPACE_NAME_DEV }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
           echo "- **Azure Portal**: [View Resource Group](${AZURE_RG_URL})" >> $GITHUB_STEP_SUMMARY

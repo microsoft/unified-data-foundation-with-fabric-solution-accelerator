@@ -23,7 +23,7 @@ For the fastest deployment experience:
 git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
 cd unified-data-foundation-with-fabric-solution-accelerator
 
-# Optional: Customize the Fabric workspace name (defaults to "Unified Data Foundation with Fabric")
+# Optional: Customize the Fabric workspace name (defaults to "Unified Data Foundation with Fabric workspace")
 azd env set AZURE_FABRIC_WORKSPACE_NAME "My Custom Workspace Name"
 
 # Deploy everything with one command
