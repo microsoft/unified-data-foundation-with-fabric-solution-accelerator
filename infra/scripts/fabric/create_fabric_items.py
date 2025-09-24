@@ -377,7 +377,7 @@ except Exception as e:
 #############
 # Workspace #
 #############
-# Docs: https://learn.microsoft.com/en-us/rest/api/fabric/admin/workspaces
+# Docs: https://learn.microsoft.com/rest/api/fabric/admin/workspaces
 
 try:
     # Get capacity ID from capacity name
@@ -429,7 +429,14 @@ try:
         print(f"✅ Created workspace: '{workspace_name}' (ID: {workspace_id})")
 
 except FabricApiError as e:
-    if e.status_code == 404:
+    if e.status_code == 401:
+        print(f"⚠️ WARNING: Unauthorized access to Fabric APIs. Please review your Fabric permissions and Ensure you have proper Fabric licensing and permissions.")
+        print("   📋 Check the following resources:")
+        print("   • Fabric licenses: https://learn.microsoft.com/fabric/enterprise/licenses")
+        print("   • Identity support: https://learn.microsoft.com/rest/api/fabric/articles/identity-support")
+        print("   • Create Entra app with appropriate Fabric permissions: https://learn.microsoft.com/rest/api/fabric/articles/get-started/create-entra-app")
+        sys.exit(0)
+    elif e.status_code == 404:
         print(f"❌ ERROR: Resource not found")
     elif e.status_code == 403:
         print(f"❌ ERROR: Access denied")
@@ -554,7 +561,7 @@ if not fabric_admins and not fabric_admins_by_object_id:
 ####################
 # Folder structure #
 ####################
-# Docs: https://learn.microsoft.com/en-us/rest/api/fabric/core/folders
+# Docs: https://learn.microsoft.com/rest/api/fabric/core/folders
 
 # Prepare variables
 fabric_folder_path_lakehouses = 'lakehouses'
@@ -605,7 +612,7 @@ except Exception as e:
 ##############
 # Lakehouses #
 ##############
-# Docs: https://learn.microsoft.com/en-us/rest/api/fabric/lakehouse/items
+# Docs: https://learn.microsoft.com/rest/api/fabric/lakehouse/items
 
 # Variables
 udfwf_lakehouse_bronze_name = 'maag_bronze'
@@ -674,7 +681,7 @@ except Exception as e:
 #######################
 # Lakehouse CSV files #
 #######################
-# Docs: https://learn.microsoft.com/en-us/fabric/onelake/onelake-access-python
+# Docs: https://learn.microsoft.com/fabric/onelake/onelake-access-python
 
 # Prepare variables
 samples_local_folder_path = os.path.join(repo_root, 'infra', 'data')
@@ -733,7 +740,7 @@ for local_file_path in csv_file_paths:
 #############
 # Notebooks #
 #############
-# Docs: https://learn.microsoft.com/en-us/rest/api/fabric/notebook/items
+# Docs: https://learn.microsoft.com/rest/api/fabric/notebook/items
 
 # Prepare variables
 fabric_notebooks = {}
@@ -1010,7 +1017,7 @@ except Exception as e:
 #################
 # Notebook Jobs #
 #################
-# Docs: https://learn.microsoft.com/en-us/rest/api/fabric/core/job-scheduler
+# Docs: https://learn.microsoft.com/rest/api/fabric/core/job-scheduler
 
 # Prepare variables
 notebooks_to_run = [
@@ -1084,7 +1091,7 @@ else:
 ###################
 # PowerBI Reports #
 ###################
-# Docs: https://learn.microsoft.com/en-us/rest/api/power-bi/imports
+# Docs: https://learn.microsoft.com/rest/api/power-bi/imports
 
 print(f"📊 Deploying Power BI reports")
 

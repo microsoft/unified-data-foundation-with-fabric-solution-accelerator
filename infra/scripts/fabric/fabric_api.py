@@ -445,6 +445,34 @@ class FabricApiClient:
         else:
             raise FabricApiError(f"Failed to assign workspace to capacity: {response.status_code}")
     
+    def delete_workspace(self, workspace_id: str) -> None:
+        """
+        Delete a workspace.
+        
+        Args:
+            workspace_id: ID of the workspace to delete
+            
+        Raises:
+            FabricApiError: If deletion fails
+            
+        Required Scopes:
+            Workspace.ReadWrite.All
+            
+        Reference:
+            https://learn.microsoft.com/en-us/rest/api/fabric/core/workspaces/delete-workspace
+        """
+        self._log(f"Deleting workspace {workspace_id}")
+        
+        response = self._make_request(
+            f"workspaces/{workspace_id}", 
+            method="DELETE"
+        )
+        
+        if response.status_code == 200:
+            self._log(f"Successfully deleted workspace")
+        else:
+            raise FabricApiError(f"Failed to delete workspace: {response.status_code}")
+    
     def add_workspace_role_assignment(self, 
                                     workspace_id: str, 
                                     principal_id: str, 
