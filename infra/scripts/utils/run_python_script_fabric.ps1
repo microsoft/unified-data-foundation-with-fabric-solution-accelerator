@@ -33,10 +33,10 @@
     Skip upgrading pip to latest version.
 
 .EXAMPLE
-    .\provision_fabric_items.ps1 -FabricCapacityName "MyCapacity" -FabricWorkspaceName "UDFWF-Workspace"
+    .\run_python_script_fabric.ps1 -FabricCapacityName "MyCapacity" -FabricWorkspaceName "UDFWF-Workspace"
     
 .EXAMPLE
-    .\provision_fabric_items.ps1 -FabricCapacityName "MyCapacity" -SkipPythonVirtualEnvironment -SkipPythonDependencies
+    .\run_python_script_fabric.ps1 -FabricCapacityName "MyCapacity" -SkipPythonVirtualEnvironment -SkipPythonDependencies
 
 .NOTES
     Prerequisites: Azure CLI (logged in), PowerShell 7+, Python 3.9+, appropriate Fabric capacity permissions
@@ -209,16 +209,17 @@ if ($adminInfo) {
 }
 
 try {
-    # Calculate paths
+    # Calculate paths - script is now in utils, but fabric scripts are in ../fabric
     $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+    $FabricScriptsDir = Join-Path (Split-Path -Parent $ScriptDir) "fabric"
     $RepoRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $ScriptDir))
-    $RequirementsPath = Join-Path $ScriptDir "requirements.txt"
+    $RequirementsPath = Join-Path $FabricScriptsDir "requirements.txt"
     
     # Initialize Python environment
     $pythonExec = Initialize-PythonEnvironment -RepoRoot $RepoRoot -SkipVirtualEnv:$SkipPythonVirtualEnvironment -SkipDependencies:$SkipPythonDependencies -SkipPipUpgrade:$SkipPipUpgrade -RequirementsPath $RequirementsPath
 
-    # Execute Python deployment script
-    Push-Location $ScriptDir
+    # Execute Python deployment script - change to fabric scripts directory
+    Push-Location $FabricScriptsDir
     Write-Warning "Starting Fabric items deployment..."
     
     # Build command arguments

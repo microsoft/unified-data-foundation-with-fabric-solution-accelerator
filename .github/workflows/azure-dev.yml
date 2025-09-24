@@ -116,18 +116,18 @@ jobs:
           python-version: "3.11"
 
       - name: Install Python Dependencies
-        working-directory: infra/scripts/fabric
+        working-directory: infra/scripts/utils
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          python -m pip install -r ../fabric/requirements.txt
 
       - name: Run Fabric Provisioning Script
-        working-directory: infra/scripts/fabric
+        working-directory: infra/scripts/utils
         run: |
           echo "Running fabric provisioning script..."
 
           # Run the PowerShell provisioning script with parameters
-          pwsh ./provision_fabric_items.ps1 \
+          pwsh ./run_python_script_fabric.ps1 \
             -FabricCapacityName '${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }}' \
             -FabricWorkspaceName '${{ env.AZURE_FABRIC_WORKSPACE_NAME_DEV }}' \
             -FabricAdmins '${{ steps.bicep-deploy.outputs.AZURE_FABRIC_ADMIN_MEMBERS }}' \

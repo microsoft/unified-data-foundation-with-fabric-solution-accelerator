@@ -47,20 +47,20 @@ $env:AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 
 ```bash
 git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
-cd unified-data-foundation-with-fabric-solution-accelerator/infra/scripts/fabric
+cd unified-data-foundation-with-fabric-solution-accelerator/infra/scripts/utils
 ```
 
 ### 3. Run Deployment Script
 
 **Linux/macOS/Cloud Shell:**
 ```bash
-chmod +x provision_fabric_items.sh
-./provision_fabric_items.sh
+chmod +x run_python_script_fabric.ps1
+pwsh ./run_python_script_fabric.ps1
 ```
 
 **Windows PowerShell:**
 ```powershell
-.\provision_fabric_items.ps1
+.\run_python_script_fabric.ps1
 ```
 
 > **Note**: Manual scripts do **not** create the Fabric capacity or Azure infrastructure. These must exist beforehand. For complete infrastructure deployment, use `azd up` instead.
@@ -116,18 +116,18 @@ chmod +x provision_fabric_items.sh
 
 **For Linux/macOS/Cloud Shell:**
 ```bash
-cd infra/scripts/fabric
-chmod +x provision_fabric_items.sh
-./provision_fabric_items.sh
+cd infra/scripts/utils
+chmod +x run_python_script_fabric.ps1
+./run_python_script_fabric.ps1
 ```
 
 #### Option B: PowerShell Script
 
 **For Windows PowerShell:**
 ```powershell
-cd infra\scripts\fabric
+cd infra\scripts\utils
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\provision_fabric_items.ps1
+.\run_python_script_fabric.ps1
 ```
 
 ### Step 4: Monitor Deployment Progress
@@ -233,8 +233,8 @@ In your Fabric workspace, verify:
 
 | Issue | Possible Cause | Resolution |
 |-------|----------------|------------|
-| Script not found | Incorrect directory | Ensure you're in `infra/scripts/fabric` directory |
-| Permission denied | Script not executable | Run `chmod +x provision_fabric_items.sh` |
+| Script not found | Incorrect directory | Ensure you're in `infra/scripts/utils` directory |
+| Permission denied | Script not executable | Run `chmod +x run_python_script_fabric.ps1` |
 | Authentication error | Not logged into Azure | Run `az login` and verify authentication |
 | Capacity not found | Wrong capacity name | Verify capacity name with `az fabric capacity list` |
 | Workspace creation failed | Insufficient permissions | Ensure Fabric admin permissions on capacity |
@@ -267,13 +267,13 @@ In your Fabric workspace, verify:
 
 **For Shell Script:**
 ```bash
-bash -x provision_fabric_items.sh
+pwsh -c './run_python_script_fabric.ps1 -Verbose'
 ```
 
 **For PowerShell:**
 ```powershell
 $VerbosePreference = "Continue"
-.\provision_fabric_items.ps1 -Verbose
+.\run_python_script_fabric.ps1 -Verbose
 ```
 
 #### Check Environment Variables
@@ -349,9 +349,9 @@ Create a pipeline step for manual deployment:
   displayName: 'Deploy Fabric Components'
   inputs:
     azureSubscription: '$(serviceConnectionName)'
-    scriptType: 'bash'
+    scriptType: 'powershell'
     scriptLocation: 'scriptPath'
-    scriptPath: 'infra/scripts/fabric/provision_fabric_items.sh'
+    scriptPath: 'infra/scripts/utils/run_python_script_fabric.ps1'
   env:
     AZURE_FABRIC_CAPACITY_NAME: $(fabricCapacityName)
     AZURE_FABRIC_WORKSPACE_NAME: $(fabricWorkspaceName)
@@ -364,9 +364,9 @@ Create a workflow step for manual deployment:
 ```yaml
 - name: Deploy Fabric Components
   run: |
-    cd infra/scripts/fabric
-    chmod +x provision_fabric_items.sh
-    ./provision_fabric_items.sh
+    cd infra/scripts/utils
+    chmod +x run_python_script_fabric.ps1
+    pwsh ./run_python_script_fabric.ps1
   env:
     AZURE_FABRIC_CAPACITY_NAME: ${{ secrets.FABRIC_CAPACITY_NAME }}
     AZURE_FABRIC_WORKSPACE_NAME: ${{ vars.FABRIC_WORKSPACE_NAME }}
