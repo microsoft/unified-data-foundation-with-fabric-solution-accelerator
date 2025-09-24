@@ -24,13 +24,13 @@
     Skip upgrading pip to latest version.
 
 .EXAMPLE
-    .\remove_python_script_fabric.ps1 -FabricWorkspaceName "UDFWF-Workspace"
+    .\run_python_script_fabric_remove.ps1 -FabricWorkspaceName "UDFWF-Workspace"
     
 .EXAMPLE
-    .\remove_python_script_fabric.ps1 -FabricWorkspaceId "12345678-1234-1234-1234-123456789012"
+    .\run_python_script_fabric_remove.ps1 -FabricWorkspaceId "12345678-1234-1234-1234-123456789012"
 
 .EXAMPLE
-    .\remove_python_script_fabric.ps1 -FabricWorkspaceName "MyWorkspace" -SkipPythonVirtualEnvironment -SkipPythonDependencies
+    .\run_python_script_fabric_remove.ps1 -FabricWorkspaceName "MyWorkspace" -SkipPythonVirtualEnvironment -SkipPythonDependencies
 
 .NOTES
     Prerequisites: Azure CLI (logged in), PowerShell 7+, Python 3.9+, appropriate Fabric workspace permissions
@@ -161,15 +161,10 @@ function Initialize-PythonEnvironment {
 $FabricWorkspaceName = Get-ParameterValue $FabricWorkspaceName "AZURE_FABRIC_WORKSPACE_NAME" "Fabric workspace name"
 $FabricWorkspaceId = Get-ParameterValue $FabricWorkspaceId "AZURE_FABRIC_WORKSPACE_ID" "Fabric workspace ID"
 
-# Validate parameters
+# If no parameters provided, use default workspace name (same as create_fabric_items.py)
 if ([string]::IsNullOrWhiteSpace($FabricWorkspaceName) -and [string]::IsNullOrWhiteSpace($FabricWorkspaceId)) {
-    Write-Error "❌ Error: Either workspace name or workspace ID is required"
-    Write-Host ""
-    Write-Warning "Please provide either:"
-    Write-Host "1. Workspace name: -FabricWorkspaceName 'MyWorkspace'" -ForegroundColor White
-    Write-Host "2. Workspace ID: -FabricWorkspaceId '12345678-1234-1234-1234-123456789012'" -ForegroundColor White
-    Write-Host "3. Set the AZURE_FABRIC_WORKSPACE_NAME or AZURE_FABRIC_WORKSPACE_ID environment variable" -ForegroundColor White
-    exit 1
+    $FabricWorkspaceName = "Unified Data Foundation with Fabric workspace"
+    Write-Info "No workspace specified, using default workspace name."
 }
 
 if (-not [string]::IsNullOrWhiteSpace($FabricWorkspaceName) -and -not [string]::IsNullOrWhiteSpace($FabricWorkspaceId)) {

@@ -29,11 +29,11 @@ hooks:
   predown:
     windows:
       shell: pwsh
-      run: ./infra/scripts/utils/remove_python_script_fabric.ps1
+      run: ./infra/scripts/utils/run_python_script_fabric_remove.ps1
       interactive: true
       continueOnError: false
     posix:
       shell: pwsh
-      run: ./infra/scripts/utils/remove_python_script_fabric.ps1 -SkipPythonVirtualEnvironment
+      run: ./infra/scripts/utils/run_python_script_fabric_remove.ps1 -SkipPythonVirtualEnvironment
       interactive: true
       continueOnError: false

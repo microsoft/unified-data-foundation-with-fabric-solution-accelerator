@@ -8,6 +8,7 @@ import os
 ####################
 
 solution_name = "Unified Data Foundation with Fabric"
+workspace_default_name = f"{solution_name} workspace"
 script_dir = os.path.dirname(os.path.abspath(__file__))
 # Go up three levels from infra/scripts/fabric to repo root
 repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
@@ -25,13 +26,11 @@ parser.add_argument('--workspaceId', required=False,
                     help='Workspace ID (GUID) to delete')
 args = parser.parse_args()
 
-# Validate arguments
+# Validate arguments and set defaults
 if not args.workspaceName and not args.workspaceId:
-    print("⚠️ WARNING: Either --workspaceName or --workspaceId must be provided")
-    print("   Usage: python remove_fabric_workspace.py --workspaceName 'MyWorkspace'")
-    print("   Usage: python remove_fabric_workspace.py --workspaceId '12345678-1234-1234-1234-123456789012'")
-    print("   Exiting gracefully...")
-    sys.exit(0)
+    # Use default workspace name if no parameters provided
+    args.workspaceName = workspace_default_name
+    print(f"ℹ️  No workspace specified, using default workspace name: '{args.workspaceName}'")
 
 if args.workspaceName and args.workspaceId:
     print("⚠️ WARNING: Please specify either --workspaceName or --workspaceId, not both")
