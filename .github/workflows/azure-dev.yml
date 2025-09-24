@@ -130,7 +130,10 @@ jobs:
           pwsh ./provision_fabric_items.ps1 \
             -FabricCapacityName '${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }}' \
             -FabricWorkspaceName '${{ env.AZURE_FABRIC_WORKSPACE_NAME_DEV }}' \
-            -FabricAdmins '${{ steps.bicep-deploy.outputs.AZURE_FABRIC_ADMIN_MEMBERS }}'
+            -FabricAdmins '${{ steps.bicep-deploy.outputs.AZURE_FABRIC_ADMIN_MEMBERS }}' \
+            -SkipPythonVirtualEnvironment \
+            -SkipPythonDependencies \
+            -SkipPipUpgrade
 
           echo "✅ Fabric items provisioning completed"
 
@@ -147,7 +150,7 @@ jobs:
           echo "| Location | ${{ env.AZURE_LOCATION }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Resource Group | [${{ env.AZURE_RESOURCE_GROUP_NAME_DEV }}](${AZURE_RG_URL}) |" >> $GITHUB_STEP_SUMMARY
           echo "| Fabric Capacity | ${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Fabric Workspace | [${{ env.AZURE_FABRIC_WORKSPACE_NAME_DEV }}](${FABRIC_WORKSPACE_URL}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Fabric Workspace | ${{ env.AZURE_FABRIC_WORKSPACE_NAME_DEV }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
           echo "- **Azure Portal**: [View Resource Group](${AZURE_RG_URL})" >> $GITHUB_STEP_SUMMARY
