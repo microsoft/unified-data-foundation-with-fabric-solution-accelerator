@@ -32,6 +32,11 @@
     • Service Principal IDs (GUIDs): "12345678-1234-1234-1234-123456789012"
     If not provided, will use AZURE_FABRIC_ADMIN_MEMBERS environment variable.
 
+.PARAMETER FabricAdminsByObjectId
+    JSON array string of object IDs (GUIDs) to add as workspace administrators. These will be tried as both User and ServicePrincipal types.
+    Format: "12345678-1234-1234-1234-123456789012"
+    If not provided, will use AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID environment variable.
+
 .EXAMPLE
     .\provision_fabric_items.ps1 -FabricCapacityName "MyCapacity" -FabricWorkspaceName "UDFWF-Workspace"
     
@@ -51,6 +56,16 @@
     .\provision_fabric_items.ps1 -FabricCapacityName "MyCapacity" -FabricAdmins '["user@contoso.com", "12345678-1234-1234-1234-123456789012"]'
     
     Deploys components and assigns both a user and service principal as administrators.
+
+.EXAMPLE
+    .\provision_fabric_items.ps1 -FabricCapacityName "MyCapacity" -FabricAdminsByObjectId '["12345678-1234-1234-1234-123456789012", "87654321-4321-4321-4321-210987654321"]'
+    
+    Deploys components and assigns administrators by their object IDs using fallback logic for both User and ServicePrincipal types.
+
+.EXAMPLE
+    .\provision_fabric_items.ps1 -FabricCapacityName "MyCapacity" -FabricAdmins '["user@contoso.com"]' -FabricAdminsByObjectId '["12345678-1234-1234-1234-123456789012"]'
+    
+    Deploys components using both FabricAdmins (with Graph API resolution) and FabricAdminsByObjectId (with fallback logic).
 
 .EXAMPLE
     $env:AZURE_FABRIC_CAPACITY_NAME = "MyCapacity"; .\provision_fabric_items.ps1
@@ -102,6 +117,7 @@
     - AZURE_FABRIC_CAPACITY_NAME: Default capacity name
     - AZURE_FABRIC_WORKSPACE_NAME: Default workspace name  
     - AZURE_FABRIC_ADMIN_MEMBERS: Default administrators JSON array
+    - AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID: Default administrators by object ID JSON array
 #>
 
 param(
@@ -112,7 +128,10 @@ param(
     [string]$FabricWorkspaceName,
     
     [Parameter(Mandatory = $false, HelpMessage = 'JSON array of administrators to add to the workspace (e.g., ''["user1@contoso.com", "12345678-1234-1234-1234-123456789012"]'')')]
-    [string]$FabricAdmins
+    [string]$FabricAdmins,
+    
+    [Parameter(Mandatory = $false, HelpMessage = 'JSON array of object IDs (GUIDs) to add as workspace administrators (e.g., ''["12345678-1234-1234-1234-123456789012", "87654321-4321-4321-4321-210987654321"]'')')]
+    [string]$FabricAdminsByObjectId
 )
 
 # Set error action preference
@@ -150,6 +169,14 @@ if ([string]::IsNullOrWhiteSpace($FabricAdmins)) {
     }
 }
 
+# Check if FabricAdminsByObjectId is provided, otherwise use environment variable
+if ([string]::IsNullOrWhiteSpace($FabricAdminsByObjectId)) {
+    $FabricAdminsByObjectId = $env:AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID
+    if (-not [string]::IsNullOrWhiteSpace($FabricAdminsByObjectId)) {
+        Write-Host "Using Fabric admins by object ID from environment variable" -ForegroundColor Cyan
+    }
+}
+
 Write-Host "Starting Microsoft Fabric deployment script..." -ForegroundColor Green
 Write-Host "Fabric Capacity Name: $FabricCapacityName" -ForegroundColor Cyan
 
@@ -166,6 +193,13 @@ if ($FabricAdmins) {
 }
 else {
     Write-Host "Fabric Admins: None specified" -ForegroundColor Yellow
+}
+
+if ($FabricAdminsByObjectId) {
+    Write-Host "Fabric Admins by Object ID: $FabricAdminsByObjectId" -ForegroundColor Cyan
+}
+else {
+    Write-Host "Fabric Admins by Object ID: None specified" -ForegroundColor Yellow
 }
 
 try {
@@ -302,6 +336,20 @@ try {
         }
         catch {
             Write-Host "Warning: Failed to parse fabric admins JSON array, proceeding without..." -ForegroundColor Yellow
+        }
+    }
+    
+    # Handle fabric admins by object ID JSON array
+    if ($FabricAdminsByObjectId) {
+        try {
+            $adminsByObjectIdArray = $FabricAdminsByObjectId | ConvertFrom-Json
+            if ($adminsByObjectIdArray -and $adminsByObjectIdArray.Count -gt 0) {
+                $pythonArgs += "--fabricAdminsByObjectId"
+                $pythonArgs += $adminsByObjectIdArray
+            }
+        }
+        catch {
+            Write-Host "Warning: Failed to parse fabric admins by object ID JSON array, proceeding without..." -ForegroundColor Yellow
         }
     }
     
