@@ -27,14 +27,16 @@ args = parser.parse_args()
 
 # Validate arguments
 if not args.workspaceName and not args.workspaceId:
-    print("❌ ERROR: Either --workspaceName or --workspaceId must be provided")
+    print("⚠️ WARNING: Either --workspaceName or --workspaceId must be provided")
     print("   Usage: python remove_fabric_workspace.py --workspaceName 'MyWorkspace'")
     print("   Usage: python remove_fabric_workspace.py --workspaceId '12345678-1234-1234-1234-123456789012'")
-    sys.exit(1)
+    print("   Exiting gracefully...")
+    sys.exit(0)
 
 if args.workspaceName and args.workspaceId:
-    print("❌ ERROR: Please specify either --workspaceName or --workspaceId, not both")
-    sys.exit(1)
+    print("⚠️ WARNING: Please specify either --workspaceName or --workspaceId, not both")
+    print("   Exiting gracefully...")
+    sys.exit(0)
 
 print(f"🗑️  Starting {solution_name} workspace removal from Microsoft Fabric")
 if args.workspaceName:
@@ -56,10 +58,11 @@ try:
     fabric_client = create_fabric_client()
     print("✅ Fabric API client authenticated successfully")
 except Exception as e:
-    print(f"❌ ERROR: Failed to authenticate with Fabric APIs")
+    print(f"⚠️ WARNING: Failed to authenticate with Fabric APIs")
     print(f"   Details: {str(e)}")
     print("   Solution: Please ensure you are logged in with Azure CLI: az login")
-    sys.exit(1)
+    print("   Exiting gracefully...")
+    sys.exit(0)
 
 ###########################
 # Workspace lookup/verify #
@@ -74,11 +77,12 @@ try:
             (w for w in workspaces if w['displayName'].lower() == workspace_name.lower()), None)
         
         if not workspace:
-            print(f"❌ ERROR: Workspace '{workspace_name}' not found")
+            print(f"⚠️ WARNING: Workspace '{workspace_name}' not found")
             print("   Available workspaces:")
             for ws in workspaces:
                 print(f"   - {ws['displayName']} (ID: {ws['id']})")
-            sys.exit(1)
+            print("   Exiting gracefully...")
+            sys.exit(0)
         
         workspace_id = workspace['id']
         workspace_display_name = workspace['displayName']
@@ -91,38 +95,42 @@ try:
             (w for w in workspaces if w['id'].lower() == workspace_id.lower()), None)
         
         if not workspace:
-            print(f"❌ ERROR: Workspace with ID '{workspace_id}' not found")
+            print(f"⚠️ WARNING: Workspace with ID '{workspace_id}' not found")
             print("   Available workspaces:")
             for ws in workspaces:
                 print(f"   - {ws['displayName']} (ID: {ws['id']})")
-            sys.exit(1)
+            print("   Exiting gracefully...")
+            sys.exit(0)
         
         workspace_display_name = workspace['displayName']
         print(f"✅ Found workspace: '{workspace_display_name}' (ID: {workspace_id})")
 
 except FabricApiError as e:
     if e.status_code == 401:
-        print(f"❌ ERROR: Unauthorized access to Fabric APIs")
+        print(f"⚠️ WARNING: Unauthorized access to Fabric APIs")
         print("   ⚠️ WARNING: Please review your Fabric permissions and licensing:")
         print("   📋 Check these resources:")
         print("   • Fabric licenses: https://learn.microsoft.com/en-us/fabric/enterprise/licenses")
         print("   • Identity support: https://learn.microsoft.com/en-us/rest/api/fabric/articles/identity-support")
         print("   • Create Entra app: https://learn.microsoft.com/en-us/rest/api/fabric/articles/get-started/create-entra-app")
         print("   Solution: Ensure you have proper Fabric licensing and permissions")
+        print("   Exiting gracefully...")
         sys.exit(0)
     elif e.status_code == 404:
-        print(f"❌ ERROR: Resource not found")
+        print(f"⚠️ WARNING: Resource not found")
     elif e.status_code == 403:
-        print(f"❌ ERROR: Access denied")
+        print(f"⚠️ WARNING: Access denied")
         print("   Solution: Ensure you have appropriate permissions")
     else:
-        print(f"❌ ERROR: Fabric API error")
+        print(f"⚠️ WARNING: Fabric API error")
     print(f"   Status Code: {e.status_code}")
     print(f"   Details: {str(e)}")
-    sys.exit(1)
+    print("   Exiting gracefully...")
+    sys.exit(0)
 except Exception as e:
-    print(f"❌ ERROR: Unexpected error during workspace lookup: {str(e)}")
-    sys.exit(1)
+    print(f"⚠️ WARNING: Unexpected error during workspace lookup: {str(e)}")
+    print("   Exiting gracefully...")
+    sys.exit(0)
 
 ####################
 # Confirmation     #
@@ -142,27 +150,31 @@ try:
 
 except FabricApiError as e:
     if e.status_code == 401:
-        print(f"❌ ERROR: Unauthorized access to Fabric APIs")
+        print(f"⚠️ WARNING: Unauthorized access to Fabric APIs")
         print("   ⚠️ WARNING: Please review your Fabric permissions and licensing:")
         print("   📋 Check these resources:")
         print("   • Fabric licenses: https://learn.microsoft.com/en-us/fabric/enterprise/licenses")
         print("   • Identity support: https://learn.microsoft.com/en-us/rest/api/fabric/articles/identity-support")
         print("   • Create Entra app: https://learn.microsoft.com/en-us/rest/api/fabric/articles/get-started/create-entra-app")
         print("   Solution: Ensure you have proper Fabric licensing and permissions")
+        print("   Exiting gracefully...")
         sys.exit(0)
     elif e.status_code == 404:
-        print(f"❌ ERROR: Workspace not found (may have already been deleted)")
+        print(f"⚠️ WARNING: Workspace not found (may have already been deleted)")
+        print("   This is typically not an issue during cleanup operations")
     elif e.status_code == 403:
-        print(f"❌ ERROR: Access denied")
+        print(f"⚠️ WARNING: Access denied")
         print("   Solution: Ensure you have Admin permissions on this workspace")
     else:
-        print(f"❌ ERROR: Fabric API error")
+        print(f"⚠️ WARNING: Fabric API error")
     print(f"   Status Code: {e.status_code}")
     print(f"   Details: {str(e)}")
-    sys.exit(1)
+    print("   Exiting gracefully...")
+    sys.exit(0)
 except Exception as e:
-    print(f"❌ ERROR: Unexpected error during workspace deletion: {str(e)}")
-    sys.exit(1)
+    print(f"⚠️ WARNING: Unexpected error during workspace deletion: {str(e)}")
+    print("   Exiting gracefully...")
+    sys.exit(0)
 
 ##################
 # End of program #
