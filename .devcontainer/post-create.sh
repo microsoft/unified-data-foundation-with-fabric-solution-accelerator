@@ -8,7 +8,7 @@ set -e
 echo "🚀 Setting up Unified Data Foundation with Fabric development environment..."
 
 # Note: Core tools already provided by devcontainer.json:
-# - Python 3.11 (base image)
+# - Python 3.x (base image) with pip and venv
 # - Azure CLI + Bicep (azure-cli feature)
 # - Git (git feature)  
 # - GitHub CLI (github-cli feature)
@@ -20,28 +20,33 @@ echo "🚀 Setting up Unified Data Foundation with Fabric development environmen
 echo "📦 Updating package lists..."
 sudo apt-get update
 
-# Install python3-venv and python3-pip explicitly to avoid ensurepip issues
-echo "🐍 Installing Python venv and pip packages..."
-sudo apt-get install -y python3-venv python3-pip python3-dev
+# Note: python3-venv, python3-pip, and python3-dev are not available as separate packages
+# in the Python dev container base image. The venv module is built into Python 3.3+
+# and pip is already pre-installed.
+
+# Verify Python and pip are available
+echo "🐍 Verifying Python installation..."
+python3 --version
+python3 -m pip --version
 
 # Upgrade pip
 echo "🐍 Upgrading pip..."
 python3 -m pip install --upgrade pip
 
 # Install Python requirements for the project
-echo "📋 Preparing Python environment..."
+echo "📋 Installing Python dependencies globally..."
 
-# Note: Project-specific dependencies (Azure libraries, requests, etc.) are installed by deployment scripts in isolated virtual environments
-# This ensures consistency between development and deployment, avoiding version conflicts
-# Only install development tools and convenience packages globally
-
-# Verify that requirements files exist (deployment scripts will install them in venvs)
+# Install Fabric requirements globally so they're pre-installed for deployment scripts
+# This improves deployment script performance by avoiding repeated installations
 if [ -f "./infra/scripts/fabric/requirements.txt" ]; then
-    echo "✅ Fabric script requirements.txt found"
+    echo "📦 Installing Fabric script requirements globally..."
+    python3 -m pip install -r "./infra/scripts/fabric/requirements.txt"
+    echo "✅ Fabric script requirements installed successfully"
 else
     echo "⚠️ Warning: ./infra/scripts/fabric/requirements.txt not found"
 fi
 
+# Verify that other requirements files exist (for reference)
 if [ -f "./src/requirements.txt" ]; then
     echo "✅ Source requirements.txt found"
 else
@@ -112,7 +117,7 @@ cat > ~/WORKSPACE_INFO.md << 'EOF'
 ## Available Tools
 - Azure CLI (`az`) + Bicep
 - Azure Developer CLI (`azd`)
-- Python 3.11 with pip, venv, and common dependencies pre-installed
+- Python 3.11+ with pip, venv, and common dependencies pre-installed
 - PowerShell
 - Git & GitHub CLI
 - Jupyter Lab
@@ -139,8 +144,9 @@ cat > ~/WORKSPACE_INFO.md << 'EOF'
 ## Virtual Environment Notes
 - Python venv module is available and configured in the container base
 - Development tools are pre-installed globally for convenience
-- Project dependencies (Azure libraries, requests, etc.) are installed by deployment scripts in isolated virtual environments
-- This approach ensures consistency between development and deployment while avoiding version conflicts
+- Fabric deployment dependencies (Azure libraries, requests, etc.) are pre-installed globally for improved performance
+- Additional project dependencies can be installed by deployment scripts in isolated virtual environments
+- This approach balances convenience with flexibility while avoiding version conflicts
 
 Enjoy coding! 🎉
 EOF
