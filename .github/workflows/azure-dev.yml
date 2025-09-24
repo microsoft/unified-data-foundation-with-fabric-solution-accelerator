@@ -31,7 +31,7 @@ env:
   AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
   AZURE_ENV_NAME_DEV: ${{ vars.AZURE_ENV_NAME }}
   AZURE_RESOURCE_GROUP_NAME_DEV: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
-  AZURE_FABRIC_WORKSPACE_NAME_DEV: "Unified Data Foundation with Fabric workspace"
+  AZURE_FABRIC_WORKSPACE_NAME_DEV: "Unified Data Foundation with Fabric workspace (dev)"
 
 jobs:
   build:
