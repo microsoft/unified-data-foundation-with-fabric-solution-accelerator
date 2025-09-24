@@ -25,7 +25,6 @@ while [[ $# -gt 0 ]]; do
     --schemaname) schemaname="$2"; shift 2;;
     --cluster-id) cluster_id="$2"; shift 2;;
     --catalog-managed-location) catalog_managed_location="$2"; shift 2;;
-    --fabric-admins) fabric_admins="$2"; shift 2;;
     *) echo "Unknown argument: $1"; exit 1;;
   esac
 done
@@ -38,36 +37,6 @@ prompt_if_missing catalogname "Enter Catalog Name (e.g. maagcatalog)"
 prompt_if_missing schemaname "Enter Schema Name (e.g. sales)"
 prompt_if_missing cluster_id "Enter Cluster ID"
 prompt_if_missing catalog_managed_location "Enter Catalog Managed Location (external location name or URI)"
-
-# Check for fabric admins from environment variable if not provided
-# Note: This parameter is for consistency with Fabric deployment scripts
-# but is not currently used in Databricks deployment
-if [ -z "$fabric_admins" ]; then
-  fabric_admins="$AZURE_FABRIC_ADMIN_MEMBERS"
-  if [ -n "$fabric_admins" ]; then
-    echo "Fabric admins parameter detected from environment variable (not used in Databricks deployment)"
-  fi
-fi
-
-# Parse fabric admins JSON array if provided (for potential future Fabric integration)
-fabric_admins_args=()
-if [ -n "$fabric_admins" ]; then
-  # Check if jq is available for JSON parsing
-  if command -v jq &> /dev/null; then
-    # Parse JSON array using jq
-    while IFS= read -r admin; do
-      fabric_admins_args+=("$admin")
-    done < <(echo "$fabric_admins" | jq -r '.[]' 2>/dev/null || echo "")
-    
-    if [ ${#fabric_admins_args[@]} -gt 0 ]; then
-      echo "Parsed ${#fabric_admins_args[@]} administrator(s) from JSON array"
-    else
-      echo "Warning: Failed to parse fabric admins JSON array, skipping..."
-    fi
-  else
-    echo "Warning: jq not available for JSON parsing, fabric admins parameter ignored"
-  fi
-fi
 
 # Check Python
 if ! command -v python &> /dev/null; then
