@@ -64,20 +64,21 @@ Before starting, ensure your deployment identity has the following requirements.
 
 ## Deployment Overview
 
-This solution accelerator uses a two-phase deployment approach that creates a complete data foundation solution with medallion architecture (Bronze-Silver-Gold).
+This solution accelerator uses a two-phase deployment approach that creates a complete data foundation solution with medallion architecture (Bronze-Silver-Gold). The deployment is designed to be **idempotent** and **safe to re-run**, intelligently detecting existing resources and only creating what's missing.
 
 The deployment executes in two coordinated phases using dedicated scripts:
 
-1. **Infrastructure Provisioning** - Executes [`main.bicep`](../infra/main.bicep) to create:
-   - **Microsoft Fabric Capacity**: Dedicated compute resources with configured admin permissions
+1. **Infrastructure Provisioning** - Executes [`main.bicep`](../infra/main.bicep) to create Azure resources using [ARM idempotency](https://learn.microsoft.com/azure/azure-resource-manager/templates/deployment-tutorial-local-template?tabs=azure-powershell#deploy-template):
+   - **Microsoft Fabric Capacity**: Dedicated compute resources with configured admin permissions (updates configuration if parameters change)
    - **Resource Group**: Container for all Azure resources
 
-2. **Fabric Workspace Setup** - Runs [`run_python_script_fabric.ps1`](../infra/scripts/utils/run_python_script_fabric.ps1) orchestrator and [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) deployment script to create:
-   - **Workspace**: Organized container with folder structure for all Fabric items
-   - **Lakehouses**: 3-tier medallion architecture (`maag_bronze`, `maag_silver`, `maag_gold`)
-   - **Notebooks**: Data transformation and management notebooks organized by processing layer
-   - **Sample Data**: Representative CSV files uploaded to bronze lakehouse for testing
-   - **Power BI Reports**: Dashboard components for data visualization (if present)
+2. **Fabric Workspace Setup** - Runs [`run_python_script_fabric.ps1`](../infra/scripts/utils/run_python_script_fabric.ps1) orchestrator and [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) deployment script to intelligently manage Fabric resources:
+   - **Workspace**: Detects existing workspace by name or creates new one, assigns to specified capacity
+   - **Lakehouses**: Creates missing 3-tier medallion architecture (`maag_bronze`, `maag_silver`, `maag_gold`) while preserving existing data
+   - **Notebooks**: Updates existing notebooks with latest content or creates missing ones with proper lakehouse references ⚠️ *overwrites customizations*
+   - **Sample Data**: Uploads CSV files to bronze lakehouse ⚠️ *overwrites existing files with same names*
+   - **Power BI Reports**: Creates or overwrites dashboard components for data visualization ⚠️ *replaces existing reports with same names*
+   - **Administrators**: Adds new workspace administrators without removing existing ones
 
 The deployment orchestration coordinates both phases, passing deployment parameters and ensuring proper sequencing. See [deployment options](#deployment-options) for different ways to run this deployment based on your preferred environment.
 
@@ -649,7 +650,7 @@ env:
 
 </details>
 
-### 👥 Administrator Configuration
+### 👥 Fabric Workspace Administrator Configuration
 
 Manage workspace administrators and security permissions for the Fabric workspace. These parameters are processed by both the Bicep template ([`main.bicep`](../infra/main.bicep)) for capacity-level admins and the Fabric deployment script ([`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py)) for workspace-level admins.
 
@@ -724,7 +725,7 @@ Administrators configured through these parameters will have **Admin** role on t
 
 </details>
 
-### 🐍 Environment Configuration Options
+### 🐍 Python Environment Configuration Options
 
 Configure deployment behavior and troubleshooting options. These parameters are handled by the PowerShell orchestration script ([`run_python_script_fabric.ps1`](../infra/scripts/utils/run_python_script_fabric.ps1)).
 
@@ -794,6 +795,121 @@ These parameters are automatically optimized in [`azure-dev.yml`](../.github/wor
 
 ---
 
+## Known Limitations
+
+This section documents known limitations in the deployment process and their workarounds.
+
+### 🔒 Power BI API Parameter Updates
+
+**Issue**: Service Principals cannot update Power BI dataset parameters via API, resulting in HTTP 403 errors.
+
+**Impact**: 
+- During automated deployment, if deployment identity is a Service Principal or a Managed Identity, Power BI reports are deployed but dataset parameters (SQL endpoint connection strings) may not be automatically configured
+- Reports may show connection errors until manually configured
+
+**Technical Details**:
+The [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) script handles this gracefully:
+
+```python
+try:
+    powerbi_client.update_powerbi_dataset_parameters(dataset_id=dataset['id'], parameters=[
+        {"name": "sqlEndpoint", "newValue": sql_endpoint},
+        {"name": "database", "newValue": database_name}
+    ])
+    print(f"✅ Dataset parameters updated successfully for '{report_name}'")
+except Exception as param_error:
+    if "HTTP 403" in str(param_error):
+        print(f"⚠️ WARNING: Cannot update dataset parameters automatically for '{report_name}'")
+        print(f"    Reason: API access restricted for service principal: {str(param_error)}")
+        print(f"    Manual action required:")
+        print(f"📋 Continuing deployment without dataset parameter updates...")
+```
+
+**Workaround**: 
+- The deployment continues successfully despite this limitation
+- Follow the manual configuration steps in the [Power BI Deployment Guide](./DeploymentGuidePowerBI.md) to complete the report setup
+- This typically involves updating the `sqlEndpoint` and `database` parameters in the Power BI service
+
+---
+
+### 👤 Graph API Principal (user or service principal) Lookup Limitations
+
+**Issue**: The deployment identity may lack permissions to query user object IDs from Azure Active Directory via Microsoft Graph API.
+
+**Impact**:
+- When using `--fabricAdmins` with user principal names (UPNs), the script may fail to resolve user identities
+- Service Principals may successfully create workspaces but fail to add human users as administrators
+- This can result in workspaces that are only accessible to the deployment service principal
+
+**Technical Details**:
+The [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) script implements fallback logic:
+
+```python
+def detect_principal_type(admin_identifier, graph_client=None):
+    try:
+        # Use Graph API to resolve the principal
+        principal_type, object_id, principal_data = graph_client.resolve_principal(admin_identifier)
+        return principal_type, object_id, principal_data
+    except GraphApiError as e:
+        # Convert Graph API errors to ValueError for backward compatibility
+        print(f"⚠️ WARNING: Graph API lookup failed for '{admin_identifier}': {str(e)}")
+        # Fallback to original logic if Graph API is not available
+        if is_valid_guid(admin_identifier):
+            return "ServicePrincipal", admin_identifier, {"id": admin_identifier, "displayName": "Unknown"}
+```
+
+**Workarounds**:
+
+1. **Use Object IDs Instead**: Configure administrators using the `--fabricAdminsByObjectId` parameter or `AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID` environment variable as described in the [advanced configuration options](#advanced-configuration-options):
+   ```bash
+   azd env set AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID '["87654321-4321-4321-4321-210987654321"]'
+   ```
+   
+   The script automatically tries both User and ServicePrincipal types for object IDs:
+   ```python
+   for principal_type in ["User", "ServicePrincipal"]:
+       # Try both User and ServicePrincipal types
+   ```
+
+2. **Post-Deployment Admin Assignment**: Use the dedicated admin management scripts:
+   - [`add_fabric_workspace_admins.py`](../infra/scripts/fabric/add_fabric_workspace_admins.py) - Direct Python script for admin assignment
+   - [`run_python_script_fabric_admins.ps1`](../infra/scripts/utils/run_python_script_fabric_admins.ps1) - PowerShell orchestrator script
+   
+   These scripts can add administrators to all available Fabric workspaces after initial deployment.
+
+---
+
+### 🔐 Fabric REST API Permission Issues
+
+**Issue**: Service Principals may lack sufficient permissions to access Microsoft Fabric REST APIs.
+
+**Impact**: 
+- Deployment fails during workspace creation or management operations
+- Graceful exit with clear guidance on permission requirements
+
+**Technical Details**:
+The [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) script provides specific error handling for authorization failures:
+
+```python
+except FabricApiError as e:
+    if e.status_code == 401:
+        print(f"⚠️ WARNING: Unauthorized access to Fabric APIs. Please review your Fabric permissions and Ensure you have proper Fabric licensing and permissions.")
+        print("   📋 Check the following resources:")
+        print("   • Fabric licenses: https://learn.microsoft.com/fabric/enterprise/licenses")
+        print("   • Identity support: https://learn.microsoft.com/rest/api/fabric/articles/identity-support")
+        print("   • Create Entra app with appropriate Fabric permissions: https://learn.microsoft.com/rest/api/fabric/articles/get-started/create-entra-app")
+        sys.exit(0)  # Graceful exit with guidance
+```
+
+**Resolution**:
+1. **Verify Fabric Licensing**: Ensure your organization has appropriate [Microsoft Fabric licenses](https://learn.microsoft.com/fabric/enterprise/licenses)
+2. **Review Identity Configuration**: Follow the [Fabric Identity Support](https://learn.microsoft.com/rest/api/fabric/articles/identity-support) documentation
+3. **Configure Service Principal**: If using a service principal, ensure it's properly configured following [Create Entra App](https://learn.microsoft.com/rest/api/fabric/articles/get-started/create-entra-app) guidance
+4. **Check API Permissions**: Verify the deployment identity has the required Fabric REST API permissions as listed in the [prerequisites](#prerequisites)
+
+The script performs a graceful exit (`sys.exit(0)`) rather than failing abruptly, allowing you to resolve permissions and retry the deployment.
+
+---
 
 ## Additional Resources
 
