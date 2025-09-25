@@ -23,8 +23,9 @@ azd up
 ```
 
 During deployment, you'll specify:
-- **Environment name** (e.g., "dev", "prod") 
-- **Azure region** (e.g., "eastus", "westeurope")
+- **Environment name** (e.g., "udfwf-dev"). This will be used to build the name of the deployed Azure resources.
+- **Azure subscription**.
+- **Azure resource group**.
 
 **What you get**: Complete medallion architecture with Fabric capacity, lakhouses (Bronze/Silver/Gold), notebooks, sample data, and Power BI reports.
 
