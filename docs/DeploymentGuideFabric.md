@@ -1,319 +1,112 @@
 # Microsoft Fabric Deployment Guide
 
-This guide describes how to deploy the **Unified Data Foundation with Fabric** solution accelerator using the **Azure Developer CLI (azd)** - the recommended deployment method.
-
-## Prerequisites
-
-Before starting, ensure you have:
-
-- **Azure subscription** with appropriate permissions to create Fabric resources
-- One of the following environments:
-  - **Local machine** with [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) installed
-  - **Azure Cloud Shell** (azd can be installed during deployment)
-  - **GitHub Codespaces** (azd can be installed during deployment)
-
----
+Deploy the **Unified Data Foundation with Fabric** solution accelerator using Azure Developer CLI - get a complete data platform with medallion architecture in minutes.
 
 ## 🚀 Quick Start
 
-For the fastest deployment experience:
+**One-command deployment** - Deploy everything with Azure Developer CLI ([prerequisites required](#prerequisites)):
 
 ```bash
-# Clone repository
+# Clone and navigate to repository
 git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
 cd unified-data-foundation-with-fabric-solution-accelerator
 
-# Optional: Customize the Fabric workspace name (defaults to "Unified Data Foundation with Fabric workspace")
-azd env set AZURE_FABRIC_WORKSPACE_NAME "My Custom Workspace Name"
+# Authenticate (required)
+az login
+azd auth login
 
-# Deploy everything with one command
+# Optional: Customize workspace name
+azd env set AZURE_FABRIC_WORKSPACE_NAME "My Analytics Platform"
+
+# Deploy everything
 azd up
 ```
 
-You'll be prompted for:
-- **Environment name** (e.g., "dev", "test", "prod")
-- **Azure region** (e.g., "eastus", "westus2")
+During deployment, you'll specify:
+- **Environment name** (e.g., "udfwf-dev"). This will be used to build the name of the deployed Azure resources.
+- **Azure subscription**.
+- **Azure resource group**.
 
-**That's it!** `azd up` handles everything: infrastructure provisioning, Fabric workspace creation, data deployment, and admin configuration.
+**What you get**: Complete medallion architecture with Fabric capacity, lakhouses (Bronze/Silver/Gold), notebooks, sample data, and Power BI reports.
 
+### Next Steps
+- **First deployment**: Follow the commands above - they work in [multiple environments](#deployment-options)
+- **Need different setup**: See [deployment environment options](#deployment-options) (Cloud Shell, Codespaces, etc.)
+- **Understand the process**: Review [deployment overview](#deployment-overview) for technical details
+- **See what's created**: Check [deployment results](#deployment-results) for detailed component overview with screenshots
+- **Want to customize**: Explore [configuration options](#advanced-configuration-options) for naming, capacity sizing, and admin setup
+- **Limitations**: Review [known limitations](#known-limitations) for common issues and workarounds
+- **Remove environment**: Use [environment cleanup](#environment-cleanup) to completely remove your deployment
+
+---
+
+## Prerequisites
+
+Before starting, ensure your deployment identity has the following requirements.
+
+> **📋 Deployment Identity Types**
+> 
+> The deployment can be executed using different identity types:
+> - **User Account**: Interactive deployment using your Azure AD credentials
+> - **Service Principal**: Application identity for automated/CI-CD scenarios  
+> - **Managed Identity**: Azure-managed identity for secure automated deployments
+>
+> For more details, see [Fabric Identity Support](https://learn.microsoft.com/rest/api/fabric/articles/identity-support)
+
+### 🔐 Azure Permissions
+- [ ] **Resource Group Access**: Ensure your deployment identity has permissions on target Resource Group to deploy Bicep templates and create Azure resources using appropriate [Azure RBAC built-in roles](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles) (e.g. has [Contributor](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#contributor) or [Owner](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#owner)) or appropriate [Azure RBAC custom role](https://learn.microsoft.com/azure/role-based-access-control/custom-roles) with necessary permissions
+- [ ] **`Microsoft.Fabric` Resource Provider Access**: Verify your Azure Subscription has [Microsoft.Fabric resource provider](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers) enabled and your deployment identity has permissions on Resource Group to create [Microsoft Fabric capacity resource](https://learn.microsoft.com/azure/templates/microsoft.fabric/capacities?pivots=deployment-language-bicep)
+
+### 🔗 API Permissions
+- [ ] **Microsoft Graph API - `User.Read`**: Delegated permission to read signed-in user profile information using [Microsoft Graph User permissions](https://learn.microsoft.com/graph/permissions-reference#user-permissions)
+- [ ] **Microsoft Graph API - `openid`**: Delegated permission for sign in and user profile authentication using [OpenID Connect scopes](https://learn.microsoft.com/entra/identity-platform/scopes-oidc)
+- [ ] **Fabric REST API - Workspace Management**: Access to create and manage Fabric workspaces for workspace structure deployment using [Fabric workspace APIs](https://learn.microsoft.com/rest/api/fabric/core/workspaces)
+- [ ] **Fabric REST API - Item Creation**: Access to create lakehouses, notebooks, and reports for Fabric content deployment using [Fabric item APIs](https://learn.microsoft.com/rest/api/fabric/core/items)
+- [ ] **Fabric REST API - Content Upload**: Access to upload files and manage workspace content for sample data and notebook deployment using [Fabric REST API scopes](https://learn.microsoft.com/rest/api/fabric/articles/scopes)
+- [ ] **Power BI API - `Tenant.Read.All`**: Delegated permission to read organization's Power BI tenant information using [Power BI REST API permissions](https://learn.microsoft.com/rest/api/power-bi/#scopes)
+
+### 💻 Software Requirements
+- [ ] **Python**: Install version 3.9+ as runtime environment for deployment scripts from [Download Python](https://www.python.org/downloads/)
+- [ ] **Azure CLI**: Install latest version for Azure authentication and resource management from [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
+- [ ] **Azure Developer CLI**: Install latest version for simplified deployment orchestration from [Install Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
 ---
 
 ## Deployment Overview
 
-The **Azure Developer CLI (azd)** automates the complete deployment process with a single `azd up` command. The deployment creates a complete data foundation solution with medallion architecture (Bronze-Silver-Gold) including infrastructure, data assets, and analytics components.
+This solution accelerator uses a two-phase deployment approach that creates a complete data foundation solution with medallion architecture (Bronze-Silver-Gold). The deployment is designed to be **idempotent** and **safe to re-run**, intelligently detecting existing resources and only creating what's missing.
 
-### Deployment Logic
+The deployment executes in two coordinated phases using dedicated scripts:
 
-1. **Infrastructure Provisioning**: Creates Azure resources using Bicep templates
-2. **Access Configuration**: Sets up admin permissions for users and managed identity
-3. **Fabric Workspace Setup**: Creates or configures Microsoft Fabric workspace and underlying data assets: lakehouses, sample data, notebooks and Power BI reports
+1. **Infrastructure Provisioning** - Executes [`main.bicep`](../infra/main.bicep) to create Azure resources using [ARM idempotency](https://learn.microsoft.com/azure/azure-resource-manager/templates/deployment-tutorial-local-template?tabs=azure-powershell#deploy-template):
+   - **Microsoft Fabric Capacity**: Dedicated compute resources with configured admin permissions (updates configuration if parameters change)
+   - **Resource Group**: Container for all Azure resources
 
-### What Gets Created
+2. **Fabric Workspace Setup** - Runs [`run_python_script_fabric.ps1`](../infra/scripts/utils/run_python_script_fabric.ps1) orchestrator and [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) deployment script to intelligently manage Fabric resources:
+   - **Workspace**: Detects existing workspace by name or creates new one, assigns to specified capacity
+   - **Lakehouses**: Creates missing 3-tier medallion architecture (`maag_bronze`, `maag_silver`, `maag_gold`) while preserving existing data
+   - **Notebooks**: Updates existing notebooks with latest content or creates missing ones with proper lakehouse references ⚠️ *overwrites customizations*
+   - **Sample Data**: Uploads CSV files to bronze lakehouse ⚠️ *overwrites existing files with same names*
+   - **Power BI Reports**: Creates or overwrites dashboard components for data visualization ⚠️ *replaces existing reports with same names*
+   - **Administrators**: Adds new workspace administrators without removing existing ones
 
-#### In Azure:
-- **Microsoft Fabric Capacity**: Dedicated compute resources
-- **User-Assigned Managed Identity**: Secure access for automated operations
-
-#### In Microsoft Fabric:
-- **Workspace**: Container for all Fabric items
-- **Lakehouses**: 3-tier medallion architecture (`maag_bronze`, `maag_silver`, `maag_gold`)
-- **Notebooks**: Data transformation and management notebooks organized by layer
-- **Sample Data**: Representative CSV files for testing and demonstration
-- **Power BI Reports**: Any `.pbix` files from the repository (if present)
-
----
-
-## Detailed Deployment Options
-
-Choose your preferred environment for running `azd up`:
-
-<div align="center">
-
-| **[🖥️ Local Environment](#local-environment)** | **[☁️ Azure Cloud Shell](#azure-cloud-shell)** | **[🚀 GitHub Codespaces](#github-codespaces)** |
-|:---:|:---:|:---:|
-| Deploy from your local machine | Deploy without local installation | Full cloud development environment |
-| Full control over environment | Pre-authenticated & configured | VS Code in browser |
-| Requires local tool installation | Always up-to-date tools | Pre-configured & collaborative |
-
-</div>
-
-<details>
-<summary><b>🖥️ Local Environment</b></summary>
-
-<div id="local-environment">
-
-### Local Environment
-
-Deploy from your local machine with full control over the environment.
-
-#### Prerequisites:
-- [Azure Developer CLI (azd)](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
-- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
-- [Python 3.9+](https://www.python.org/downloads/)
-- [Git](https://git-scm.com/downloads)
-
-#### Installation Steps:
-
-**Windows (PowerShell):**
-```powershell
-# Install Azure Developer CLI
-winget install microsoft.azd
-
-# Verify installation
-azd version
-```
-
-**macOS:**
-```bash
-# Install Azure Developer CLI
-brew tap azure/azd && brew install azd
-
-# Verify installation
-azd version
-```
-
-**Linux:**
-```bash
-# Install Azure Developer CLI
-curl -fsSL https://aka.ms/install-azd.sh | bash
-
-# Verify installation
-azd version
-```
-
-#### Deployment Steps:
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
-   cd unified-data-foundation-with-fabric-solution-accelerator
-   ```
-
-2. **Authenticate with Azure:**
-   ```bash
-   az login
-   azd auth login
-   ```
-
-3. **Initialize the project:**
-   ```bash
-   azd init
-   ```
-
-4. **Optional: Set custom workspace name:**
-   ```bash
-   azd env set AZURE_FABRIC_WORKSPACE_NAME "My Production Workspace"
-   ```
-
-5. **Deploy everything:**
-   ```bash
-   azd up
-   ```
-
-   You'll be prompted for:
-   - Environment name (e.g., "production", "dev", "test")
-   - Azure location (e.g., "eastus", "westus2")
-
-</details>
-
-<details>
-  <summary><b>☁️ Azure Cloud Shell</b></summary>
-
-### Azure Cloud Shell
-
-Deploy directly from Azure Cloud Shell without installing anything locally.
-
-#### Benefits:
-- **No local installation required**: Azure CLI and Python are pre-installed
-- **Always up-to-date**: Latest tools are maintained automatically
-- **Secure authentication**: Automatically authenticated with your Azure account
-- **Persistent storage**: Files persist across sessions
-
-#### Deployment Steps:
-
-1. **Open Azure Cloud Shell:**
-   - Navigate to [Azure Cloud Shell](https://portal.azure.com/#cloudshell/)
-   - Choose **Bash** as your shell environment
-
-2. **Install Azure Developer CLI:**
-   ```bash
-   # Install azd in Cloud Shell
-   curl -fsSL https://aka.ms/install-azd.sh | bash
-   
-   # Restart your shell or reload PATH
-   exec bash
-   
-   # Verify installation
-   azd version
-   ```
-
-3. **Clone the repository:**
-   ```bash
-   git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
-   cd unified-data-foundation-with-fabric-solution-accelerator
-   ```
-
-4. **Initialize and deploy:**
-   ```bash
-   # Initialize the project
-   azd init
-   
-   # Optional: Set custom workspace name
-   azd env set AZURE_FABRIC_WORKSPACE_NAME "Cloud Shell Deployment"
-   
-   # Deploy everything
-   azd up
-   ```
-
-   During deployment, you'll be prompted for:
-   - Environment name
-   - Azure location
-
-> **💡 Tip**: Cloud Shell sessions last 20 minutes. For longer deployments, periodically interact with the shell to keep it active.
-</details>
-
-<details>
-  <summary><b>🚀 GitHub Codespaces</b></summary>
-
-### GitHub Codespaces
-
-Deploy using GitHub Codespaces for a complete cloud development environment.
-
-#### Benefits:
-- **Full development environment**: VS Code in the browser with all extensions
-- **Pre-configured**: Development environment is ready to use
-- **Collaborative**: Easy to share and collaborate
-- **No local setup**: Everything runs in the cloud
-
-#### Deployment Steps:
-
-1. **Fork the repository:**
-   - Navigate to [the repository](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator) on GitHub
-   - Click the **Fork** button in the top-right corner
-   - Select your account to create a fork
-
-2. **Open GitHub Codespaces:**
-   - In your forked repository, click the **Code** button
-   - Select the **Codespaces** tab
-   - Click **Create codespace on main**
-   
-   Alternatively, use this direct link with your GitHub username:
-   ```
-   https://codespaces.new/YOUR-GITHUB-USERNAME/unified-data-foundation-with-fabric-solution-accelerator
-   ```
-
-3. **Wait for environment setup:**
-   - Codespaces will automatically set up the development environment
-   - This typically takes 2-3 minutes
-
-4. **Open terminal in Codespaces:**
-   - Press `Ctrl+`` (backtick) or go to **Terminal > New Terminal**
-
-5. **Install Azure Developer CLI:**
-   ```bash
-   # Install azd
-   curl -fsSL https://aka.ms/install-azd.sh | bash
-   
-   # Reload PATH
-   source ~/.bashrc
-   
-   # Verify installation
-   azd version
-   ```
-
-6. **Authenticate with Azure:**
-   ```bash
-   # Login to Azure CLI
-   az login --use-device-code
-   
-   # Login to azd (will use the same authentication)
-   azd auth login --use-device-code
-   ```
-
-7. **Initialize and deploy:**
-   ```bash
-   # Initialize the project
-   azd init
-   
-   # Optional: Set custom workspace name
-   azd env set AZURE_FABRIC_WORKSPACE_NAME "Codespaces Deployment"
-   
-   # Deploy everything
-   azd up
-   ```
-
-> **💡 Tip**: Use device code authentication (`--use-device-code`) in Codespaces for the most reliable authentication experience.
-
-
-</details>
+The deployment orchestration coordinates both phases, passing deployment parameters and ensuring proper sequencing. See [deployment options](#deployment-options) for different ways to run this deployment based on your preferred environment.
 
 ---
 
 ## Deployment Results
 
-### Fabric Components Created
-
-The deployment creates a complete medallion architecture with:
-
-- **Infrastructure**: Automated provisioning of Fabric capacity and workspace
-- **Folder Structure**: Organized folders for lakehouses, notebooks, and reports
-- **Lakehouses**: Three-tier architecture (Bronze, Silver, Gold) with schema support
-- **Sample Data**: Representative CSV files uploaded to the bronze lakehouse
-- **Notebooks**: Complete set of data transformation and management notebooks
-- **Automated Processing**: Initial data pipeline execution
-- **Power BI Reports**: Automated deployment of Power BI reports (.pbix files) to the workspace
-- **User-Assigned Managed Identity**: Automatically created for secure access to Azure resources
+After successful deployment, you'll have a complete data platform implementing medallion architecture.
 
 ### Azure Infrastructure
 
-| Resource | Type | Purpose |
-|----------|------|---------|
-| [**Fabric Capacity**](https://learn.microsoft.com/fabric/admin/capacity-settings?tabs=power-bi-premium) | `Microsoft.Fabric/capacities` | Dedicated compute capacity for Fabric workloads |
-| [**User-Assigned Managed Identity**](https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview) | `Microsoft.ManagedIdentity/userAssignedIdentities` | Secure authentication for automated operations |
+| Resource | Purpose |
+|----------|---------|
+| **[Fabric Capacity](https://learn.microsoft.com/fabric/admin/capacity-settings?tabs=power-bi-premium)** | Dedicated compute for Fabric workloads |
+| **[Managed Identity](https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview)** | Secure authentication for automated operations |
 
 ![Screenshot of deployed Azure resources](./images/deployment/fabric/azure_resources.png)
 
-### Fabric items
+### Fabric Components
 
 #### Fabric Workspace
 
@@ -324,14 +117,14 @@ Workspace created with the specified or default name.
 #### Folder Structure
 
 ```
-workspace/
-├── lakehouses/
-├── notebooks/
+your-workspace/
+├── lakehouses/          # Bronze, Silver, Gold lakehouses
+├── notebooks/           # Data transformation pipelines
 │   ├── bronze_to_silver/
+│   ├── silver_to_gold/
 │   ├── data_management/
-│   ├── schema/
-│   └── silver_to_gold/
-└── reports/
+│   └── schema/
+└── reports/            # Power BI dashboards
 ```
 
 ![Screenshot of resulting Fabric workspace folder structure](./images/deployment/fabric/fabric_workspace_folders.png)
@@ -355,31 +148,16 @@ The solution includes sample data for:
 
 ![Screenshot of resulting Fabric sample data](./images/deployment/fabric/fabric_sample_data.png)
 
-#### Jupyter Notebooks
+#### Notebooks
+
+**Automation Components**:
+- **Orchestration notebooks**: `run_bronze_to_silver`, `run_silver_to_gold`
+- **Transformation notebooks**: Domain-specific data processing for each entity
+- **Management utilities**: Table operations, schema definitions, troubleshooting tools
 
 ![Screenshot of resulting Fabric notebooks](./images/deployment/fabric/fabric_notebooks.png)
 
-#### Main Orchestration
-- `run_bronze_to_silver` - Orchestrates bronze to silver transformation
-- `run_silver_to_gold` - Orchestrates silver to gold transformation
-
-#### Bronze to Silver Transformation
-- Domain-specific transformation notebooks for each data entity
-- Handles data cleansing and standardization
-
-#### Data Management
-- Table management utilities (drop, truncate)
-- Troubleshooting and maintenance notebooks
-
-#### Schema Definition
-- Data model definitions for each layer
-- Schema creation and management
-
-#### Silver to Gold Processing
-- Business logic implementation
-- Data aggregation and enrichment
-
-#### Power BI Report
+#### Power BI Reports
 
 Any `.pbix` files found in the `reports/` directory will be automatically deployed to the workspace's reports folder. The deployment process:
 - Scans recursively through the reports directory
@@ -387,22 +165,532 @@ Any `.pbix` files found in the `reports/` directory will be automatically deploy
 - Assigns reports to the appropriate folder within the workspace
 - Provides deployment tracking and verification
 
+**PowerBI files**
+
 ![Screenshot of resulting PowerBI reports](./images/deployment/fabric/fabric_powerbi_reports.png)
+
+**PowerBI Dashboard**
+
+![Screenshot of resulting PowerBI dashboard](./images/deployment/fabric/fabric_powerbi_dashboard.png)
+
+---
+
+## Deployment Options
+
+Choose your deployment environment based on your workflow and requirements. All options use the same [Quick Start commands](#quick-start) with environment-specific setup.
+
+| Environment | Best For | Setup Required | Notes |
+|-------------|----------|----------------|-------|
+| **[Local Machine](#local-machine)** | Full development control | Install [software requirements](#-software-requirements) | Most flexible, requires local setup |
+| **[Azure Cloud Shell](#azure-cloud-shell)** | Zero setup | Just a web browser | Pre-configured tools, session timeouts |
+| **[GitHub Codespaces](#github-codespaces)** | Team consistency | GitHub account | Cloud development environment |
+| **[Dev Container](#vs-code-dev-container)** | Standardized tooling | Docker Desktop + VS Code | Containerized consistency |
+| **[GitHub Actions](#github-actions-cicd)** | Automated CI/CD | Service principal setup | Production deployments |
+
+### Local Machine
+Deploy with full control over your development environment.
+
+**Setup requirements**: Install the [software requirements](#-software-requirements)
+
+**Deployment**: Use the standard [Quick Start commands](#quick-start)
+
+### Azure Cloud Shell
+Deploy from Azure's browser-based terminal with zero local installation.
+
+**Setup**: Open [Azure Cloud Shell](https://shell.azure.com) and install Azure Developer CLI:
+```bash
+curl -fsSL https://aka.ms/install-azd.sh | bash && exec bash
+```
+
+**Deployment**: Run the [Quick Start commands](#quick-start) (Azure CLI pre-authenticated)
+
+### GitHub Codespaces  
+Deploy from a cloud development environment with pre-configured tools.
+
+**Setup**: 
+1. Go to the [repository](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator)
+2. Click **Code** → **Codespaces** → **Create codespace**
+
+**Deployment**: Install azd and run [Quick Start commands](#quick-start) with device authentication:
+```bash
+# Install azd if needed
+curl -fsSL https://aka.ms/install-azd.sh | bash && exec bash
+
+# Use device code authentication  
+az login --use-device-code
+azd auth login --use-device-code
+
+# Continue with Quick Start deployment commands
+```
+
+### VS Code Dev Container
+Deploy from a containerized environment for team consistency.
+
+**Setup**: 
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop) and [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+2. Clone repository and open in VS Code
+3. Reopen in container when prompted
+
+**Deployment**: All tools pre-installed - run [Quick Start commands](#quick-start) directly
+
+### GitHub Actions (CI/CD)
+Automated deployment using the included [workflow](../.github/workflows/azure-dev.yml).
+
+**Setup**: Configure [repository variables](https://docs.github.com/en/actions/learn-github-actions/variables) and set up [service principal with federated credentials](https://learn.microsoft.com/azure/developer/github/connect-from-azure)
+
+**Triggers**: Push to main branch or manual workflow dispatch
+
+---
+
+## Advanced Configuration Options
+
+The solution accelerator provides flexible configuration options to customize your deployment. Parameters can be configured through **Azure Developer CLI environment variables** (`azd env set`) for local deployments or through **GitHub repository variables** for CI/CD deployments.
+
+> **📁 Configuration Files Reference:**
+> - Infrastructure: [`infra/main.bicep`](../infra/main.bicep) - Azure resource definitions
+> - Deployment orchestration: [`azure.yaml`](../azure.yaml) - AZD project configuration  
+> - CI/CD workflow: [`.github/workflows/azure-dev.yml`](../.github/workflows/azure-dev.yml) - GitHub Actions pipeline
+> - Fabric deployment: [`infra/scripts/fabric/create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) - Fabric workspace setup
+
+### 🏗️ Infrastructure Configuration
+
+Configure the Azure infrastructure components through Bicep template parameters defined in [`main.bicep`](../infra/main.bicep).
+
+<details>
+<summary><strong>Azure Resources</strong></summary>
+
+| Parameter | AZD Environment Variable | GitHub Actions Variable | Description | Default | Example |
+|-----------|-------------------------|------------------------|-------------|---------|---------|
+| **Solution Name** | `solutionName` | `AZURE_ENV_NAME` | Friendly name for the application/solution (3-20 chars) | `udfwfsa` | `mycompany-fabric` |
+| **Location** | `AZURE_LOCATION` | `AZURE_LOCATION` | Azure region for resource deployment | Resource group location | `eastus`, `westus2`, `westeurope` |
+| **Fabric Capacity SKU** | `skuName` | Not directly supported* | Fabric capacity tier and performance level | `F2` | `F4`, `F8`, `F16`, `F32`, `F64`, `F128`, `F256`, `F512`, `F1024`, `F2048` |
+| **Enable Telemetry** | `enableTelemetry` | Not directly supported* | Enable/disable usage telemetry collection | `true` | `false` |
+
+*_GitHub Actions can use additional parameters through Bicep parameter files or workflow modifications._
+
+**Configuration Examples:**
+
+<details>
+<summary><strong>🖥️ Azure Developer CLI</strong></summary>
+
+```bash
+# Set environment variables (used by main.parameters.json)
+azd env set AZURE_LOCATION "westeurope"
+azd env set skuName "F8"
+azd env set enableTelemetry false
+azd up
+```
+
+</details>
+
+<details>
+<summary><strong>🚀 GitHub Actions</strong></summary>
+
+Modify [`azure-dev.yml`](../.github/workflows/azure-dev.yml) Deploy Infrastructure step:
+
+```yaml
+- name: Deploy Infrastructure
+  uses: azure/bicep-deploy@v2
+  with:
+    parameters: |
+      {
+        "solutionName": "${{ env.AZURE_ENV_NAME_DEV }}",
+        "skuName": "F8",
+        "enableTelemetry": false
+      }
+```
+
+</details>
+
+**Fabric Capacity SKU Selection Guide:**
+- **F2-F4**: Development and testing environments
+- **F8-F32**: Small to medium production workloads
+- **F64-F256**: Large enterprise production workloads  
+- **F512-F2048**: High-performance analytics and data science workloads
+
+For detailed capacity planning, see [Fabric capacity planning](https://learn.microsoft.com/fabric/admin/capacity-planning).
+
+</details>
+
+### 🏢 Fabric Workspace Configuration
+
+Customize the Fabric workspace setup and naming conventions. These parameters are used by the [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) script during post-provisioning.
+
+<details>
+<summary><strong>Workspace Settings</strong></summary>
+
+| Parameter | AZD Environment Variable | GitHub Actions Variable | Description | Default | Example |
+|-----------|-------------------------|------------------------|-------------|---------|---------|
+| **Capacity Name** | `AZURE_FABRIC_CAPACITY_NAME` | Bicep output | Microsoft Fabric capacity name (auto-generated from deployment) | Generated from Bicep | `fc-udfwfsa-abc123` |
+| **Workspace Name** | `AZURE_FABRIC_WORKSPACE_NAME` | `AZURE_FABRIC_WORKSPACE_NAME_DEV` | Custom name for the Fabric workspace | `Unified Data Foundation with Fabric workspace` | `"MyCompany Data Foundation"`, `"Analytics Platform - DEV"` |
+
+**Configuration Examples:**
+
+<details>
+<summary><strong>🖥️ Azure Developer CLI</strong></summary>
+
+```bash
+azd env set AZURE_FABRIC_WORKSPACE_NAME "Analytics Platform - DEV"
+azd up
+```
+
+</details>
+
+<details>
+<summary><strong>🚀 GitHub Actions</strong></summary>
+
+Modify [`azure-dev.yml`](../.github/workflows/azure-dev.yml) environment variables:
+
+```yaml
+env:
+  AZURE_FABRIC_WORKSPACE_NAME_DEV: "Analytics Platform (dev)"
+```
+
+</details>
+
+**Workspace Naming Best Practices:**
+- Use descriptive names that indicate purpose and environment
+- Consider organizational naming conventions
+- Include environment indicators for multi-environment deployments (Dev, Test, Prod)
+- Avoid special characters that might cause conflicts with Fabric APIs
+
+</details>
+
+### 👥 Fabric Workspace Administrator Configuration
+
+Manage workspace administrators and security permissions for the Fabric workspace. These parameters are processed by both the Bicep template ([`main.bicep`](../infra/main.bicep)) for capacity-level admins and the Fabric deployment script ([`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py)) for workspace-level admins.
+
+<details>
+<summary><strong>Admin Assignment Options</strong></summary>
+
+| Parameter | AZD Environment Variable | GitHub Actions Support | Description | Format | Example |
+|-----------|-------------------------|------------------------|-------------|--------|---------|
+| **Fabric Admins** | `AZURE_FABRIC_ADMIN_MEMBERS` | Bicep output | List of administrators (UPNs and Service Principal IDs) | JSON array | `["user1@contoso.com", "12345678-1234-1234-1234-123456789012"]` |
+| **Admins by Object ID** | `AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID` | Not directly supported* | List of object IDs with fallback user/service principal detection | JSON array | `["87654321-4321-4321-4321-210987654321"]` |
+
+*_GitHub Actions workflow uses Bicep output for admin configuration. See examples below for customization._
+
+**Administrator Types Supported:**
+- **User Principal Names (UPNs)**: `user@domain.com` format for individual users
+- **Service Principal IDs**: GUID format for application registrations  
+- **Object IDs**: Direct Azure AD object identifiers with automatic type detection
+
+**Configuration Examples:**
+
+<details>
+<summary><strong>🖥️ Azure Developer CLI</strong></summary>
+
+```bash
+azd env set AZURE_FABRIC_ADMIN_MEMBERS '["user@contoso.com", "sp-guid"]'
+azd env set AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID '["object-id-guid"]'
+azd up
+```
+
+</details>
+
+<details>
+<summary><strong>🚀 GitHub Actions</strong></summary>
+
+**Option A**: Update [`main.parameters.json`](../infra/main.parameters.json):
+
+```json
+{
+  "parameters": {
+    "solutionName": { "value": "${AZURE_ENV_NAME}" },
+    "fabricAdminMembers": { "value": ["user@contoso.com"] }
+  }
+}
+```
+
+**Option B**: Override in workflow [`azure-dev.yml`](../.github/workflows/azure-dev.yml):
+
+```yaml
+- name: Deploy Infrastructure  
+  uses: azure/bicep-deploy@v2
+  with:
+    parameters: |
+      {
+        "fabricAdminMembers": ["user@contoso.com", "sp-guid"]
+      }
+```
+
+</details>
+
+**Administrator Assignment Behavior:**
+- **Automatic Default Admin**: The deployment identity (user or service principal) is automatically added as a Fabric capacity admin
+- **Duplicate Detection**: Prevents adding the same principal multiple times
+- **Fallback Logic**: Object ID method tries both User and ServicePrincipal types automatically
+- **Graph API Resolution**: UPN method uses Microsoft Graph API for identity resolution
+
+**Permission Requirements:**
+Administrators configured through these parameters will have **Admin** role on the Fabric workspace, providing:
+- Full workspace management capabilities
+- Ability to manage workspace items (lakehouses, notebooks, reports)
+- User and permission management within the workspace
+- Workspace settings configuration
+
+</details>
+
+### 🐍 Python Environment Configuration Options
+
+Configure deployment behavior and troubleshooting options. These parameters are handled by the PowerShell orchestration script ([`run_python_script_fabric.ps1`](../infra/scripts/utils/run_python_script_fabric.ps1)).
+
+<details>
+<summary><strong>Deployment Customization</strong></summary>
+
+These options are primarily used for configuring the appropriate environment for each deployment process based on elements such as underlying operating system or specialized environments such as containerized deployments or GitHub-hosted runners.
+
+| Parameter | PowerShell Switch | AZD Support | GitHub Actions Support | Description | Use Case |
+|-----------|-------------------|-------------|------------------------|-------------|----------|
+| **Skip Virtual Environment** | `-SkipPythonVirtualEnvironment` | Manual override | ✅ Used in workflow | Use system Python instead of virtual environment | System-wide Python management, containerized environments |
+| **Skip Dependencies** | `-SkipPythonDependencies` | Manual override | ✅ Used in workflow | Skip installing Python packages (assume pre-installed) | Pre-configured environments, repeated deployments |
+| **Skip Pip Upgrade** | `-SkipPipUpgrade` | Manual override | ✅ Used in workflow | Skip upgrading pip to latest version | Environments with controlled pip versions |
+
+**Configuration Examples:**
+
+<details>
+<summary><strong>🖥️ Azure Developer CLI</strong></summary>
+
+These parameters are automatically optimized in [`azure.yml`](../azure.yaml):
+
+```yaml
+hooks:
+  postprovision:
+    windows:
+      shell: pwsh
+      run: ./infra/scripts/utils/run_python_script_fabric.ps1
+      interactive: true
+      continueOnError: false
+    posix:
+      shell: pwsh
+      run: ./infra/scripts/utils/run_python_script_fabric.ps1 -SkipPythonVirtualEnvironment
+      interactive: true
+      continueOnError: false
+  predown:
+    windows:
+      shell: pwsh
+      run: ./infra/scripts/utils/run_python_script_fabric_remove.ps1
+      interactive: true
+      continueOnError: false
+    posix:
+      shell: pwsh
+      run: ./infra/scripts/utils/run_python_script_fabric_remove.ps1 -SkipPythonVirtualEnvironment
+      interactive: true
+      continueOnError: false
+```
+
+</details>
+
+<details>
+<summary><strong>🚀 GitHub Actions</strong></summary>
+
+These parameters are automatically optimized in [`azure-dev.yml`](../.github/workflows/azure-dev.yml):
+
+```yaml
+- name: Run Fabric Provisioning Script
+  run: |
+    pwsh ./run_python_script_fabric.ps1 \
+      -SkipPythonVirtualEnvironment \
+      -SkipPythonDependencies \
+      -SkipPipUpgrade
+```
+
+</details>
+
+</details>
+
+---
+
+## Known Limitations
+
+This section documents known limitations in the deployment process and their workarounds.
+
+### 🔒 Power BI API Parameter Updates
+
+**Issue**: Service Principals cannot update Power BI dataset parameters via API, resulting in HTTP 403 errors.
+
+**Impact**: 
+- During automated deployment, if deployment identity is a Service Principal or a Managed Identity, Power BI reports are deployed but dataset parameters (SQL endpoint connection strings) may not be automatically configured
+- Reports may show connection errors until manually configured
+
+**Technical Details**:
+The [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) script handles this gracefully:
+
+```python
+try:
+    powerbi_client.update_powerbi_dataset_parameters(dataset_id=dataset['id'], parameters=[
+        {"name": "sqlEndpoint", "newValue": sql_endpoint},
+        {"name": "database", "newValue": database_name}
+    ])
+    print(f"✅ Dataset parameters updated successfully for '{report_name}'")
+except Exception as param_error:
+    if "HTTP 403" in str(param_error):
+        print(f"⚠️ WARNING: Cannot update dataset parameters automatically for '{report_name}'")
+        print(f"    Reason: API access restricted for service principal: {str(param_error)}")
+        print(f"    Manual action required:")
+        print(f"📋 Continuing deployment without dataset parameter updates...")
+```
+
+**Workaround**: 
+- The deployment continues successfully despite this limitation
+- Follow the manual configuration steps in the [Power BI Deployment Guide](./DeploymentGuidePowerBI.md) to complete the report setup
+- This typically involves updating the `sqlEndpoint` and `database` parameters in the Power BI service
+
+---
+
+### 👤 Graph API Principal (user or service principal) Lookup Limitations
+
+**Issue**: The deployment identity may lack permissions to query user object IDs from Azure Active Directory via Microsoft Graph API.
+
+**Impact**:
+- When using `--fabricAdmins` with user principal names (UPNs), the script may fail to resolve user identities
+- Service Principals may successfully create workspaces but fail to add human users as administrators
+- This can result in workspaces that are only accessible to the deployment service principal
+
+**Technical Details**:
+The [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) script implements fallback logic:
+
+```python
+def detect_principal_type(admin_identifier, graph_client=None):
+    try:
+        # Use Graph API to resolve the principal
+        principal_type, object_id, principal_data = graph_client.resolve_principal(admin_identifier)
+        return principal_type, object_id, principal_data
+    except GraphApiError as e:
+        # Convert Graph API errors to ValueError for backward compatibility
+        print(f"⚠️ WARNING: Graph API lookup failed for '{admin_identifier}': {str(e)}")
+        # Fallback to original logic if Graph API is not available
+        if is_valid_guid(admin_identifier):
+            return "ServicePrincipal", admin_identifier, {"id": admin_identifier, "displayName": "Unknown"}
+```
+
+**Workarounds**:
+
+1. **Use Object IDs Instead**: Configure administrators using the `--fabricAdminsByObjectId` parameter or `AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID` environment variable as described in the [advanced configuration options](#advanced-configuration-options):
+   ```bash
+   azd env set AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID '["87654321-4321-4321-4321-210987654321"]'
+   ```
+   
+   The script automatically tries both User and ServicePrincipal types for object IDs:
+   ```python
+   for principal_type in ["User", "ServicePrincipal"]:
+       # Try both User and ServicePrincipal types
+   ```
+
+2. **Post-Deployment Admin Assignment**: Use the dedicated admin management scripts:
+   - [`add_fabric_workspace_admins.py`](../infra/scripts/fabric/add_fabric_workspace_admins.py) - Direct Python script for admin assignment
+   - [`run_python_script_fabric_admins.ps1`](../infra/scripts/utils/run_python_script_fabric_admins.ps1) - PowerShell orchestrator script
+   
+   These scripts can add administrators to all available Fabric workspaces after initial deployment.
+
+---
+
+### 🔐 Fabric REST API Permission Issues
+
+**Issue**: Service Principals may lack sufficient permissions to access Microsoft Fabric REST APIs.
+
+**Impact**: 
+- Deployment fails during workspace creation or management operations
+- Graceful exit with clear guidance on permission requirements
+
+**Technical Details**:
+The [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) script provides specific error handling for authorization failures:
+
+```python
+except FabricApiError as e:
+    if e.status_code == 401:
+        print(f"⚠️ WARNING: Unauthorized access to Fabric APIs. Please review your Fabric permissions and Ensure you have proper Fabric licensing and permissions.")
+        print("   📋 Check the following resources:")
+        print("   • Fabric licenses: https://learn.microsoft.com/fabric/enterprise/licenses")
+        print("   • Identity support: https://learn.microsoft.com/rest/api/fabric/articles/identity-support")
+        print("   • Create Entra app with appropriate Fabric permissions: https://learn.microsoft.com/rest/api/fabric/articles/get-started/create-entra-app")
+        sys.exit(0)  # Graceful exit with guidance
+```
+
+**Resolution**:
+1. **Verify Fabric Licensing**: Ensure your organization has appropriate [Microsoft Fabric licenses](https://learn.microsoft.com/fabric/enterprise/licenses)
+2. **Review Identity Configuration**: Follow the [Fabric Identity Support](https://learn.microsoft.com/rest/api/fabric/articles/identity-support) documentation
+3. **Configure Service Principal**: If using a service principal, ensure it's properly configured following [Create Entra App](https://learn.microsoft.com/rest/api/fabric/articles/get-started/create-entra-app) guidance
+4. **Check API Permissions**: Verify the deployment identity has the required Fabric REST API permissions as listed in the [prerequisites](#prerequisites)
+
+The script performs a graceful exit (`sys.exit(0)`) rather than failing abruptly, allowing you to resolve permissions and retry the deployment.
+
+---
+
+## Environment Cleanup
+
+When you no longer need your deployed environment, Azure Developer CLI provides a streamlined approach to completely remove all resources and clean up your Microsoft Fabric workspace.
+
+### Complete Environment Removal
+
+The `azd down` command orchestrates a complete environment cleanup process that:
+
+1. **Removes Fabric Workspace**: Safely deletes the Microsoft Fabric workspace and all associated items
+2. **Deprovisions Azure Resources**: Removes all Azure infrastructure components deployed via Bicep templates
+3. **Preserves Local Environment**: Keeps your local development environment and configurations intact
+
+**Quick cleanup command:**
+
+```bash
+# Navigate to your solution directory
+cd unified-data-foundation-with-fabric-solution-accelerator
+
+# Remove everything deployed by azd up
+azd down
+```
+
+### Cleanup Process Details
+
+Based on the [`azure.yaml`](../azure.yaml) configuration, the cleanup process follows these orchestrated steps:
+
+#### Phase 1: Fabric Workspace Cleanup (predown hook)
+Before removing Azure infrastructure, the cleanup process first handles the Microsoft Fabric workspace:
+
+**Windows (PowerShell):**
+```powershell
+./infra/scripts/utils/run_python_script_fabric_remove.ps1
+```
+
+**Unix/Linux (PowerShell Core):**
+```bash
+./infra/scripts/utils/run_python_script_fabric_remove.ps1 -SkipPythonVirtualEnvironment
+```
+
+This orchestration script ([`run_python_script_fabric_remove.ps1`](../infra/scripts/utils/run_python_script_fabric_remove.ps1)) manages:
+- **Python Environment Setup**: Creates or reuses Python virtual environment with required dependencies
+- **Workspace Identification**: Locates the target workspace using environment variables or defaults
+- **Safe Deletion**: Executes the Python removal script with proper error handling and user guidance
+
+The core removal logic is handled by [`remove_fabric_workspace.py`](../infra/scripts/fabric/remove_fabric_workspace.py), which:
+- **Workspace Lookup**: Finds the workspace by name or ID (defaults to "Unified Data Foundation with Fabric workspace")
+- **Comprehensive Removal**: Deletes all workspace items including notebooks, lakehouses, and datasets
+- **Confirmation Prompts**: Provides interactive confirmation to prevent accidental deletions
+- **Error Handling**: Gracefully handles missing workspaces or permission issues
+
+#### Phase 2: Azure Infrastructure Cleanup
+After successful Fabric workspace removal, `azd down` proceeds to deprovision all Azure resources that were created through the [`main.bicep`](../infra/main.bicep) template, including:
+
+- **Microsoft Fabric Capacity**: Dedicated compute resources
+- **User-Assigned Managed Identity**: Secure authentication identity
+- **Resource Group**: Complete resource group removal (if specified)
+
+### Safety Features
+
+The cleanup process includes several safety mechanisms:
+
+- **Interactive Confirmation**: Prompts before deleting workspaces to prevent accidental removal
+- **Graceful Error Handling**: Continues with infrastructure cleanup even if Fabric workspace removal fails
+- **Detailed Logging**: Provides comprehensive output for troubleshooting and audit purposes
+- **Non-Destructive Failures**: Missing workspaces or permission issues don't prevent infrastructure cleanup
 
 ---
 
 ## Additional Resources
 
-- [Microsoft Fabric Documentation](https://learn.microsoft.com/fabric/)
-- [Azure Developer CLI Documentation](https://learn.microsoft.com/azure/developer/azure-developer-cli/)
-- [Power BI Deployment Guide](./DeploymentGuidePowerBI.md)
-- [Solution Architecture Overview](../architecture/README.md)
-- [Frequently Asked Questions](./FAQs.md)
+- **Documentation**: [Microsoft Fabric](https://learn.microsoft.com/fabric/) | [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/)
+- **Guides**: [Power BI Deployment](./DeploymentGuidePowerBI.md) | [FAQs](./FAQs.md) 
+- **Repository**: [Solution Accelerator](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator)
 
-For technical support and community discussions, visit the [project repository](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator) or engage with the Microsoft Fabric community.
-
----
-
-*This deployment guide is part of the Unified Data Foundation with Fabric solution accelerator. For the latest updates and documentation, visit the [official repository](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator).*
+For support, visit the [project repository](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator) or engage with the Microsoft Fabric community.
 
 ---
