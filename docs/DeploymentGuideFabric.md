@@ -164,7 +164,13 @@ Any `.pbix` files found in the `reports/` directory will be automatically deploy
 - Assigns reports to the appropriate folder within the workspace
 - Provides deployment tracking and verification
 
+**PowerBI files**
+
 ![Screenshot of resulting PowerBI reports](./images/deployment/fabric/fabric_powerbi_reports.png)
+
+**PowerBI Dashboard**
+
+![Screenshot of resulting PowerBI dashboard](./images/deployment/fabric/fabric_powerbi_dashboard.png)
 
 ---
 
