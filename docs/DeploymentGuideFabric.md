@@ -911,6 +911,119 @@ The script performs a graceful exit (`sys.exit(0)`) rather than failing abruptly
 
 ---
 
+## Environment Clean Up
+
+When you no longer need your deployed environment, Azure Developer CLI provides a streamlined approach to completely remove all resources and clean up your Microsoft Fabric workspace.
+
+### Complete Environment Removal
+
+The `azd down` command orchestrates a complete environment cleanup process that:
+
+1. **Removes Fabric Workspace**: Safely deletes the Microsoft Fabric workspace and all associated items
+2. **Deprovisions Azure Resources**: Removes all Azure infrastructure components deployed via Bicep templates
+3. **Preserves Local Environment**: Keeps your local development environment and configurations intact
+
+**Quick cleanup command:**
+
+```bash
+# Navigate to your solution directory
+cd unified-data-foundation-with-fabric-solution-accelerator
+
+# Remove everything deployed by azd up
+azd down
+```
+
+### Cleanup Process Details
+
+Based on the [`azure.yaml`](../azure.yaml) configuration, the cleanup process follows these orchestrated steps:
+
+#### Phase 1: Fabric Workspace Cleanup (predown hook)
+Before removing Azure infrastructure, the cleanup process first handles the Microsoft Fabric workspace:
+
+**Windows (PowerShell):**
+```powershell
+./infra/scripts/utils/run_python_script_fabric_remove.ps1
+```
+
+**Unix/Linux (PowerShell Core):**
+```bash
+./infra/scripts/utils/run_python_script_fabric_remove.ps1 -SkipPythonVirtualEnvironment
+```
+
+This orchestration script ([`run_python_script_fabric_remove.ps1`](../infra/scripts/utils/run_python_script_fabric_remove.ps1)) manages:
+- **Python Environment Setup**: Creates or reuses Python virtual environment with required dependencies
+- **Workspace Identification**: Locates the target workspace using environment variables or defaults
+- **Safe Deletion**: Executes the Python removal script with proper error handling and user guidance
+
+The core removal logic is handled by [`remove_fabric_workspace.py`](../infra/scripts/fabric/remove_fabric_workspace.py), which:
+- **Workspace Lookup**: Finds the workspace by name or ID (defaults to "Unified Data Foundation with Fabric workspace")
+- **Comprehensive Removal**: Deletes all workspace items including notebooks, lakehouses, and datasets
+- **Confirmation Prompts**: Provides interactive confirmation to prevent accidental deletions
+- **Error Handling**: Gracefully handles missing workspaces or permission issues
+
+#### Phase 2: Azure Infrastructure Cleanup
+After successful Fabric workspace removal, `azd down` proceeds to deprovision all Azure resources that were created through the [`main.bicep`](../infra/main.bicep) template, including:
+
+- **Azure Storage Accounts**: Data lake storage and associated containers
+- **Azure SQL Database**: Analytics database and logical server
+- **Azure Key Vault**: Secrets and configuration storage
+- **Service Principals**: Associated managed identities (if created)
+- **Resource Group**: Complete resource group removal (if specified)
+
+### Cleanup Options and Flexibility
+
+**Environment Variables:**
+The cleanup process respects the same environment variables as deployment:
+
+```bash
+# Specify custom workspace name for removal
+azd env set AZURE_FABRIC_WORKSPACE_NAME "My Custom Workspace Name"
+
+# Or specify workspace by ID
+azd env set AZURE_FABRIC_WORKSPACE_ID "12345678-1234-1234-1234-123456789012"
+```
+
+**Cleanup Script Parameters:**
+For advanced scenarios, you can run the removal scripts directly with additional options:
+
+```powershell
+# Skip Python virtual environment (use system Python)
+./infra/scripts/utils/run_python_script_fabric_remove.ps1 -SkipPythonVirtualEnvironment
+
+# Skip dependency installation (assume pre-installed)
+./infra/scripts/utils/run_python_script_fabric_remove.ps1 -SkipPythonDependencies
+
+# Specify workspace directly
+./infra/scripts/utils/run_python_script_fabric_remove.ps1 -FabricWorkspaceName "MyWorkspace"
+```
+
+### Safety Features
+
+The cleanup process includes several safety mechanisms:
+
+- **Interactive Confirmation**: Prompts before deleting workspaces to prevent accidental removal
+- **Graceful Error Handling**: Continues with infrastructure cleanup even if Fabric workspace removal fails
+- **Detailed Logging**: Provides comprehensive output for troubleshooting and audit purposes
+- **Non-Destructive Failures**: Missing workspaces or permission issues don't prevent infrastructure cleanup
+
+### Troubleshooting Cleanup Issues
+
+**Common Issues and Resolutions:**
+
+1. **Workspace Not Found**: The script gracefully handles non-existent workspaces and continues with infrastructure cleanup
+2. **Permission Errors**: If Fabric API access fails, the cleanup process logs the issue and proceeds with Azure resource removal
+3. **Partial Cleanup**: If the Fabric removal fails, you can manually delete the workspace through the [Microsoft Fabric portal](https://fabric.microsoft.com) or re-run `azd down`
+
+**Manual Verification:**
+After `azd down` completes, verify cleanup success:
+- **Fabric**: Check the [Microsoft Fabric portal](https://fabric.microsoft.com) to ensure workspace removal
+- **Azure**: Verify resource group deletion in the [Azure portal](https://portal.azure.com)
+- **Local Environment**: Use `azd env list` to see remaining environments
+
+> **💡 Pro Tip**: Use `azd env select` to switch between environments if you have multiple deployments, then run `azd down` to remove specific environments selectively.
+
+---
+
 ## Additional Resources
 
 - [Microsoft Fabric Documentation](https://learn.microsoft.com/fabric/)
