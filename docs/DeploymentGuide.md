@@ -19,7 +19,7 @@ Below is the list of technology stacks utilized by the solution accelerator:
 
 ### **Deploy and Configure Microsoft Fabric Resources** (For Architecture Option 1)
 
-Please follow the instructions in [Fabric Deployment Guide](./DeploymentGuideFabric.md) to deploy all resources for the medallion architecture. The resources include 3 lakehouses (bronze, silver, and gold), 48 notebooks, 2 SQL scripts, and sample data. For detailed information on the notebooks and SQL scripts, please see [Guide to Fabric Notebooks](./NotebooksGuideFabric.md).
+Please follow the instructions in [Medallion Architecture with PBI Dashboard Deployment Guide](./DeploymentGuideFabric.md) to deploy all resources for the medallion architecture. The resources include 3 lakehouses (bronze, silver, and gold), 48 notebooks, 2 SQL scripts, and sample data. For detailed information on the notebooks and SQL scripts, please see [Guide to Medallion Architecture Fabric Notebooks](./NotebooksGuideFabric.md).
 
 Please follow the [Power BI Configuration Guide](./DeploymentGuidePowerBI.md) to choose your option to set up the Power BI dashboard.
 
@@ -33,7 +33,7 @@ Please follow the instructions in [Provisioning Microsoft Purview](./SetupPurvie
 
 **Prerequisites**: You have deployed architecture option 1. 
 
-Please follow the instructions in [Provisioning Azure Databricks](./SetupDatabricks.md) to create the Azure Databricks workspace and obtain the necessary information first, and then follow the instructions in the [Azure Databricks Deployment Guide](./DeploymentGuideDatabricks.md) to deploy resources to the Azure Databricks workspace and set up the integration with the Microsoft Fabric workspace previously created. The resources include 1 silver lakehouse, 7 notebooks, 2 SQL scripts, and sample data. For detailed information on the notebooks and SQL scripts, please see [Guide to Databricks Notebooks](./NotebooksGuideFabric.md).
+Please follow the instructions in [Provisioning Azure Databricks](./SetupDatabricks.md) to create the Azure Databricks workspace and obtain the necessary information first, and then follow the instructions in the [Azure Databricks Lakehouse Deployment Guide](./DeploymentGuideDatabricks.md) to deploy resources to the Azure Databricks workspace and set up the integration with the Microsoft Fabric workspace previously created. The resources include 1 silver lakehouse, 7 notebooks, 2 SQL scripts, and sample data. For detailed information on the notebooks and SQL scripts, please see [Guide to Databricks Notebooks](./NotebooksGuideFabric.md).
 
 ### **Deploy and Configure Azure Databricks** (For Architecture Option 4)
 
