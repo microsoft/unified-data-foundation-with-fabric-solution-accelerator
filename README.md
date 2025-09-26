@@ -102,9 +102,7 @@ Quick deploy
 </h2>
 
 ### How to install or deploy
-Follow the quick deploy steps in the deployment guide to deploy this solution to your own Azure subscription.
-
-[Click here to launch the deployment guide](./docs/DeploymentGuide.md)
+If you choose option 1, "Core Medallion Architecture in Microsoft Fabric only", please follow the quick deploy steps in [guide to deploy medallion architecture with PowerBI dashboard in Fabric](./docs/DeploymentGuideFabric.md).  Otherwise, please follow the instructions provided in [deployment guide for all options](./docs/DeploymentGuide.md).
 <br/>
 
 ### Prerequisites and costs
