@@ -22,6 +22,8 @@ azd env set AZURE_FABRIC_WORKSPACE_NAME "My Analytics Platform"
 azd up
 ```
 
+![Recording of the azd up experience](./images/deployment/fabric/azd-up-deployment.gif)
+
 During deployment, you'll specify:
 - **Environment name** (e.g., "udfwf-dev"). This will be used to build the name of the deployed Azure resources.
 - **Azure subscription**.
