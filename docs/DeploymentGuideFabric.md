@@ -1,4 +1,4 @@
-# Microsoft Fabric Deployment Guide
+# Deployment Guide for Medallion Architecture and PBI in Fabric
 
 Deploy the **Unified Data Foundation with Fabric** solution accelerator using Azure Developer CLI - get a complete data platform with medallion architecture in minutes.
 

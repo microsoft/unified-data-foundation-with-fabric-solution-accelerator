@@ -1,4 +1,4 @@
-# Azure Databricks Deployment Guide
+# Deployment Guide for Azure Databricks Lakehouse
 
 This guide describes how to deploy the **Unified data foundation with Fabric solution accelerator** - Databricks components including notebooks, sample data, Unity Catalog, and workspace structure.
 
@@ -7,9 +7,10 @@ This guide describes how to deploy the **Unified data foundation with Fabric sol
 ## Prerequisites
 
 
-Refer to the [Deployment Guide for Fabric](./DeploymentGuideFabric.md) and follow the [Setup Guide for Databricks](./SetupDatabricks.md). The Setup guide for Databricks contains important steps you must complete before running the deployment scripts.
+If you have not deployed Option 1, deploy the medallion architecture with PowerBI dashboard by following the instructions [Medallion Architecture with PBI Dashboard Deployment Guide](./DeploymentGuideFabric.md) and follow the [Setup Guide for Databricks](./SetupDatabricks.md). The Setup guide for Databricks contains important steps you must complete before running the deployment scripts.
 
 **Required Tools for deployment**
+
 - [Python 3.9+](https://www.python.org/downloads/) - for running deployment scripts
 - [Git](https://git-scm.com/downloads) - for cloning the repository
 

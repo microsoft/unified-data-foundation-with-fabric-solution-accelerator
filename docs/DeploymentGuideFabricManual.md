@@ -1,4 +1,4 @@
-# Manual Microsoft Fabric Deployment Guide
+# Deployment Guide (Manual Option) for Medallion Architecture and PBI in Fabric
 
 This guide describes how to deploy the **Unified Data Foundation with Fabric** solution accelerator using manual deployment scripts for users who prefer more granular control over the deployment process.
 

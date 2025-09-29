@@ -1,11 +1,11 @@
 # Power BI Deployment Guide
- 
+
 This guide describes how to setup the **Unified data foundation with Fabric solution accelerator** Power BI reports to Microsoft Fabric.
- 
+
 ---
- 
+
 ## Prerequisites
-Refer to the [Setup Guide for Fabric](./SetupFabric.md) and [Deployment Guide for Fabric](./DeploymentGuideFabric.md) to complete the required environment and account setup before proceeding.
+If you have not done so, follow the instructions in [Medallion Architecture with PBI Dashboard Deployment Guide](./DeploymentGuideFabric.md) to deploy the required Fabric resources. 
 
 ---
 
@@ -13,7 +13,7 @@ Refer to the [Setup Guide for Fabric](./SetupFabric.md) and [Deployment Guide fo
 
 1. In Microsoft Fabric, open the **`maag_gold` lakehouse**.  
 2. Go to **Lakehouse settings** (*top left*) and locate the **SQL analytics endpoint**. 
-      
+   
    ![SQL_credentials](./images/deployment/sqlConnection.jpg)
 
 3. Copy the **SQL connection string**. You will use this value to verify or configure connections in both automated and manual deployments.
@@ -43,7 +43,7 @@ You can deploy the Power BI report using either of the following approaches:
    - If you’re not the owner, click **Take Over**. 
    ![Sementic Model takeover](./images/deployment/sementicmodel-takeover.png)
    - Under **Parameters**, check the value for **`sqlEndPoint`** and confirm that it matches the SQL endpoint obtained earlier.  
-  ![Sementic Model parametrs](./images/deployment/sementicmodel-parameter.png) 
+    ![Sementic Model parametrs](./images/deployment/sementicmodel-parameter.png) 
 
 1. **Explore the Report**
    - Once verified, you can start exploring the report without additional configuration.  
