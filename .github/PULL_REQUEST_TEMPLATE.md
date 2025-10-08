@@ -30,7 +30,6 @@
 git clone [repo-address]
 cd [repo-name]
 git checkout [branch-name]
-npm install
 ```
 
 * Test the code
