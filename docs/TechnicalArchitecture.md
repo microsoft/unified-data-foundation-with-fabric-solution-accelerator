@@ -28,7 +28,7 @@ Below diagram illustrates the architecture if you choose to deploy option 3, **C
 
 ![Architecture Option 3](./images/deployment/architectures/sa-architecture-option-3-fabric-databricks.png)
 
-Below architecture illustrates the architecture for option 4, **Core Medallion Architecture in Microsoft Fabric + Azure Purview + Azure Databricks**. If you have deployed the options 1, 2, or 3, you automatically get this architecture. 
+Below architecture illustrates the architecture for option 4, **Core Medallion Architecture in Microsoft Fabric + Azure Purview + Azure Databricks**. If you have deployed the options 1, 2, and 3, you will automatically get the option 4, which is the full solution architecture. 
 
 ![Solution Architecture](./images/deployment/architectures/sa-architecture-option-4-fabric-purview-databricks.png)
 
