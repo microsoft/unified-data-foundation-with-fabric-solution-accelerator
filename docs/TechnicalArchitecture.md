@@ -16,12 +16,6 @@ We have built a flexible and configurable architecture with plug-and-play option
 3. **Core Medallion Architecture in Microsoft Fabric + Azure Databricks**: On top of the capabilities provided by the Core Medallion Architecture, you will get 7 data engineering notebooks in Azure Databricks to load raw data into Databricks lakehouse tables in the **sales** domain with schema name `salesadb`. For details, please refer to [Guide to Databricks Notebooks](./NotebooksGuideDatabricks.md). There is one runner notebook that automates execution to move data from source files to lakehouse tables.  You do not need to move the data into Azure Fabric. You will be able to use Fabric Databricks mirroring and shortcut from the Gold lakehouse to review or use the data. 
 4. **Core Medallion Architecture in Microsoft Fabric + Azure Purview + Azure Databricks**: You will get all the capabilities described by previous items 1-3. You will be able to leverage the strengths of all three platforms to build comprehensive data architecture that delivers managed and governed data products.
 
-Below architecture illustrates the architecture for option 4, **Core Medallion Architecture in Microsoft Fabric + Azure Purview + Azure Databricks**.
-
-![Solution Architecture](../docs/images/readme/solution-architecture.png)
-
-If you choose to deploy this architecture, you will need to follow the deployment guide step by step to set up and deploy all resources. If you choose the option 1, 2, or 3. You can deploy the respective parts by following the [Deployment Guide](./DeploymentGuide.md) accordingly. 
-
 Below diagram illustrates the architecture if you choose to deploy option 1, **Core Medallion Architecture in Microsoft Fabric only**.
 
 ![Architecture Option 1](./images/deployment/architectures/sa-architecture-option-1-fabric.png)
@@ -30,11 +24,11 @@ Below diagram illustrates the architecture if you choose to deploy option 2, **C
 
 ![Architecture Option 2](./images/deployment/architectures/sa-architecture-option-2-fabric-purview.png)
 
-Below diagram illustrates the architecture if you choose to deploy option 3, **Core Medallion Architecture in Microsoft Fabric + Azure Databricks**.
+Below diagram illustrates the architecture if you choose to deploy option 3, **Core Medallion Architecture in Microsoft Fabric + Azure Databricks**. 
 
 ![Architecture Option 3](./images/deployment/architectures/sa-architecture-option-3-fabric-databricks.png)
 
+Below architecture illustrates the architecture for option 4, **Core Medallion Architecture in Microsoft Fabric + Azure Purview + Azure Databricks**. If you have deployed the options 1, 2, and 3, you will automatically get the option 4, which is the full solution architecture. 
 
-
-
+![Solution Architecture](./images/deployment/architectures/sa-architecture-option-4-fabric-purview-databricks.png)
 
