@@ -1,8 +1,8 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 
-name: unified-data-foundation-fabric-accelerator
-# metadata:
-#   template: unified-data-foundation-fabric-accelerator@1.0
+name: unified-data-foundation-with-fabric-solution-accelerator
+metadata:
+  template: unified-data-foundation-with-fabric-solution-accelerator@1.0
 
 requiredVersions:
   azd: ">1.17.1"
