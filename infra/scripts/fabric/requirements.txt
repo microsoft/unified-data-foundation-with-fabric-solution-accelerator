@@ -2,7 +2,7 @@
 # For fabric_api.py, powerbi_api.py, fabric_utils.py and related Fabric deployment scripts
 
 # Azure authentication and core libraries
-azure-identity==1.15.0
+azure-identity==1.16.1
 azure-core==1.29.0
 
 # Azure Data Lake Storage (required by fabric_utils.py)
