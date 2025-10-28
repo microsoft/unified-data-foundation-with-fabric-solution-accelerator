@@ -18,6 +18,9 @@ param location string = resourceGroup().location
 @description('Optional. Enable/Disable usage telemetry for module.')
 param enableTelemetry bool = true
 
+@description('Optional. Tags to be applied to all resources.')
+param tags object = {}
+
 @description('Optional. An array of user object IDs or service principal object IDs that will be assigned the Fabric Capacity Admin role. This can be used to add additional admins beyond the default admin which is the user assigned managed identity created as part of this deployment.')
 param fabricAdminMembers array = []
 
@@ -47,6 +50,8 @@ var solutionSuffix = toLower(trim(replace(
   ''
 )))
 
+var allTags = union(resourceGroup().tags, tags)
+
 // var userAssignedIdentityResourceName = 'id-${solutionSuffix}'
 // module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
 //   name: take('avm.res.managed-identity.user-assigned-identity.${userAssignedIdentityResourceName}', 64)
@@ -70,6 +75,7 @@ module fabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = {
     enableTelemetry: enableTelemetry
     skuName: skuName
     adminMembers: fabricTotalAdminMembers
+    tags: allTags
   }
 }
 
