@@ -3,6 +3,9 @@
 To help you get started, here are some **Sample Prompts** you can ask in the app:
 
 ## **Sections**
+Select the team option from the top left section and click **continue** button.
+
+![GenerateDraft](images/maag-sample.png)
 
 ### **Fabric Testing**
 _Sample Steps:_ <br>
