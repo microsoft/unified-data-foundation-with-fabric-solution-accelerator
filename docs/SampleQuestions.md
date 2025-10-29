@@ -86,3 +86,4 @@ _Sample Steps:_ <br>
   2. Select Data Product Sales Resources.
   3. Open maag_gold. Observe Data asset lineage   
        
+Unified data foundation using Microsoft Fabric, Purview, and Azure Databricks for integrated, governed, and analytics-ready insights.
