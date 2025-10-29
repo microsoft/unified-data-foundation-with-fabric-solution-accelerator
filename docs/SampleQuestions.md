@@ -2,8 +2,8 @@
 
 To help you get started, here are some **Sample Prompts** you can ask in the app:
 
-## **Sections**
-Select the team option from the top left section and click **continue** button.
+## **steps**
+Execute a guided validation process across Fabric Workspace, Lakehouses, Notebooks, Power BI, Databricks, and Purview to ensure seamless data movement from Bronze to Gold layers, validated reporting, and complete data lineage visibility.
 
 ![GenerateDraft](images/maag-sample.png)
 
