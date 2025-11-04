@@ -5,7 +5,7 @@ To help you get started, here’s a **sample process** to follow.
 ## **Process**
 Execute a guided validation process across Fabric Workspace, Lakehouses, Notebooks, Power BI, Databricks, and Purview to ensure seamless data movement from Bronze to Gold layers, validated reporting, and complete data lineage visibility.
 
-![GenerateDraft](images/maag-sample.png)
+![sampleimg](images/maag-sample.png)
 
 ### **Fabric Testing**
 
