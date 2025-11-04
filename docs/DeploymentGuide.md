@@ -35,4 +35,4 @@ If you have deployed all the steps described for options 1, 2, and 3, you will h
 ## Next Steps
 Now that you've completed your deployment, you can start using the solution. 
 
-To help you get started, here are some [Sample Questions](./SampleQuestions.md) you can follow to try it out.
+To help you get started, here are some [Sample Questions](./SampleWorkflow.md) you can follow to try it out.
