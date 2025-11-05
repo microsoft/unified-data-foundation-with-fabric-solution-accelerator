@@ -2,6 +2,8 @@
 
 To help you get started, here’s a **sample process** to follow.
 
+> _Note: Average response time is 10-15 seconds._ <br>
+
 ## **Process**
 Execute a guided validation process across Fabric Workspace, Lakehouses, Notebooks, Power BI, Databricks, and Purview to ensure seamless data movement from Bronze to Gold layers, validated reporting, and complete data lineage visibility.
 
