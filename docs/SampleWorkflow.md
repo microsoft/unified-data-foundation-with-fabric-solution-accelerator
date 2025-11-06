@@ -28,7 +28,7 @@ Execute a guided validation process across Fabric Workspace, Lakehouses, Noteboo
 	- **bronze_to_silver:** Contains 16 notebooks to process data in bronze lakehouse and populate data models in the silver lakehouse
 	- **data_management:** Contains 5 notebooks to truncate and delete tables if a process needs to be rerun
 	- **schema:** Contains  8 notebooks to create data models
-	- **silver_to_gold:** Contains 19 notebooks to take data from silver tier with necessary processing and  insert data to tables in gold lakehouse
+	- **silver_to_gold:** Contains 19 notebooks to take data from silver tier with necessary processing and insert data to tables in gold lakehouse
    
 #### Step 4
 - Observe: You will also see two runner notebooks:
