@@ -2,7 +2,7 @@
 
 To help you get started, here’s a **sample process** to follow.
 
-> _Note: Average response time is 10-15 seconds._ <br>
+> _Note: Average response time for report loading is 10-15 seconds._ <br>
 
 ## **Process**
 Execute a guided validation process across Fabric Workspace, Lakehouses, Notebooks, Power BI, Databricks, and Purview to ensure seamless data movement from Bronze to Gold layers, validated reporting, and complete data lineage visibility.
@@ -17,7 +17,9 @@ Execute a guided validation process across Fabric Workspace, Lakehouses, Noteboo
   - lakehouses
   - notebooks
   - reports
-    
+
+> _Note: The databricks folder is included only when the user has completed deployment and configuration of Azure Databricks for Fabric integration._
+	
 #### Step 2    
 - Task: Browse the resources in each folder and subfolders.
   
