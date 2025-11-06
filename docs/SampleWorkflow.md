@@ -85,7 +85,7 @@ Execute a guided validation process across Fabric Workspace, Lakehouses, Noteboo
 ### **Power BI Testing** 
 
 #### Step 1
-- Task: Open the Fabric workspace and Open reports folder and navigate to sales_dashboard,
+- Task: Open the Fabric workspace and open reports folder and navigate to sales_dashboard.
 
 #### Step 2  
 - Observe: YOY Net sales Comparison chart.
