@@ -12,7 +12,7 @@ Execute a guided validation process across Fabric Workspace, Lakehouses, Noteboo
 ### **Fabric Testing**
 
 #### Step 1
-- Task: Validate 4 folders are created successully in the Fabric Workspace <br>
+- Task: Validate 4 folders are created successfully in the Fabric Workspace <br>
   - databricks
   - lakehouses
   - notebooks
