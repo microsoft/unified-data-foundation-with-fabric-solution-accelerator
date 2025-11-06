@@ -61,7 +61,7 @@ Execute a guided validation process across Fabric Workspace, Lakehouses, Noteboo
 
 #### Step 1
 - Task: Navigate to the notebooks folder.
-- Task: Opens the bronze_to_silver subfolder.
+- Task: Open the bronze_to_silver subfolder.
 - Observe: list of related notebooks.
 - Observe: Open any notebook  verify that the notebook details are loaded correctly.
      
