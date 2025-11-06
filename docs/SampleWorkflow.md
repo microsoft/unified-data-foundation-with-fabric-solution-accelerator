@@ -80,7 +80,7 @@ Execute a guided validation process across Fabric Workspace, Lakehouses, Noteboo
 #### Step 4
 - Task: Navigate to the notebooks folder.
 - Task: Verify that two runner notebooks is displayed.
-- Task: Open any notebook  verify that the notebook details are loaded correctly.         
+- Task: Open any notebook and verify that the notebook details are loaded correctly.
 
 ### **Power BI Testing** 
 
