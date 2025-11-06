@@ -75,7 +75,7 @@ Execute a guided validation process across Fabric Workspace, Lakehouses, Noteboo
 - Task: Navigate to the notebooks folder.
 - Task: Opens the  data_management subfolder.
 - Observe: list of related notebooks.
-- Task: Open any notebook  verify that the notebook details are loaded correctly. e.g. truncate_all_tables_gold
+- Task: Open any notebook  verify that the notebook details are loaded correctly (e.g., truncate_all_tables_gold)
      
 #### Step 4
 - Task: Navigate to the notebooks folder.
