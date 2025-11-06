@@ -24,7 +24,7 @@ Execute a guided validation process across Fabric Workspace, Lakehouses, Noteboo
 - Task: Browse the resources in each folder and subfolders.
   
 #### Step 3  
-- Task: Open notebooks folder and verify below resourcses:
+- Task: Open notebooks folder and verify below resources:
 	- **bronze_to_silver:** Contains 16 notebooks to process data in bronze lakehouse and populate data models in the silver lakehouse
 	- **data_management:** Contains 5 notebooks to truncate and delete tables if a process needs to be rerun
 	- **schema:** Contains  8 notebooks to create data models
