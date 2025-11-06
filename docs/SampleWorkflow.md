@@ -120,7 +120,7 @@ Execute a guided validation process across Fabric Workspace, Lakehouses, Noteboo
   - Observe: Scan details and see information on Cards and Graph
  
 #### Step 3     
-**Data Lineage and metdata review**
+**Data Lineage and metadata review**
 - Task: Navigate to Unified Catalog -> Catalog management -> Data Products
 - Task: Select Data Product Sales Resources.
 - Task: Open maag_gold. Observe Data asset lineage   
