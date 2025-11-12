@@ -12,7 +12,11 @@ Below is the list of technology stacks utilized by the solution accelerator:
 
 ### **Deploy Medallion Architecture with PBI Dashboard in Fabric** (For Architecture Option 1)
 
-Please follow the instructions in [Medallion Architecture with PBI Dashboard Deployment Guide](./DeploymentGuideFabric.md) to deploy all resources for the medallion architecture. The resources include 3 lakehouses (bronze, silver, and gold), 48 notebooks, 2 SQL scripts, and sample data. For detailed information on the notebooks and SQL scripts, please see [Guide to Medallion Architecture Fabric Notebooks](./NotebooksGuideFabric.md).
+Please choose your preferred deployment method:
+- [Automated Deployment Guide](./DeploymentGuideFabric.md) - Uses Azure Developer CLI for one-command deployment (recommended)
+- [Manual Deployment Guide](./DeploymentGuideFabricManual.md) - Uses manual deployment scripts for users who prefer more granular control over the deployment process
+
+Both methods deploy the complete medallion architecture including 3 lakehouses (bronze, silver, and gold), 48 notebooks, 2 SQL scripts, and sample data. For detailed information on the notebooks and SQL scripts, please see [Guide to Medallion Architecture Fabric Notebooks](./NotebooksGuideFabric.md).
 
 Please follow the [Power BI Dashboard Configuration Options](./DeploymentGuidePowerBI.md) to review your options on using the dashboard. 
 

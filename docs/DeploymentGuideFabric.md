@@ -29,6 +29,10 @@ During deployment, you'll specify:
 
 **What you get**: Complete medallion architecture with Fabric capacity, lakhouses (Bronze/Silver/Gold), notebooks, sample data, and Power BI reports.
 
+> **💡 Alternative Deployment Option**
+> 
+> This guide uses Azure Developer CLI for automated deployment. If you prefer more granular control or have an existing Fabric capacity, see the [Manual Deployment Guide](./DeploymentGuideFabricManual.md).
+
 ### Next Steps
 - **First deployment**: Follow the commands above - they work in [multiple environments](#deployment-options)
 - **Need different setup**: See [deployment environment options](#deployment-options) (Cloud Shell, Codespaces, etc.)

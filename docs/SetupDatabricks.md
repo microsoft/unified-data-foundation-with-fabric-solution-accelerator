@@ -6,7 +6,7 @@ This guide helps an organization to set up  set up Azure Databricks for Microsof
 
 ## Prerequisites
 
-- Microsoft Fabric is already provisioned. [Provisioning Microsoft Fabric](./SetupFabric.md)
+- Follow [Deployment Guide for Microsoft Fabric](./DeploymentGuideFabric.md).
 - You have access to the Azure Portal and permission to create resources (or ask your Azure admin).
 
 ---
