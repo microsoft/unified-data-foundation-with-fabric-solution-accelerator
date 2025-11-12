@@ -102,13 +102,17 @@ Quick deploy
 </h2>
 
 ### How to install or deploy
-If you choose option 1, "Core Medallion Architecture in Microsoft Fabric only", please follow the quick deploy steps in [guide to deploy medallion architecture with PowerBI dashboard in Fabric](./docs/DeploymentGuideFabric.md).  Otherwise, please follow the instructions provided in [deployment guide for all options](./docs/DeploymentGuide.md).
+If you choose option 1, "Core Medallion Architecture in Microsoft Fabric only", you can deploy using either:
+- [Automated deployment with Azure Developer CLI](./docs/DeploymentGuideFabric.md) (recommended for quick setup)
+- [Manual deployment scripts](./docs/DeploymentGuideFabricManual.md) for users who prefer more granular control over the deployment process
+
+For other architecture options, please follow the instructions provided in [deployment guide for all options](./docs/DeploymentGuide.md).
 <br/>
 
 ### Prerequisites and costs
-You have followed the provisioning guidance pages for [Provisioning Fabric](./docs/SetupFabric.md), [Provisioning Azure Databricks](./docs/SetupDatabricks.md), [Provisioning Purview](./docs/SetupPurview.md) based on your choice of architecture. 
-
 To deploy this solution accelerator, ensure you have access to an [Azure subscription](https://azure.microsoft.com/free/) with the necessary permissions to create **resource groups, resources, app registrations, and assign roles at the resource group level**. This should include Contributor role at the subscription level and Role Based Access Control role on the subscription and/or resource group level. Follow the steps in [Azure Account Set Up](./docs/AzureAccountSetUp.md).
+
+ Depending on your selected architecture option, you may also need to complete the provisioning steps outlined in [Provisioning Azure Databricks](./docs/SetupDatabricks.md) and/or [Provisioning Purview](./docs/SetupPurview.md).
 
 Licensing and cost for establishing Fabric can be found at  [Microsoft Fabric concepts and licenses](https://learn.microsoft.com/en-us/fabric/enterprise/licenses#capacity) and [Microsoft Fabric Pricing](https://azure.microsoft.com/en-us/pricing/details/microsoft-fabric/).
 
