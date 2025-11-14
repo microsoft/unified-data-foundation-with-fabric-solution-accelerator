@@ -25,6 +25,8 @@ We have built flexibility and options so that you do not have to provision all t
 </div>
 <br/>
 
+ **Note:** With any AI solutions you create using these templates, you are responsible for assessing all associated risks and for complying with all applicable laws and safety standards. Learn more in the transparency documents for [Agent Service](https://learn.microsoft.com/en-us/azure/ai-foundry/responsible-ai/agents/transparency-note) and [Agent Framework](https://github.com/microsoft/agent-framework/blob/main/TRANSPARENCY_FAQ.md).
+
 <h2><img src="./docs/images/readme/solution-overview.png" width="48" />
 Solution overview
 </h2>
