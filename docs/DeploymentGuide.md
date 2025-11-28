@@ -10,6 +10,12 @@ Below is the list of technology stacks utilized by the solution accelerator:
 - [Microsoft Purview](https://learn.microsoft.com/en-us/purview/) for added data governance support (for Architecture Options 2 and 4)
 - [Azure Databricks](https://learn.microsoft.com/en-us/azure/databricks/) for added integration with Azure Databricks data into Fabric via mirroring and shortcut (for Architecture Options 3 and 4)
 
+### **Quota Check (Optional)**
+
+💡 RECOMMENDED: Check your Azure OpenAI quota availability before deployment for optimal planning.
+
+📖 Follow: [Quota Check Instructions](./QuotaCheck.md) to ensure sufficient capacity.
+
 ### **Deploy Medallion Architecture with PBI Dashboard in Fabric** (For Architecture Option 1)
 
 Please choose your preferred deployment method:
