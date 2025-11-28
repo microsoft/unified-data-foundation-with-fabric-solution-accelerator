@@ -2,7 +2,7 @@
 
 ## **Prerequisites**
 
-We have built a flexible and configurable architecture with plug-and-play options, providing you with four architecture choices. You can deploy any of the the four architectures options based on your organizational needs. For a detailed feature description of each architecture, please refer to [Solution Architecture and Options](./TechnicalArchitecture.md).
+We have built a flexible and configurable architecture with plug-and-play options, providing you with four architecture choices. You can deploy any of the four architecture options based on your organizational needs. For a detailed feature description of each architecture, please refer to [Solution Architecture and Options](./TechnicalArchitecture.md).
 
 Below is the list of technology stacks utilized by the solution accelerator:
 
