@@ -304,9 +304,74 @@ Any `.pbix` files found in the `reports/` directory will be automatically deploy
 
 ---
 
+## Deployment Options
 
+Choose your deployment environment based on your workflow and requirements. All options use the same [Quick Start commands](#quick-start) with environment-specific setup.
 
-## 🔧 Advanced Configuration Options
+| Environment | Best For | Setup Required | Notes |
+|-------------|----------|----------------|-------|
+| **[Local Machine](#local-machine)** | Full development control | Install [software requirements](#-software-requirements) | Most flexible, requires local setup |
+| **[Azure Cloud Shell](#azure-cloud-shell)** | Zero setup | Just a web browser | Pre-configured tools, session timeouts |
+| **[GitHub Codespaces](#github-codespaces)** | Team consistency | GitHub account | Cloud development environment |
+| **[Dev Container](#vs-code-dev-container)** | Standardized tooling | Docker Desktop + VS Code | Containerized consistency |
+| **[GitHub Actions](#github-actions-cicd)** | Automated CI/CD | Service principal setup | Production deployments |
+
+### Local Machine
+Deploy with full control over your development environment.
+
+**Setup requirements**: Install the [software requirements](#-software-requirements)
+
+**Deployment**: Use the standard [Quick Start commands](#quick-start)
+
+### Azure Cloud Shell
+Deploy from Azure's browser-based terminal with zero local installation.
+
+**Setup**: Open [Azure Cloud Shell](https://shell.azure.com) and install Azure Developer CLI:
+```bash
+curl -fsSL https://aka.ms/install-azd.sh | bash && exec bash
+```
+
+**Deployment**: Run the [Quick Start commands](#quick-start) (Azure CLI pre-authenticated)
+
+### GitHub Codespaces  
+Deploy from a cloud development environment with pre-configured tools.
+
+**Setup**: 
+1. Go to the [repository](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator)
+2. Click **Code** → **Codespaces** → **Create codespace**
+
+**Deployment**: Install azd and run [Quick Start commands](#quick-start) with device authentication:
+```bash
+# Install azd if needed
+curl -fsSL https://aka.ms/install-azd.sh | bash && exec bash
+
+# Use device code authentication  
+az login --use-device-code
+azd auth login --use-device-code
+
+# Continue with Quick Start deployment commands
+```
+
+### VS Code Dev Container
+Deploy from a containerized environment for team consistency.
+
+**Setup**: 
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop) and [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+2. Clone repository and open in VS Code
+3. Reopen in container when prompted
+
+**Deployment**: All tools pre-installed - run [Quick Start commands](#quick-start) directly
+
+### GitHub Actions (CI/CD)
+Automated deployment using the included [workflow](../.github/workflows/azure-dev.yml).
+
+**Setup**: Configure [repository variables](https://docs.github.com/en/actions/learn-github-actions/variables) and set up [service principal with federated credentials](https://learn.microsoft.com/azure/developer/github/connect-from-azure)
+
+**Triggers**: Push to main branch or manual workflow dispatch
+
+---
+
+## Advanced Configuration Options
 
 The solution accelerator provides flexible configuration options to customize your deployment. Parameters can be configured through **Azure Developer CLI environment variables** (`azd env set`) for local deployments or through **GitHub repository variables** for CI/CD deployments.
 
