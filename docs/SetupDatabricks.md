@@ -145,7 +145,7 @@ Follow these steps to manually create an external location:
 2. **Find the storage path URL:**
      - Go to the [Azure Portal](https://portal.azure.com/).
      - Navigate to your Azure Databricks resource group.
-     - Locate and click on the **Managed Resource Group**,
+     - Locate and click on the **Managed Resource Group**.
      - In the managed resource group, find the **Storage Account** (usually named `dbstorage<random-string>`).
      - Click on the storage account and select **Containers** from the left menu.
      - Note the **Container Name** (commonly `unity-catalog` or similar).
@@ -159,7 +159,7 @@ Follow these steps to manually create an external location:
      - In the Databricks **Create Location** dialog, you'll need to select or create a **Storage Credential** that has access to the storage account.
      - If you need to create a new storage credential, you'll need the **Access Connector ID**:
        - In the [Azure Portal](https://portal.azure.com/), go to your Azure Databricks resource group.
-       - Open the **Managed Resource Group** (typically named `databricks-rg-<workspace-name>-<random-string>`).
+       - Open the **Managed Resource Group**.
        - Look for the **Access Connector for Azure Databricks** resource (named something like `<workspace-name>-accessconnector`).
        - Click on the Access Connector resource.
        - Copy the **Resource ID** from the Overview page or Properties section.
