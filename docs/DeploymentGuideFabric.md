@@ -9,8 +9,8 @@ Deploy the **Unified Data Foundation with Fabric** solution accelerator using Az
 This guide helps you deploy the Unified Data Foundation with Fabric solution accelerator using Azure Developer CLI.
 
 ### Getting Started
-- **New to this solution?** Start with [Deployment Overview](#deployment-overview) → [Prerequisites](#prerequisites) → [Quick Start](#quick-start)
-- **Ready to deploy?** Jump directly to [Quick Start](#quick-start)
+- **New to this solution?** Start with [Deployment Overview](#-deployment-overview) → [Prerequisites](#-prerequisites) → [Quick Start](#-quick-start)
+- **Ready to deploy?** Jump directly to [Quick Start](#-quick-start)
 - **Need customization?** See [Advanced Configuration Options](#advanced-configuration-options)
 
 ### Key Sections
@@ -21,7 +21,7 @@ This guide helps you deploy the Unified Data Foundation with Fabric solution acc
 | [Quick Start](#-quick-start) | One-command deployment instructions |
 | [Deployment Options](#-deployment-options) | Local, cloud, and CI/CD deployment methods |
 | [Deployment Results](#-deployment-results) | Expected outcomes and verification steps |
-| [Advanced Configuration Options](#-advanced-configuration-options) | Optional customization parameters |
+| [Advanced Configuration Options](#advanced-configuration-options) | Optional customization parameters |
 | [Known Limitations](#-known-limitations) | Important constraints to review |
 | [Environment Cleanup](#-environment-cleanup) | How to remove deployed resources |
 | [Additional Resources](#-additional-resources) | Support and further reading |
@@ -80,7 +80,7 @@ python --version
 
 ## 🚀 Quick Start
 
-**One-command deployment** - Deploy everything with Azure Developer CLI ([prerequisites required](#prerequisites)):
+**One-command deployment** - Deploy everything with Azure Developer CLI ([prerequisites required](#-prerequisites)):
 
 ```bash
 # Clone and navigate to repository
@@ -110,13 +110,13 @@ During deployment, you'll specify:
 > This guide uses Azure Developer CLI for automated deployment. If you prefer more granular control or have an existing Fabric capacity, see the [Manual Deployment Guide](./DeploymentGuideFabricManual.md).
 
 ### Next Steps
-- **First deployment**: Follow the commands above - they work in [multiple environments](#deployment-options)
-- **Need different setup**: See [deployment environment options](#deployment-options) (Cloud Shell, Codespaces, etc.)
-- **Understand the process**: Review [deployment overview](#deployment-overview) for technical details
-- **See what's created**: Check [deployment results](#deployment-results) for detailed component overview with screenshots
+- **First deployment**: Follow the commands above - they work in [multiple environments](#-deployment-options)
+- **Need different setup**: See [deployment environment options](#-deployment-options) (Cloud Shell, Codespaces, etc.)
+- **Understand the process**: Review [deployment overview](#-deployment-overview) for technical details
+- **See what's created**: Check [deployment results](#-deployment-results) for detailed component overview with screenshots
 - **Want to customize**: Explore [configuration options](#advanced-configuration-options) for naming, capacity sizing, and admin setup
-- **Limitations**: Review [known limitations](#known-limitations) for common issues and workarounds
-- **Remove environment**: Use [environment cleanup](#environment-cleanup) to completely remove your deployment
+- **Limitations**: Review [known limitations](#-known-limitations) for common issues and workarounds
+- **Remove environment**: Use [environment cleanup](#-environment-cleanup) to completely remove your deployment
 
 ---
 
@@ -151,28 +151,28 @@ The deployment is designed to be **safe to re-run**. If you run `azd up` again:
   - *Data*: Preserved (sample data is re-uploaded if missing).
   - *Admins*: New admins are added; existing ones remain.
 
-The deployment orchestration coordinates both phases, passing deployment parameters and ensuring proper sequencing. See [deployment options](#deployment-options) for different ways to run this deployment based on your preferred environment.
+The deployment orchestration coordinates both phases, passing deployment parameters and ensuring proper sequencing. See [deployment options](#-deployment-options) for different ways to run this deployment based on your preferred environment.
 
 ---
 
 ## 💻 Deployment Options
 
-Choose your deployment environment based on your workflow and requirements. All options use the same [Quick Start commands](#quick-start) with environment-specific setup.
+Choose your deployment environment based on your workflow and requirements. All options use the same [Quick Start commands](#-quick-start) with environment-specific setup.
 
 | Environment | Best For | Setup Required | Notes |
 |-------------|----------|----------------|-------|
-| **[Local Machine](#local-machine)** | Full development control | Install [software requirements](#software-requirements) | Most flexible, requires local setup |
-| **[Azure Cloud Shell](#azure-cloud-shell)** | Zero setup | Just a web browser | Pre-configured tools, session timeouts |
-| **[GitHub Codespaces](#github-codespaces)** | Team consistency | GitHub account | Cloud development environment |
-| **[Dev Container](#vs-code-dev-container)** | Standardized tooling | Docker Desktop + VS Code | Containerized consistency |
-| **[GitHub Actions](#github-actions-cicd)** | Automated CI/CD | Service principal setup | Production deployments |
+| **[Local Machine](#1-local-machine)** | Full development control | Install [software requirements](#software-requirements) | Most flexible, requires local setup |
+| **[Azure Cloud Shell](#2-azure-cloud-shell)** | Zero setup | Just a web browser | Pre-configured tools, session timeouts |
+| **[GitHub Codespaces](#3-github-codespaces)** | Team consistency | GitHub account | Cloud development environment |
+| **[Dev Container](#4-vs-code-dev-container)** | Standardized tooling | Docker Desktop + VS Code | Containerized consistency |
+| **[GitHub Actions](#5-github-actions-cicd)** | Automated CI/CD | Service principal setup | Production deployments |
 
 ### 1. Local Machine
 Deploy with full control over your development environment.
 
 **Setup requirements**: Install the [software requirements](#software-requirements)
 
-**Deployment**: Use the standard [Quick Start commands](#quick-start)
+**Deployment**: Use the standard [Quick Start commands](#-quick-start)
 
 ### 2. Azure Cloud Shell
 Deploy from Azure's browser-based terminal with zero local installation.
@@ -182,7 +182,7 @@ Deploy from Azure's browser-based terminal with zero local installation.
 curl -fsSL https://aka.ms/install-azd.sh | bash && exec bash
 ```
 
-**Deployment**: Run the [Quick Start commands](#quick-start) (Azure CLI pre-authenticated)
+**Deployment**: Run the [Quick Start commands](#-quick-start) (Azure CLI pre-authenticated)
 
 ### 3. GitHub Codespaces  
 Deploy from a cloud development environment with pre-configured tools.
@@ -191,7 +191,7 @@ Deploy from a cloud development environment with pre-configured tools.
 1. Go to the [repository](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator)
 2. Click **Code** → **Codespaces** → **Create codespace**
 
-**Deployment**: Install azd and run [Quick Start commands](#quick-start) with device authentication:
+**Deployment**: Install azd and run [Quick Start commands](#-quick-start) with device authentication:
 ```bash
 # Install azd if needed
 curl -fsSL https://aka.ms/install-azd.sh | bash && exec bash
@@ -211,7 +211,7 @@ Deploy from a containerized environment for team consistency.
 2. Clone repository and open in VS Code
 3. Reopen in container when prompted
 
-**Deployment**: All tools pre-installed - run [Quick Start commands](#quick-start) directly
+**Deployment**: All tools pre-installed - run [Quick Start commands](#-quick-start) directly
 
 ### 5. GitHub Actions (CI/CD)
 Automated deployment using the included [workflow](../.github/workflows/azure-dev.yml).
@@ -675,7 +675,7 @@ except FabricApiError as e:
 1. **Verify Fabric Licensing**: Ensure your organization has appropriate [Microsoft Fabric licenses](https://learn.microsoft.com/fabric/enterprise/licenses)
 2. **Review Identity Configuration**: Follow the [Fabric Identity Support](https://learn.microsoft.com/rest/api/fabric/articles/identity-support) documentation
 3. **Configure Service Principal**: If using a service principal, ensure it's properly configured following [Create Entra App](https://learn.microsoft.com/rest/api/fabric/articles/get-started/create-entra-app) guidance
-4. **Check API Permissions**: Verify the deployment identity has the required Fabric REST API permissions as listed in the [prerequisites](#prerequisites)
+4. **Check API Permissions**: Verify the deployment identity has the required Fabric REST API permissions as listed in the [prerequisites](#-prerequisites)
 
 The script performs a graceful exit (`sys.exit(0)`) rather than failing abruptly, allowing you to resolve permissions and retry the deployment.
 
