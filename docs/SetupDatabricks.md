@@ -151,7 +151,7 @@ Follow these steps to manually create an external location:
      - Note the **Container Name** (commonly `unity-catalog` or similar).
      - Construct the storage path URL using this format:  
        ```
-       abfss://<container-name>@<storage-account-name>.dfs.core.windows.net/<path>
+       abfss://<container-name>@<storage-account-name>.dfs.core.windows.net/<optional-path>
        ```
      - Example: `abfss://unity-catalog@dbstorage123abc.dfs.core.windows.net/managed-location`
 
