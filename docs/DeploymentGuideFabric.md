@@ -8,8 +8,8 @@ Deploy the **Unified Data Foundation with Fabric** solution accelerator using Az
 
 | Section | Description |
 |---------|-------------|
-| [Deployment Overview](#2-deployment-overview) | Overview of deployed resources and architecture |
 | [Prerequisites](#1-prerequisites) | Required permissions, tools, and setup |
+| [Deployment Overview](#2-deployment-overview) | Overview of deployed resources and architecture |
 | [Deployment Options](#3-deployment-options) | Local, cloud, and CI/CD deployment methods |
 | [Deployment Commands](#4-deployment-commands) | One-command deployment instructions |
 | [Deployment Results](#5-deployment-results) | Expected outcomes and verification steps |
