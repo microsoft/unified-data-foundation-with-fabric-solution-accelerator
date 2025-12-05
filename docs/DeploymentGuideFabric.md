@@ -218,7 +218,7 @@ During deployment, you'll specify:
 - **Azure subscription**.
 - **Azure resource group**.
 
-**What you get**: Complete medallion architecture with Fabric capacity, lakhouses (Bronze/Silver/Gold), notebooks, sample data, and Power BI reports.
+**What you get**: Complete medallion architecture with Fabric capacity, lakehouses (Bronze/Silver/Gold), notebooks, sample data, and Power BI reports.
 
 > **💡 Alternative Deployment Option**
 > This guide uses Azure Developer CLI for automated deployment. If you prefer more granular control or have an existing Fabric capacity, see the [Manual Deployment Guide](./DeploymentGuideFabricManual.md).
@@ -345,7 +345,7 @@ Configure the Azure infrastructure components through Bicep template parameters 
 | **Fabric Capacity SKU** | `skuName` | Not directly supported* | Fabric capacity tier and performance level | `F2` | `F4`, `F8`, `F16`, `F32`, `F64`, `F128`, `F256`, `F512`, `F1024`, `F2048` |
 | **Enable Telemetry** | `enableTelemetry` | Not directly supported* | Enable/disable usage telemetry collection | `true` | `false` |
 
-**GitHub Actions can use additional parameters through Bicep parameter files or workflow modifications.*
+*GitHub Actions can use additional parameters through Bicep parameter files or workflow modifications.*
 
 **Configuration Examples:**
 
@@ -449,7 +449,7 @@ Manage workspace administrators and security permissions for the Fabric workspac
 | **Fabric Admins** | `AZURE_FABRIC_ADMIN_MEMBERS` | Bicep output | List of administrators (UPNs and Service Principal IDs) | JSON array | `["user1@contoso.com", "12345678-1234-1234-1234-123456789012"]` |
 | **Admins by Object ID** | `AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID` | Not directly supported* | List of object IDs with fallback user/service principal detection | JSON array | `["87654321-4321-4321-4321-210987654321"]` |
 
-**GitHub Actions workflow uses Bicep output for admin configuration. See examples below for customization.*
+*GitHub Actions workflow uses Bicep output for admin configuration. See examples below for customization.*
 
 **Administrator Types Supported:**
 
@@ -668,7 +668,7 @@ def detect_principal_type(admin_identifier, graph_client=None):
 
 2. **Post-Deployment Admin Assignment**: Use the dedicated admin management scripts:
    - [`add_fabric_workspace_admins.py`](../infra/scripts/fabric/add_fabric_workspace_admins.py) - Direct Python script for admin assignment
-   - [`run_python_script_fabric_admins.ps1`](../infra/scripts/utils/run_python_script_fabric_admins.ps1) - PowerShell orchestrator script.
+   - [`run_python_script_fabric_admins.ps1`](../infra/scripts/utils/run_python_script_fabric_admins.ps1) - PowerShell orchestrator script
    These scripts can add administrators to all available Fabric workspaces after initial deployment.
 
 ---
@@ -688,7 +688,7 @@ The [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) s
 ```python
 except FabricApiError as e:
     if e.status_code == 401:
-        print(f"⚠️ WARNING: Unauthorized access to Fabric APIs. Please review your Fabric permissions and Ensure you have proper Fabric licensing and permissions.")
+        print(f"⚠️ WARNING: Unauthorized access to Fabric APIs. Please review your Fabric permissions and ensure you have proper Fabric licensing and permissions.")
         print("   📋 Check the following resources:")
         print("   • Fabric licenses: https://learn.microsoft.com/fabric/enterprise/licenses")
         print("   • Identity support: https://learn.microsoft.com/rest/api/fabric/articles/identity-support")
@@ -789,4 +789,3 @@ The cleanup process includes several safety mechanisms:
 
 For support, visit the [project repository](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator) or engage with the Microsoft Fabric community.
 
----
