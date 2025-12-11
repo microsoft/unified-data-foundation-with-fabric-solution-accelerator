@@ -6,7 +6,6 @@ This guide describes how to deploy the **Unified data foundation with Fabric sol
 
 ## Prerequisites
 
-
 If you have not deployed Option 1, deploy the medallion architecture with PowerBI dashboard by following the instructions [Medallion Architecture with PBI Dashboard Deployment Guide](./DeploymentGuideFabric.md) and follow the [Setup Guide for Databricks](./SetupDatabricks.md). The Setup guide for Databricks contains important steps you must complete before running the deployment scripts.
 
 **Required Tools for deployment**
@@ -27,7 +26,6 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 This allows scripts to run for the current session without permanently changing system policy.
 
 ---
-
 
 ## Deployment Options
 
@@ -214,11 +212,12 @@ Check the terminal for success or error messages. See Troubleshooting if issues 
 After Databricks deployment, you can mirror the Unity Catalog in Microsoft Fabric:
 
 1. Open the Fabric / Power BI portal (https://powerbi.com) and sign in to the target Fabric workspace.
-2. Click **+ New** → **Mirrored Azure Databricks catalog**.
+2. Create a folder named **databricks** in your Fabric workspace and navigate to it.
+3. Click **+ New** → **Mirrored Azure Databricks catalog**.
    ![mirror Catalog](./images/deployment/mirrorcatlogimage.png) 
-3. Authenticate using the previously created connection, then select the catalog, schemas, and tables you want to mirror.
+4. Authenticate using the previously created connection, then select the catalog, schemas, and tables you want to mirror.
  ![mirrorCatalog Connection setup](./images/deployment/mirrorcatlog-connectionsetup.png) 
- 4. Review and create the mirrored item. Monitor sync status.
+5. Review and create the mirrored item. Monitor sync status.
 
 ---
 
@@ -273,6 +272,7 @@ After creating shortcuts, verify data access in Fabric:
 
 1. Open the Lakehouse in Fabric and click **SQL endpoint**(top right).
 2. Run queries like:
+
    ```sql
    SELECT COUNT(*) FROM <table1>;
    SELECT COUNT(*) FROM <table2>;

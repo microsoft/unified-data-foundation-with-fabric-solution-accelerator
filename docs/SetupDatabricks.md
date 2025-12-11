@@ -119,17 +119,19 @@ You will need the following values for deployment process later. Be sure to reco
 ## Step 5: Connect Databricks to Fabric
 
 1. In your Fabric workspace, click **+ New item**.
-2. Search for "Azure Databricks" and select **Mirrored Azure Databricks Catalog**.
-3. Choose **New connection**.
-4. Enter your Databricks workspace URL (copied earlier, e.g., `https://adb-<WorkspaceID>.azuredatabricks.net`).
-5. Name your connection, select **Microsoft Entra ID** for authentication, and sign in.
-6. Click **Connect**.
+2. Select **Folder** and name it `databricks`.
+3. Open the newly created `databricks` folder to navigate into it.
+4. Within the folder, click **+ New item** again.
+5. Search for "Azure Databricks" and select **Mirrored Azure Databricks Catalog**.
+6. Choose **New connection**.
+7. Enter your Databricks workspace URL (copied earlier, e.g., `https://adb-<WorkspaceID>.azuredatabricks.net`).
+8. Name your connection, select **Microsoft Entra ID** for authentication, and sign in.
+9. Click **Connect**.
 
 After setup, you can reuse this connection by choosing **Existing connection**.
 
 ---
 
 ## Next Steps
-
 
 For deploying Databricks resources, follow instructions the [Deployment Guide for Databricks](./DeploymentGuideDatabricks.md).
