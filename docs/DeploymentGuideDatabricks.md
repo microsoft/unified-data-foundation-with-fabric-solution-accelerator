@@ -212,7 +212,10 @@ Check the terminal for success or error messages. See Troubleshooting if issues 
 After Databricks deployment, you can mirror the Unity Catalog in Microsoft Fabric:
 
 1. Open the Fabric / Power BI portal (https://powerbi.com) and sign in to the target Fabric workspace.
-2. Create a folder named **databricks** in your Fabric workspace and navigate to it.
+2. Create a new folder named **databricks** in your workspace:
+   - Click **+ New** → **Folder**.
+   - Name the folder `databricks`.
+   - Navigate into the newly created folder.
 3. Click **+ New** → **Mirrored Azure Databricks catalog**.
    ![mirror Catalog](./images/deployment/mirrorcatlogimage.png) 
 4. Authenticate using the previously created connection, then select the catalog, schemas, and tables you want to mirror.
