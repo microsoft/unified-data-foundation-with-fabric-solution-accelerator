@@ -10,6 +10,7 @@ on:
     paths:
       - "infra/**"
       - "src/**"
+      - "azure.yaml"
       - ".github/workflows/azure-dev.yml"
   pull_request:
     branches:
@@ -17,6 +18,7 @@ on:
     paths:
       - "infra/**"
       - "src/**"
+      - "azure.yaml"
       - ".github/workflows/azure-dev.yml"
 
 # Set up permissions for deploying with secretless Azure federated credentials
@@ -34,10 +36,52 @@ env:
   AZURE_FABRIC_WORKSPACE_NAME_DEV: "Unified Data Foundation with Fabric workspace - Dev"
 
 jobs:
+  # Detect which files changed to conditionally run jobs
+  changes:
+    runs-on: ubuntu-latest
+    # Required permissions
+    permissions:
+      pull-requests: read
+    outputs:
+      infra: ${{ steps.filter.outputs.infra }}
+      src: ${{ steps.filter.outputs.src }}
+      python: ${{ steps.filter.outputs.python }}
+      databricks: ${{ steps.filter.outputs.databricks }}
+      fabric: ${{ steps.filter.outputs.fabric }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Check for file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            infra:
+              - 'infra/**'
+              - 'azure.yaml'
+            src:
+              - 'src/**'
+            python:
+              - 'src/**/*.py'
+              - 'infra/scripts/**/*.py'
+              - '**/requirements*.txt'
+            databricks:
+              - 'src/databricks/**'
+              - 'infra/scripts/databricks/**'
+            fabric:
+              - 'src/fabric/**'
+              - 'infra/scripts/fabric/**'
+
   build:
     runs-on: ubuntu-latest
     name: Build and Static Analysis
     environment: 'udfwf-build'
+    needs: changes
+    # Run if infrastructure files changed or manually triggered
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      needs.changes.outputs.infra == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -80,8 +124,15 @@ jobs:
     runs-on: ubuntu-latest
     name: Deploy to Development
     environment: 'udfwf-dev'
-    needs: build
-    # if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/pre-deploy-alguadam' || github.event_name == 'workflow_dispatch'
+    needs: [changes, build]
+    # Deploy only on main branch or manual trigger, and when infrastructure/source files changed
+    # Use always() to run even if build was skipped (e.g., source-only changes)
+    if: |
+      always() &&
+      !cancelled() &&
+      (needs.build.result == 'success' || needs.build.result == 'skipped') &&
+      (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') &&
+      (needs.changes.outputs.infra == 'true' || needs.changes.outputs.src == 'true' || github.event_name == 'workflow_dispatch')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
