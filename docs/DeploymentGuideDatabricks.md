@@ -6,7 +6,6 @@ This guide describes how to deploy the **Unified data foundation with Fabric sol
 
 ## Prerequisites
 
-
 If you have not deployed Option 1, deploy the medallion architecture with PowerBI dashboard by following the instructions [Medallion Architecture with PBI Dashboard Deployment Guide](./DeploymentGuideFabric.md) and follow the [Setup Guide for Databricks](./SetupDatabricks.md). The Setup guide for Databricks contains important steps you must complete before running the deployment scripts.
 
 **Required Tools for deployment**
@@ -27,7 +26,6 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 This allows scripts to run for the current session without permanently changing system policy.
 
 ---
-
 
 ## Deployment Options
 
@@ -277,6 +275,7 @@ After creating shortcuts, verify data access in Fabric:
 
 1. Open the Lakehouse in Fabric and click **SQL endpoint**(top right).
 2. Run queries like:
+
    ```sql
    SELECT COUNT(*) FROM <table1>;
    SELECT COUNT(*) FROM <table2>;

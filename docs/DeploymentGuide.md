@@ -1,48 +1,125 @@
 # Deployment Guide
 
-## **Prerequisites**
+## Overview
 
-We have built a flexible and configurable architecture with plug-and-play options, providing you with four architecture choices. You can deploy any of the four architecture options based on your organizational needs. For a detailed feature description of each architecture, please refer to [Solution Architecture and Options](./TechnicalArchitecture.md).
+This solution offers a flexible and configurable architecture with modular components. You can deploy any of the **four architecture options** based on your organizational needs.
 
-Below is the list of technology stacks utilized by the solution accelerator:
+| Option | Components | Use Case |
+|--------|-----------|----------|
+| **Option 1** | Fabric + Power BI | Core data foundation |
+| **Option 2** | Option 1 + Purview | Add data governance |
+| **Option 3** | Option 1 + Databricks | Add advanced analytics |
+| **Option 4** | Option 1 + 2 + 3 | Complete enterprise solution |
 
-- [Microsoft Fabric](https://learn.microsoft.com/en-us/fabric/) for Unified Data Foundation core components (for Architecture Options 1, 2, 3, and 4)
-- [Microsoft Purview](https://learn.microsoft.com/en-us/purview/) for added data governance support (for Architecture Options 2 and 4)
-- [Azure Databricks](https://learn.microsoft.com/en-us/azure/databricks/) for added integration with Azure Databricks data into Fabric via mirroring and shortcut (for Architecture Options 3 and 4)
+For a detailed feature description of each architecture option, please refer to [Solution Architecture and Options](./TechnicalArchitecture.md).
 
-### **Quota Check (Optional)**
+---
 
-💡 RECOMMENDED: Check your Azure OpenAI quota availability before deployment for optimal planning.
+## Technology Stack
+
+The solution accelerator utilizes the following Microsoft technologies:
+
+| Technology | Purpose | Included in |
+|-----------|---------|------------|
+| [Microsoft Fabric](https://learn.microsoft.com/en-us/fabric/) | Unified Data Foundation core components | Options 1, 2, 3, 4 |
+| [Microsoft Purview](https://learn.microsoft.com/en-us/purview/) | Data governance and metadata management | Options 2, 4 |
+| [Azure Databricks](https://learn.microsoft.com/en-us/azure/databricks/) | Advanced analytics and Fabric integration | Options 3, 4 |
+
+---
+
+## Prerequisites and Preparation
+
+### Quota Check (Recommended)
+
+💡 Before deployment, check your Azure quota availability for optimal planning.
 
 📖 Follow: [Quota Check Instructions](./QuotaCheck.md) to ensure sufficient capacity.
 
-### **Deploy Medallion Architecture with PBI Dashboard in Fabric** (For Architecture Option 1)
+---
 
-Please choose your preferred deployment method:
-- [Automated Deployment Guide](./DeploymentGuideFabric.md) - Uses Azure Developer CLI for one-command deployment (recommended)
-- [Manual Deployment Guide](./DeploymentGuideFabricManual.md) - Uses manual deployment scripts for users who prefer more granular control over the deployment process
+## Deployment Options
 
-Both methods deploy the complete medallion architecture including 3 lakehouses (bronze, silver, and gold), 48 notebooks, 2 SQL scripts, and sample data. For detailed information on the notebooks and SQL scripts, please see [Guide to Medallion Architecture Fabric Notebooks](./NotebooksGuideFabric.md).
+### Option 1: Medallion Architecture with Power BI in Fabric
 
-Please follow the [Power BI Dashboard Configuration Options](./DeploymentGuidePowerBI.md) to review your options on using the dashboard. 
+**Deploy the foundational architecture** - 3 Lakehouses (Bronze, Silver, Gold), 48 Notebooks, 2 SQL scripts, and Power BI Dashboard.
 
-### **Deploy and Configure Purview for Fabric Resources** (For Architecture Option 2)
+**Choose your deployment method:**
 
-**Prerequisites**: You have deployed architecture option 1. 
+| Method | Guide | Best For |
+|--------|-------|----------|
+| **Automated** (Recommended) | [Automated Deployment Guide](./DeploymentGuideFabric.md) | Production, one-command setup |
+| **Manual** | [Manual Deployment Guide](./DeploymentGuideFabricManual.md) | Granular control, restricted environments |
+| **Local Development** | [Local Development Setup Guide](./LocalDevelopmentSetup.md) | Development, testing, customization |
 
-Please follow the instructions in [Provisioning Microsoft Purview](./SetupPurview.md) if your organization has not provisioned Purview. Otherwise, please follow the [Guide to set up Purview to Govern the Fabric Workspace Resources](./DeploymentGuidePurview.md) to configure Purview to work with the resources deployed to the Microsoft Fabric workspace. The guide also provides steps users can perform after successful configuration.
+**After Deployment:**
+- Configure Power BI dashboard: [Power BI Dashboard Configuration](./DeploymentGuidePowerBI.md)
+- Learn about notebooks: [Guide to Medallion Architecture Fabric Notebooks](./NotebooksGuideFabric.md)
 
-### **Deploy and Configure Azure Databricks to work with Fabric** (For Architecture Option 3)
+---
 
-**Prerequisites**: You have deployed architecture option 1. 
+### Option 2: Add Data Governance with Purview
 
-Please follow the instructions in [Provisioning Azure Databricks](./SetupDatabricks.md) to create the Azure Databricks workspace and obtain the necessary information first, and then follow the instructions in the [Azure Databricks Lakehouse Deployment Guide](./DeploymentGuideDatabricks.md) to deploy resources to the Azure Databricks workspace and set up the integration with the Microsoft Fabric workspace previously created. The resources include 1 silver lakehouse, 7 notebooks, 2 SQL scripts, and sample data. For detailed information on the notebooks and SQL scripts, please see [Guide to Databricks Lakehouse Notebooks](./NotebooksGuideFabric.md).
+**Enhance Option 1 with governance and compliance** - Adds metadata management, lineage tracking, and data governance policies.
 
-### Option 1 + 2 + 3 = Architecture Option 4
+**Prerequisites:** You have completed Option 1 deployment.
 
-If you have deployed all the steps described for options 1, 2, and 3, you will have deployed architecture option 4. 
+**Setup Steps:**
+
+1. **Provision Purview** (if needed):  
+   📖 [Provisioning Microsoft Purview](./SetupPurview.md)
+
+2. **Configure Purview for Fabric:**  
+   📖 [Guide to set up Purview to Govern Fabric Workspace Resources](./DeploymentGuidePurview.md)
+
+---
+
+### Option 3: Add Azure Databricks Integration
+
+**Extend Option 1 with Databricks** - Integrates Databricks with Fabric for hybrid analytics and advanced data processing.
+
+**Prerequisites:** You have completed Option 1 deployment.
+
+**Setup Steps:**
+
+1. **Provision Azure Databricks:**  
+   📖 [Provisioning Azure Databricks](./SetupDatabricks.md)
+
+2. **Deploy Databricks Resources:**  
+   📖 [Azure Databricks Lakehouse Deployment Guide](./DeploymentGuideDatabricks.md)
+
+**Deployed Resources:**
+- 1 Silver lakehouse in Databricks
+- 7 Notebooks for data processing
+- 2 SQL scripts
+- Sample data for Databricks
+
+**Learn more:** [Guide to Databricks Lakehouse Notebooks](./NotebooksGuideDatabricks.md)
+
+---
+
+### Option 4: Complete Solution
+
+**Deploy all components** - Combines Options 1, 2, and 3 for a complete enterprise data platform.
+
+**Requirements:**
+- Complete Option 1 (Fabric)
+- Complete Option 2 (Purview)
+- Complete Option 3 (Databricks)
+
+---
 
 ## Next Steps
-Now that you've completed your deployment, you can start using the solution. 
 
-To help you get started, here are some [Sample Questions](./SampleWorkflow.md) you can follow to try it out.
+After successful deployment, you can begin using the solution:
+
+📖 **Try Sample Workflows:** Follow the guided examples in [Sample Questions](./SampleWorkflow.md)
+
+**For Development & Customization:**
+- [Local Development Setup Guide](./LocalDevelopmentSetup.md) - Set up a local development environment for customizations and testing
+
+**Additional Resources:**
+- [Solution Architecture Overview](./TechnicalArchitecture.md)
+- [FAQ & Troubleshooting](./FAQs.md)
+- [Microsoft Fabric Documentation](https://learn.microsoft.com/en-us/fabric/)
+- [Microsoft Purview Documentation](https://learn.microsoft.com/en-us/purview/)
+- [Azure Databricks Documentation](https://learn.microsoft.com/en-us/azure/databricks/)
