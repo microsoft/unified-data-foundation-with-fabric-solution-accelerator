@@ -1,18 +1,7 @@
 name: AZD AI Template validation
 # Run when commits are pushed to pre-deploy-alguadam
-# Only runs when azure.yaml, infra, or this workflow changes
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "azure.yaml"
-      - "infra/**"
-      - ".github/workflows/azd-ai-template-validation.yml"
-  pull_request:
-    paths:
-      - "azure.yaml"
-      - "infra/**"
-      - ".github/workflows/azd-ai-template-validation.yml"
 
 # Set up permissions for deploying with secretless Azure federated credentials
 # https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-portal%2Clinux#set-up-azure-login-with-openid-connect-authentication

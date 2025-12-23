@@ -1,19 +1,8 @@
 name: CI/CD Azure - Assign Fabric Workspace Administrators
 
 # Trigger the workflow on push to main/master or manual dispatch
-# Only runs when Fabric scripts or this workflow changes
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "infra/scripts/fabric/**"
-      - "infra/scripts/utils/**"
-      - ".github/workflows/assign-workspace-admins.yml"
-  pull_request:
-    paths:
-      - "infra/scripts/fabric/**"
-      - "infra/scripts/utils/**"
-      - ".github/workflows/assign-workspace-admins.yml"
 
 # Set up permissions for deploying with secretless Azure federated credentials
 permissions:
