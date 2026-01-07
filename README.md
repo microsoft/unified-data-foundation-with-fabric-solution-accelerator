@@ -207,7 +207,7 @@ Check out similar solution accelerators
 
 | Solution Accelerator | Description |
 |---|---|
-| [Agentic applications for unified data foundation](https://github.com/microsoft/agentic-applications-for-unified-data-foundation-solution-accelerator) | Agentic AI application that provides nature language query of the data using unified data foundation.  Description of solution accelerator |
+| [Agentic applications for unified data foundation](https://github.com/microsoft/agentic-applications-for-unified-data-foundation-solution-accelerator) | Agentic AI application that provides nature language query of the data using unified data foundation.|
 
 <br/>   
 
