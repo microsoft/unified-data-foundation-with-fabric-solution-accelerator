@@ -124,8 +124,9 @@ Choose your deployment environment based on your workflow and requirements. All 
 | **[Local Machine](#1-local-machine)** | Full development control | Install [software requirements](#software-requirements) | Most flexible, requires local setup |
 | **[Azure Cloud Shell](#2-azure-cloud-shell)** | Zero setup | Just a web browser | Pre-configured tools, session timeouts |
 | **[GitHub Codespaces](#3-github-codespaces)** | Team consistency | GitHub account | Cloud development environment |
-| **[Dev Container](#4-vs-code-dev-container)** | Standardized tooling | Docker Desktop + VS Code | Containerized consistency |
-| **[GitHub Actions](#5-github-actions-cicd)** | Automated CI/CD | Service principal setup | Production deployments |
+| **[Visual Studio Code (WEB)](#4-visual-studio-code-web)** | Zero setup| Just a web browser | Web-based VS Code, session timeouts |
+| **[Dev Container](#5-vs-code-dev-container)** | Standardized tooling | Docker Desktop + VS Code | Containerized consistency |
+| **[GitHub Actions](#6-github-actions-cicd)** | Automated CI/CD | Service principal setup | Production deployments |
 
 ### 1. Local Machine
 
@@ -170,7 +171,47 @@ azd auth login --use-device-code
 # Continue with deployment commands
 ```
 
-### 4. VS Code Dev Container
+### 4. Visual Studio Code (WEB)
+
+Deploy from VS Code in the browser with zero local installation.
+
+**Setup**:
+
+1. Open the following link to launch VS Code Web:
+
+    [![Open in Visual Studio Code Web](https://img.shields.io/static/v1?style=for-the-badge&label=Visual%20Studio%20Code%20(Web)&message=Open&color=blue&logo=visualstudiocode&logoColor=white)](https://vscode.dev/azure/?vscode-azure-exp=foundry&agentPayload=eyJiYXNlVXJsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9taWNyb3NvZnQvdW5pZmllZC1kYXRhLWZvdW5kYXRpb24td2l0aC1mYWJyaWMtc29sdXRpb24tYWNjZWxlcmF0b3IvcmVmcy9oZWFkcy9tYWluL2luZnJhL3ZzY29kZV93ZWIiLCAiaW5kZXhVcmwiOiAiL2luZGV4Lmpzb24iLCAidmFyaWFibGVzIjogeyJhZ2VudElkIjogIiIsICJjb25uZWN0aW9uU3RyaW5nIjogIiIsICJ0aHJlYWRJZCI6ICIiLCAidXNlck1lc3NhZ2UiOiAiIiwgInBsYXlncm91bmROYW1lIjogIiIsICJsb2NhdGlvbiI6ICIiLCAic3Vic2NyaXB0aW9uSWQiOiAiIiwgInJlc291cmNlSWQiOiAiIiwgInByb2plY3RSZXNvdXJjZUlkIjogIiIsICJlbmRwb2ludCI6ICIifSwgImNvZGVSb3V0ZSI6IFsiYWktcHJvamVjdHMtc2RrIiwgInB5dGhvbiIsICJkZWZhdWx0LWF6dXJlLWF1dGgiLCAiZW5kcG9pbnQiXX0=)
+2. When prompted, sign in using your Microsoft account linked to your Azure subscription. 
+   Select the appropriate subscription to continue.
+3. Once the solution opens, the AI Foundry terminal will automatically start running the following command to install the required dependencies:
+
+    ```bash
+    sh install.sh
+    ```
+
+   During this process, you’ll be prompted with the message:
+
+    ```text
+    What would you like to do with these files?
+    - Overwrite with versions from template
+    - Keep my existing files unchanged
+    ```
+
+    Choose “**Overwrite with versions from template**” and provide a unique environment name when prompted.
+
+**Deployment**: Install azd and run [Deployment commands](#4-deployment-commands) with device authentication:
+
+```bash
+# Install azd if needed
+curl -fsSL https://aka.ms/install-azd.sh | bash && exec bash
+
+# Use device code authentication  
+az login --use-device-code
+azd auth login --use-device-code
+
+# Continue with deployment commands
+```
+
+### 5. VS Code Dev Container
 
 Deploy from a containerized environment for team consistency.
 
@@ -182,7 +223,7 @@ Deploy from a containerized environment for team consistency.
 
 **Deployment**: All tools pre-installed - run [Deployment commands](#4-deployment-commands) directly
 
-### 5. GitHub Actions (CI/CD)
+### 6. GitHub Actions (CI/CD)
 
 Automated deployment using the included [workflow](../.github/workflows/azure-dev.yml).
 
