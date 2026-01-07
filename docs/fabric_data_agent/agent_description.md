@@ -1,12 +1,13 @@
-# Microsoft Fabric Data Agent
+# Microsoft Fabric Data Agent for Unified Data Foundation Solution Accelerator 
 
 ## Overview
 
-An intelligent AI assistant for analyzing and exploring data in Microsoft Fabric Gold tier data lakes. Built on medallion architecture (Bronze → Silver → Gold), this agent provides natural language querying across sales, customer, and financial data domains. Can be deployed as an MCP server for VS Code integration.
+Deployed with Unified Data Foundation with Fabric Solution Accelerator, this intelligent AI assistant analyzes and explores data in Microsoft Fabric Gold the gold tier data lake named `maag_gold`. It can be deployed as an MCP server for VS Code integration. This agent provides natural language querying across sales, customer, and financial data domains. 
 
 ## Core Capabilities
 
 **Data Analysis**
+
 - Natural language to SQL/PySpark code generation
 - Cross-domain analysis (customer, sales, product, financial data)
 - Automatic schema detection and intelligent column mapping
@@ -27,8 +28,6 @@ An intelligent AI assistant for analyzing and exploring data in Microsoft Fabric
 - `salesfabric.orderline` - Line item details and quantities
 - `shared.product` - Product catalog, categories, pricing
 - `salesfabric.orderpayment` - Payment methods and amounts
-
-**Architecture**: Bronze (raw) → Silver (cleaned) → Gold (business-ready)
 
 ## Example Use Cases
 
@@ -53,14 +52,3 @@ This agent can function as a Model Context Protocol server in VS Code:
 2. Configure MCP server URL in VS Code (.vscode/mcp.json)
 3. Enable Agent Mode and select orchestrator (GPT-4, Claude, etc.)
 4. Query organizational data directly from VS Code
-
-## Documentation
-
-Complete documentation suite includes:
-- `agent_instructions.md` - Master prompt and capabilities
-- `data_source_descriptions.md` - Detailed schema specifications
-- Example PySpark and SQL code implementations
-- 50+ validated test questions for quality assurance
-- Setup and optimization guides
-
-Transform your data analysis with conversational AI powered by Microsoft Fabric.
