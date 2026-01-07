@@ -1,4 +1,4 @@
-# Microsoft Fabric Data Agent for Unified Data Foundation Solution Accelerator 
+# Microsoft Fabric Data Agent for Unified Data Foundation with Fabric Solution Accelerator 
 
 ## Overview
 
