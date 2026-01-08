@@ -164,8 +164,6 @@ Interactive PowerBI Report is illustrated below.
 Interactive Fabric Data Agent is illustrated below. 
 ![image](./docs/images/readme/fabric-data-agent-ui.png)
 
-The data engineer can also upload additional source data to the bronze lakehouse and recreate the data processing flow from bronze to silver and then to gold. 
-
 ⚠️ The sample data used in this repository is synthetic and generated using Python Programs. The data is intended for use as sample data only.
 
 ### Business value
