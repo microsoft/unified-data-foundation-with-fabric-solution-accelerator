@@ -80,7 +80,7 @@ You can modify the data models and notebooks in different folders under the `src
 <br/>
 
 ### Key features
-<details open>
+<details>
   <summary>Click to learn more about the key features this solution enables</summary>
 
   - **Core Medallion Architecture in Fabric** <br/>Core medallion architecture in unified Microsoft Fabric Platform, with cross-domain data models covering shared (customer, product), finance, and sales across multiple channels. The solution is packaged with 48 Fabric PySpark Notebooks and 2 SQL scripts. All of them are deployed to the Fabric workspace with an automated deployment process. 
