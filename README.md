@@ -155,9 +155,12 @@ After successful deployment of the Core Medallion Architecture in Microsoft Fabr
 - Sales Analysts create or update Power BI dashboards. 
 - Sales Analysts or other business stakeholders can use the Fabric Data Agent to get business and operations intelligence quickly without the need to create query code. For details, please refer to [Fabric Data Agent Guide](./docs/FabricDataAgentGuide.md).
 
-Fabric Workspace UI: 
-![image](./docs/images/readme/fabric-workspace-ui.png)
+Interactive PowerBI Report is illustrated below. 
+![image](./docs/images/readme/pbi-report-ui.png)
 <br/>
+
+Interactive Fabric Data Agent is illustrated below. 
+![image](./docs/images/readme/fabric-data-agent-ui.png)
 
 The data engineer can also upload additional source data to the bronze lakehouse and recreate the data processing flow from bronze to silver and then to gold. 
 
