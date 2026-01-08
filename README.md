@@ -2,7 +2,7 @@
 
 This solution accelerator provides a unified data foundation with integrated data architecture leveraging Microsoft Fabric, OneLake, Microsoft Purview, and Azure Databricks to deliver a unified, integrated, and governed analytics platform.
 
-Built with principles of [medallion lakehouse architecture](https://learn.microsoft.com/en-us/fabric/onelake/onelake-medallion-lakehouse-architecture), the solution accelerator supports data mesh concepts with a sample implementation. It provides domain schemas and sample data as a framework for shared domains (customer, product), finance, and sales across multiple channels. You can easily adopt the framework and update the domain models with your own. The solution seamlessly integrates sales channel data hosted in Azure Databricks, utilizing Fabric's data mirroring and shortcut to bring this data into the gold tier for unified analytics and reporting. Pre-built Power BI dashboards showcase advanced sales analytics. Advanced data governance is powered by Microsoft Purview, ensuring compliance and transparency.
+Built with principles of [medallion lakehouse architecture](https://learn.microsoft.com/en-us/fabric/onelake/onelake-medallion-lakehouse-architecture), the solution accelerator supports data mesh concepts with a sample implementation. It provides domain schemas and sample data as a framework for shared domains (customer, product), finance, and sales across multiple channels. You can easily adopt the framework and update the domain models with your own. The solution seamlessly integrates sales channel data hosted in Azure Databricks, utilizing Fabric's data mirroring and shortcut to bring this data into the gold tier for unified analytics and reporting. Pre-built Power BI dashboards showcase advanced sales analytics. The solution includes a customized Fabric Data Agent that can facilitate interactions from users' inquires about the data in business terms. Advanced data governance is powered by Microsoft Purview, ensuring compliance and transparency.
 
 This solution accelerator demonstrates how organizations can unify, govern, and analyze data across multiple domains and platforms using modern lakehouse architecture and robust governance, enabling rapid development of analytics solutions for diverse business needs.
 
@@ -15,6 +15,8 @@ We have built flexibility and options so that you do not have to provision all t
 - Sales analytics across data stored in Fabric and Azure Databricks
 - Finance data management and foundation for reporting
 - Power BI dashboards for sales data with actionable business insights
+- Fabric data agent answering users' questions with intelligence derived from the data.
+- Fabric built-in Power BI Copilot answering users' question on the reports 
 
 <br/>
 
@@ -53,6 +55,8 @@ You can modify the data models and notebooks in different folders under the `src
 
 [Customize Schema](./src/fabric/notebooks/schema)
 
+[Customize Fabric Data Agent](./docs/fabric_data_agent)
+
 [Update Data Management Notebooks](./src/fabric/notebooks/data_management)
 
 [Update Bronze to Silver Data Processing Notebooks](./src/fabric/notebooks/bronze_to_silver)
@@ -84,6 +88,8 @@ You can modify the data models and notebooks in different folders under the `src
   - **Silver Lakehouse Data Flows into Gold Lakehouse with Automated Execution** <br/>Completed and automated process for validated data in silver tables flowing into gold tables for enrichment and utilization. 
     
   - **Power BI Semantic Models and Sales Analysis Dashboard** <br/>Power BI semantic models using gold tables, producing dashboards with comprehensive sales analysis. 
+    
+  - **Fabric Data Agent for Business Data Analysis** <br/>Fabric Data Agent can help you perform data analysis using natural business language. 
     
   - **Integration with Azure Databricks** <br/>
     Integration with Azure Databricks with Mirroring and Shortcut to eliminate the need for data movement. Additional sales data from Azure Databricks is made available to Fabric via data mirroring and shortcut. 
@@ -147,10 +153,10 @@ After successful deployment of the Core Medallion Architecture in Microsoft Fabr
 - Data Engineer tests end-to-end data flow
 - Sales Analysts create or update Power BI Semantic models based off Gold tier lakehouse
 - Sales Analysts create or update Power BI dashboards. 
+- Sales Analysts or other business stakeholders can use the Fabric Data Agent to get business and operations intelligence quickly without the need to create query code. For details, please refer to [Fabric Data Agent Guide](./docs/FabricDataAgentGuide.md).
 
-|![image](./docs/images/readme/fabric-workspace-ui.png)|
-|---|
-
+Fabric Workspace UI: 
+![image](./docs/images/readme/fabric-workspace-ui.png)
 <br/>
 
 The data engineer can also upload additional source data to the bronze lakehouse and recreate the data processing flow from bronze to silver and then to gold. 
