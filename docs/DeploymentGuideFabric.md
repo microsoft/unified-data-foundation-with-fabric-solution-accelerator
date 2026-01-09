@@ -155,8 +155,10 @@ Deploy from a cloud development environment with pre-configured tools.
 
 **Setup**:
 
-1. Go to the [repository](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator)
-2. Click **Code** → **Codespaces** → **Create codespace**
+1. Go to the [Unified Data Foundation with Fabric solution in GitHub Codespace](https://codespaces.new/microsoft/unified-data-foundation-with-fabric-solution-accelerator?quickstart=1)
+2. Follow the instructions on screen to create a new codespace with default setup.
+3. Wait for the environment to initialize (2-3 minutes)
+4. All tools are pre-installed; proceed to deployment
 
 **Deployment**: Install azd and run [Deployment commands](#4-deployment-commands) with device authentication:
 
