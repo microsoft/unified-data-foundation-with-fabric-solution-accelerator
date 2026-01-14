@@ -1,7 +1,6 @@
 import os
 import glob
 import time
-import argparse
 import sys
 import json
 import base64
@@ -293,50 +292,82 @@ def add_workspace_admin_by_object_id(fabric_client, workspace_id, object_id, exi
     return {'status': 'failed', 'message': 'Failed to add as both User and ServicePrincipal types'}
 
 
+def get_required_env_var(var_name: str) -> str:
+    """Get a required environment variable or exit with error.
+    
+    Args:
+        var_name: Name of the environment variable to retrieve
+        
+    Returns:
+        Value of the environment variable
+        
+    Raises:
+        SystemExit: If the environment variable is not set
+    """
+    value = os.getenv(var_name)
+    if not value:
+        print(f"❌ Missing environment variable: {var_name}")
+        sys.exit(1)
+    return value
+
+
 ####################
 # Variables set up #
 ####################
 
 
-solution_name = "Unified Data Foundation with Fabric"
-workspace_default_name = f"{solution_name} workspace"
+solution_name = "Unified Data Foundation"
 script_dir = os.path.dirname(os.path.abspath(__file__))
 # Go up three levels from infra/scripts/fabric to repo root
 repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
 
-##########################
-# Command line arguments #
-##########################
+##############################
+# Environment Variable Setup #
+##############################
 
-# Parse command line arguments
-parser = argparse.ArgumentParser(
-    description=f'Deploy {solution_name} to Microsoft Fabric')
-parser.add_argument('--capacityName', required=True,
-                    help='Microsoft Fabric capacity name')
-parser.add_argument('--workspaceName', required=False,
-                    help=f'Workspace name (if not provided, will use "{workspace_default_name}")')
-parser.add_argument('--fabricAdmins', nargs='*', default=[],
-                    help='List of administrators to add to the workspace. Can include user principal names (UPNs) like user@contoso.com or service principal IDs (GUIDs) like 12345678-1234-1234-1234-123456789012')
-parser.add_argument('--fabricAdminsByObjectId', nargs='*', default=[],
-                    help='List of object IDs (GUIDs) to add as workspace administrators. These will be tried as both User and ServicePrincipal types. Format: 12345678-1234-1234-1234-123456789012')
-args = parser.parse_args()
+# Load configuration from environment variables
+capacity_name = get_required_env_var("AZURE_FABRIC_CAPACITY_NAME")
+solution_suffix = get_required_env_var("AZURE_SOLUTION_SUFFIX")
+
+# Optional environment variables with defaults
+workspace_name = os.getenv("AZURE_FABRIC_WORKSPACE_NAME")
+fabric_admins_str = os.getenv("AZURE_FABRIC_ADMIN_MEMBERS")
+fabric_admins_by_object_id_str = os.getenv("AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID")
+
+# Process admin lists from environment variables
+fabric_admins = []
+fabric_admins_by_object_id = []
+
+if fabric_admins_str:
+    try:
+        import json
+        fabric_admins = json.loads(fabric_admins_str)
+    except json.JSONDecodeError:
+        print(f"⚠️ Warning: Failed to parse AZURE_FABRIC_ADMIN_MEMBERS as JSON, treating as empty list")
+        fabric_admins = []
+
+if fabric_admins_by_object_id_str:
+    try:
+        import json
+        fabric_admins_by_object_id = json.loads(fabric_admins_by_object_id_str)
+    except json.JSONDecodeError:
+        print(f"⚠️ Warning: Failed to parse AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID as JSON, treating as empty list")
+        fabric_admins_by_object_id = []
+
+# Construct workspace name with mandatory suffix if not provided
+workspace_default_name = f"{solution_name} - {solution_suffix}"
+if not workspace_name:
+    workspace_name = workspace_default_name
 
 print(f"🚀 Starting {solution_name} deployment to Microsoft Fabric")
-print(f"📋 Target capacity: {args.capacityName}")
-if args.workspaceName:
-    print(f"📋 Target workspace name: {args.workspaceName}")
-else:
-    print(f"📋 Will create new workspace with auto-generated name")
-if args.fabricAdmins:
-    print(f"📋 Administrators to add: {', '.join(args.fabricAdmins)}")
-if args.fabricAdminsByObjectId:
-    print(f"📋 Administrators to add by Object ID: {', '.join(args.fabricAdminsByObjectId)}")
+print(f"📋 Target capacity: {capacity_name}")
+print(f"📋 Solution suffix: {solution_suffix}")
+print(f"📋 Workspace name: {workspace_name} (auto-generated)")
+if fabric_admins:
+    print(f"📋 Fabric admins: {', '.join(fabric_admins)}")
+if fabric_admins_by_object_id:
+    print(f"📋 Fabric admins by object ID: {', '.join(fabric_admins_by_object_id)}")
 print("-" * 60)
-
-capacity_name = args.capacityName
-workspace_name = args.workspaceName
-fabric_admins = args.fabricAdmins
-fabric_admins_by_object_id = args.fabricAdminsByObjectId
 
 ##########################
 # Clients authentication #

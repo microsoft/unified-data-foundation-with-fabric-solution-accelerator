@@ -85,3 +85,6 @@ output AZURE_FABRIC_CAPACITY_NAME string = fabricCapacity.outputs.name
 
 @description('The identities added as Fabric Capacity Admin members')
 output AZURE_FABRIC_ADMIN_MEMBERS array = fabricTotalAdminMembers
+
+@description('The unique solution suffix of the deployed resources')
+output AZURE_SOLUTION_SUFFIX string = solutionSuffix
