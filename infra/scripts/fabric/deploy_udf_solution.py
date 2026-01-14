@@ -7,7 +7,8 @@ import base64
 import re
 import requests
 import uuid
-from fabric_api import create_fabric_client, FabricApiError
+from typing import Optional
+from fabric_api import create_fabric_client, create_workspace_fabric_client, FabricApiError, FabricWorkspaceApiClient
 from graph_api import create_graph_client, GraphApiError
 from powerbi_api import *
 
@@ -42,13 +43,12 @@ def build_folder_path_mapping(folders: list) -> dict:
     return path_map
 
 
-def create_fabric_directory_structure(fabric_client, workspace_id: str, folder_path: str, existing_folder_map: dict) -> str:
+def create_fabric_directory_structure(workspace_client: FabricWorkspaceApiClient, folder_path: str, existing_folder_map: dict) -> str:
     """
-    Create a complete folder hierarchy.
+    Create a complete folder hierarchy using workspace client.
 
     Args:
-        fabric_client: Fabric API client instance
-        workspace_id: Target workspace ID
+        workspace_client: Fabric workspace API client instance
         folder_path: Full path separated by forward slashes
         existing_folder_map: Pre-built mapping of folder paths to IDs
 
@@ -64,19 +64,18 @@ def create_fabric_directory_structure(fabric_client, workspace_id: str, folder_p
 
     if len(path_parts) == 1:
         # Root folder
-        folder_id = fabric_client.create_folder(workspace_id, path_parts[0])
+        folder_id = workspace_client.create_folder(path_parts[0])
         existing_folder_map[folder_path] = folder_id
         return folder_id
     else:
         # Ensure parent exists
         parent_path = '/'.join(path_parts[:-1])
         parent_id = create_fabric_directory_structure(
-            fabric_client, workspace_id, parent_path, existing_folder_map)
+            workspace_client, parent_path, existing_folder_map)
 
         # Create this folder
         folder_name = path_parts[-1]
-        folder_id = fabric_client.create_folder(
-            workspace_id, folder_name, parent_id)
+        folder_id = workspace_client.create_folder(folder_name, parent_id)
         existing_folder_map[folder_path] = folder_id
         return folder_id
 
@@ -315,7 +314,6 @@ def get_required_env_var(var_name: str) -> str:
 # Variables set up #
 ####################
 
-
 solution_name = "Unified Data Foundation"
 script_dir = os.path.dirname(os.path.abspath(__file__))
 # Go up three levels from infra/scripts/fabric to repo root
@@ -330,7 +328,7 @@ capacity_name = get_required_env_var("AZURE_FABRIC_CAPACITY_NAME")
 solution_suffix = get_required_env_var("AZURE_SOLUTION_SUFFIX")
 
 # Optional environment variables with defaults
-workspace_name = os.getenv("AZURE_FABRIC_WORKSPACE_NAME")
+workspace_name = os.getenv("AZURE_FABRIC_WORKSPACE_NAME",f"{solution_name} - {solution_suffix}")
 fabric_admins_str = os.getenv("AZURE_FABRIC_ADMIN_MEMBERS")
 fabric_admins_by_object_id_str = os.getenv("AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID")
 
@@ -354,10 +352,6 @@ if fabric_admins_by_object_id_str:
         print(f"⚠️ Warning: Failed to parse AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID as JSON, treating as empty list")
         fabric_admins_by_object_id = []
 
-# Construct workspace name with mandatory suffix if not provided
-workspace_default_name = f"{solution_name} - {solution_suffix}"
-if not workspace_name:
-    workspace_name = workspace_default_name
 
 print(f"🚀 Starting {solution_name} deployment to Microsoft Fabric")
 print(f"📋 Target capacity: {capacity_name}")
@@ -479,6 +473,15 @@ except FabricApiError as e:
     sys.exit(1)
 except Exception as e:
     print(f"❌ ERROR: Unexpected error during workspace setup: {str(e)}")
+    sys.exit(1)
+
+# Create workspace-scoped client for all operations
+print("🔗 Creating workspace-scoped Fabric client...")
+try:
+    workspace_fabric_client = create_workspace_fabric_client(workspace_id)
+    print("✅ Workspace-scoped client created successfully")
+except Exception as e:
+    print(f"❌ Failed to create workspace-scoped client: {str(e)}")
     sys.exit(1)
 
 ############################
@@ -611,26 +614,25 @@ udfwf_fabric_folders = [
     fabric_folder_path_reports
 ]
 
-# Create folder structure using the new API client
+# Create folder structure using workspace client
 try:
     print(f"📁 Creating folder structure for '{solution_name}' solution")
 
-    # Get existing folders and build path mapping
-    fabric_folders = build_folder_path_mapping(
-        fabric_client.get_folders(workspace_id))
-
-    # Create hierarchy of folders based on full path
+    # Get existing folders using workspace client
+    existing_folders = workspace_fabric_client.get_folders()
+    fabric_folders = build_folder_path_mapping(existing_folders)
+    
+    # Create hierarchy of folders using workspace client
     for udfwf_folder_path in udfwf_fabric_folders:
         if udfwf_folder_path in fabric_folders:
             print(f"  📁 Folder '{udfwf_folder_path}' already exists")
         else:
             try:
                 folder_id = create_fabric_directory_structure(
-                    fabric_client, workspace_id, udfwf_folder_path, fabric_folders)
+                    workspace_fabric_client, udfwf_folder_path, fabric_folders)
                 print(f"  ✅ Created folder '{udfwf_folder_path}'")
             except Exception as e:
-                print(
-                    f"❌ ERROR: Failed to create folder '{udfwf_folder_path}': {str(e)}")
+                print(f"❌ ERROR: Failed to create folder '{udfwf_folder_path}': {str(e)}")
                 sys.exit(1)
 
 except FabricApiError as e:
@@ -660,9 +662,10 @@ fabric_lakehouses = {}
 # Get existing lakehouses and create new ones
 print(f"🏠 Setting up lakehouses (Bronze, Silver, Gold)")
 try:
-    # Get existing lakehouses using the new API client methods
+    # Get existing lakehouses using workspace client
     print(f"  📋 Checking for existing lakehouses in workspace...")
-    existing_lakehouses = fabric_client.get_lakehouses(workspace_id)
+    
+    existing_lakehouses = workspace_fabric_client.get_lakehouses()
 
     # Build mapping of existing lakehouses by name
     for lakehouse in existing_lakehouses:
@@ -677,23 +680,20 @@ try:
         else:
             print(f"  🏗️ Creating lakehouse '{lakehouse_name}'...")
             try:
-                # Use the new create_lakehouse method
-                lakehouse = fabric_client.create_lakehouse(
-                    workspace_id=workspace_id,
+                # Use workspace client
+                lakehouse = workspace_fabric_client.create_lakehouse(
                     display_name=lakehouse_name,
                     description=f"UDFWF {lakehouse_name.split('_')[-1].title()} layer lakehouse for data processing",
                     folder_id=lakehouse_folder_id,
                     enable_schemas=True,
                     wait_for_lro=True
                 )
+                fabric_lakehouses[lakehouse_name] = workspace_fabric_client.get_lakehouse(lakehouse['id'])
 
                 print(f"  ✅ Lakehouse '{lakehouse_name}' created successfully")
-                fabric_lakehouses[lakehouse_name] = fabric_client.get_lakehouse(
-                    workspace_id=workspace_id, lakehouse_id=lakehouse['id'])
 
             except FabricApiError as e:
-                print(
-                    f"❌ ERROR: Failed to create lakehouse '{lakehouse_name}': {e}")
+                print(f"❌ ERROR: Failed to create lakehouse '{lakehouse_name}': {e}")
                 print(f"   Solution: Check workspace permissions and quotas")
                 sys.exit(1)
             except Exception as e:
@@ -723,11 +723,11 @@ bronze_lakehouse_onelake_root_path = f"{bronze_lakehouse['displayName']}.Lakehou
 csv_pattern = os.path.join(samples_local_folder_path, '**', '*.csv')
 csv_file_paths = glob.glob(csv_pattern, recursive=True)
 
-# Connect to bronze lakehouse using the new API client
+# Connect to bronze lakehouse using workspace client
 print(f"📊 Uploading sample data to bronze lakehouse")
 try:
-    udfwf_wfs_client = fabric_client.get_workspace_file_system_client(
-        workspace_name)
+    # Use workspace client
+    udfwf_wfs_client = workspace_fabric_client.get_workspace_file_system_client(workspace_name)
 except Exception as e:
     print(f"❌ ERROR: Failed to connect to OneLake: {str(e)}")
     print("   Solution: Ensure you have proper permissions and the workspace is accessible")
@@ -856,9 +856,9 @@ for notebook_path, (source_lakehouse_name, targeted_lakehouse_name, folder_path)
 # Deploy notebooks using optimized batch processing
 try:
     # Inline batch_upload_notebooks logic
-    # Get existing notebooks
+    # Get existing notebooks using workspace client
     try:
-        existing_notebooks = fabric_client.get_notebooks(workspace_id)
+        existing_notebooks = workspace_fabric_client.get_notebooks()
     except Exception as e:
         print(f"❌ ERROR: Failed to get existing notebooks: {str(e)}")
         print("   Solution: Check workspace permissions and connectivity")
@@ -950,15 +950,15 @@ try:
                 "folderId": folder_id
             }
 
-            # Upload or update
+            # Upload or update using workspace client
             if existing_notebook_id:
                 print(f"  ✅ Updating notebook '{notebook_name}'")
-                response = fabric_client.update_notebook(
-                    workspace_id, existing_notebook_id, notebook_data, wait_for_lro=False)
+                response = workspace_fabric_client.update_notebook(
+                    existing_notebook_id, notebook_data, wait_for_lro=False)
             else:
                 print(f"  ✅ Creating notebook '{notebook_name}'")
-                response = fabric_client.create_notebook(
-                    workspace_id, notebook_data, wait_for_lro=False)
+                response = workspace_fabric_client.create_notebook(
+                    notebook_data, wait_for_lro=False)
 
             if response.status_code == 202:
                 # Track LRO for batch monitoring
@@ -1029,7 +1029,7 @@ try:
 
     # Refresh notebooks list
     try:
-        final_notebooks = fabric_client.get_notebooks(workspace_id)
+        final_notebooks = workspace_fabric_client.get_notebooks()
         fabric_notebooks.update(final_notebooks)
     except Exception as e:
         print(f"❌ ERROR: Failed to refresh notebooks list: {str(e)}")
@@ -1076,8 +1076,8 @@ for notebook_name in notebooks_to_run:
     notebook_id = fabric_notebooks[notebook_name]
 
     try:
-        # Execute the notebook job using fabric API client
-        result = fabric_client.schedule_notebook_job(workspace_id, notebook_id)
+        # Execute the notebook job using workspace client
+        result = workspace_fabric_client.schedule_notebook_job(notebook_id)
         execution_results[notebook_name] = result
 
         # Track success/failure
@@ -1164,8 +1164,8 @@ for pbix_file_path in pbix_file_paths:
 
         # Get Gold lakehouse details and check SQL endpoint status
         try:
-            gold_lakehouse = fabric_client.get_lakehouse(
-                workspace_id=workspace_id, lakehouse_id=fabric_lakehouses[udfwf_lakehouse_gold_name]['id'])
+            gold_lakehouse = workspace_fabric_client.get_lakehouse(
+                lakehouse_id=fabric_lakehouses[udfwf_lakehouse_gold_name]['id'])
             sql_endpoint_provisioning_status = gold_lakehouse[
                 'properties']['sqlEndpointProperties']['provisioningStatus']
             print(

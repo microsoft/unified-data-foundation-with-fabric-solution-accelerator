@@ -37,15 +37,8 @@ repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
 solution_suffix = get_required_env_var("AZURE_SOLUTION_SUFFIX")
 
 # Optional environment variables
-workspace_name = os.getenv("AZURE_FABRIC_WORKSPACE_NAME")
+workspace_name = os.getenv("AZURE_FABRIC_WORKSPACE_NAME",f"{solution_name} - {solution_suffix}")
 workspace_id = os.getenv("AZURE_FABRIC_WORKSPACE_ID")
-
-# Construct default workspace name with mandatory suffix if neither name nor ID provided
-workspace_default_name = f"{solution_name} - {solution_suffix}"
-if not workspace_name and not workspace_id:
-    workspace_name = workspace_default_name
-    print(f"ℹ️  No workspace specified, using default workspace name: '{workspace_name}'")
-
 if workspace_name and workspace_id:
     print("⚠️ WARNING: Both AZURE_FABRIC_WORKSPACE_NAME and AZURE_FABRIC_WORKSPACE_ID are set")
     print("   Using workspace name and ignoring workspace ID...")
@@ -54,10 +47,7 @@ if workspace_name and workspace_id:
 print(f"🗑️  Starting {solution_name} workspace removal from Microsoft Fabric")
 print(f"📋 Solution suffix: {solution_suffix}")
 if workspace_name:
-    if workspace_name == workspace_default_name:
-        print(f"📋 Target workspace name: {workspace_name} (auto-generated)")
-    else:
-        print(f"📋 Target workspace name: {workspace_name} (custom)")
+    print(f"📋 Target workspace name: {workspace_name}")
 else:
     print(f"📋 Target workspace ID: {workspace_id}")
 print("-" * 60)
