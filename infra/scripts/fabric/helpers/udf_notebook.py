@@ -24,7 +24,7 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
                     notebook_specs: list,
                     lakehouses: dict) -> dict:
     """
-    Deploy notebooks to a Fabric workspace with lakehouse associations.
+    Deploy notebooks to a Fabric workspace with lakehouse associations using batch processing.
     
     Args:
         workspace_client: Authenticated workspace API client
@@ -41,7 +41,7 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
     Raises:
         FabricApiError: If notebook deployment fails
     """
-    print(f"📓 Deploying notebooks to workspace")
+    print(f"📓 Deploying notebooks to workspace using batch processing")
     
     # Get existing notebooks (returns dict of {name: id})
     print(f"   Retrieving existing notebooks...")
@@ -49,12 +49,12 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
     print(f"   Found {len(existing_notebook_ids)} existing notebooks")
     
     notebooks = {}
+    upload_jobs = []  # Track LRO jobs for batch monitoring
     created_count = 0
     updated_count = 0
-    skipped_count = 0
     failed_count = 0
     
-    # Process each notebook
+    # Process each notebook and submit jobs without waiting
     total_notebooks = len(notebook_specs)
     for idx, spec in enumerate(notebook_specs, 1):
         local_path = spec.get('path') or spec.get('local_path')  # Support both key names
@@ -71,8 +71,6 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
         notebook_name = os.path.splitext(os.path.basename(local_path))[0]
         
         try:
-            print(f"   [{idx}/{total_notebooks}] Processing: {notebook_name}")
-            
             # Read notebook content
             notebook_content = read_file_content(local_path)
             notebook_json = json.loads(notebook_content)
@@ -132,34 +130,47 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
             if folder_id:
                 notebook_data["folderId"] = folder_id
             
-            # Check if notebook exists
+            # Submit create or update operation without waiting for LRO completion
             if notebook_name in existing_notebook_ids:
                 # Update existing notebook
                 notebook_id = existing_notebook_ids[notebook_name]
+                print(f"   [{idx}/{total_notebooks}] Updating: {notebook_name}")
                 response = workspace_client.update_notebook(
                     notebook_id,
                     notebook_data,
-                    wait_for_lro=True
+                    wait_for_lro=False  # Don't wait, batch process instead
                 )
-                # Store notebook object with ID
-                notebooks[notebook_name] = {'id': notebook_id, 'displayName': notebook_name}
-                print(f"      ✅ Updated: {notebook_name}")
-                updated_count += 1
+                operation_type = 'update'
             else:
                 # Create new notebook
+                print(f"   [{idx}/{total_notebooks}] Creating: {notebook_name}")
                 response = workspace_client.create_notebook(
                     notebook_data,
-                    wait_for_lro=True
+                    wait_for_lro=False  # Don't wait, batch process instead
                 )
-                # Extract notebook ID from response
-                if response.ok:
-                    response_data = response.json()
-                    notebook_id = response_data.get('id', 'unknown')
-                    notebooks[notebook_name] = {'id': notebook_id, 'displayName': notebook_name}
-                    print(f"      ✅ Created: {notebook_name}")
+                operation_type = 'create'
+            
+            # Track job for batch monitoring if LRO (status 202)
+            if response.status_code == 202:
+                job_monitoring_url = response.headers.get('Location')
+                if job_monitoring_url:
+                    upload_jobs.append({
+                        'notebook_name': notebook_name,
+                        'job_url': job_monitoring_url,
+                        'operation_type': operation_type,
+                        'start_time': time.time()
+                    })
+            elif response.ok:
+                # Immediate success (no LRO)
+                response_data = response.json()
+                notebook_id = response_data.get('id', existing_notebook_ids.get(notebook_name, 'unknown'))
+                notebooks[notebook_name] = {'id': notebook_id, 'displayName': notebook_name}
+                if operation_type == 'create':
                     created_count += 1
                 else:
-                    raise FabricApiError(f"Failed to create notebook: {response.text}")
+                    updated_count += 1
+            else:
+                raise FabricApiError(f"Failed to {operation_type} notebook: {response.text}")
                 
         except FileNotFoundError as e:
             print(f"      ❌ Notebook file not found: {notebook_name} - {e}")
@@ -174,7 +185,73 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
             print(f"      ❌ Failed to deploy {notebook_name}: {e}")
             failed_count += 1
     
-    print(f"   ✅ Notebook deployment complete:")
+    # Wait for all LRO jobs to complete
+    if upload_jobs:
+        print(f"\n   ⏳ Waiting for {len(upload_jobs)} notebook operations to complete...")
+        pending_jobs = upload_jobs.copy()
+        start_time = time.time()
+        max_wait_time = 600  # 10 minutes max
+        check_interval = 5  # Check every 5 seconds
+        
+        while pending_jobs and (time.time() - start_time) < max_wait_time:
+            jobs_to_remove = []
+            
+            for job in pending_jobs:
+                try:
+                    # Check job status using the workspace client
+                    job_result = workspace_client.check_lro_job_status(job['job_url'])
+                    
+                    if job_result:
+                        # Job completed successfully
+                        notebook_id = job_result.get('id', 'unknown')
+                        notebooks[job['notebook_name']] = {
+                            'id': notebook_id,
+                            'displayName': job['notebook_name']
+                        }
+                        
+                        print(f"      ✅ {job['operation_type'].capitalize()}d: {job['notebook_name']}")
+                        
+                        if job['operation_type'] == 'create':
+                            created_count += 1
+                        else:
+                            updated_count += 1
+                            
+                        jobs_to_remove.append(job)
+                        
+                except Exception as e:
+                    # Check if job has timed out
+                    if time.time() - job['start_time'] > max_wait_time:
+                        print(f"      ❌ Operation timed out for '{job['notebook_name']}': {str(e)}")
+                        failed_count += 1
+                        jobs_to_remove.append(job)
+                    # Otherwise continue monitoring
+            
+            # Remove completed/failed jobs
+            for job in jobs_to_remove:
+                pending_jobs.remove(job)
+            
+            # Sleep before next check if there are still pending jobs
+            if pending_jobs:
+                time.sleep(check_interval)
+        
+        # Handle any remaining pending jobs that timed out
+        if pending_jobs:
+            print(f"      ⚠️  {len(pending_jobs)} operations did not complete within timeout")
+            for job in pending_jobs:
+                print(f"         - {job['notebook_name']}")
+                failed_count += 1
+    
+    # Refresh notebooks list to ensure we have all IDs
+    try:
+        final_notebook_ids = workspace_client.list_notebooks()
+        # Update notebooks dict with any missing entries
+        for name, notebook_id in final_notebook_ids.items():
+            if name not in notebooks:
+                notebooks[name] = {'id': notebook_id, 'displayName': name}
+    except Exception as e:
+        print(f"      ⚠️  Could not refresh notebooks list: {e}")
+    
+    print(f"\n   ✅ Notebook deployment complete:")
     print(f"      Created: {created_count}")
     print(f"      Updated: {updated_count}")
     if failed_count > 0:

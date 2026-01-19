@@ -400,6 +400,37 @@ class FabricApiClient:
         """
         return {"Authorization": f"Bearer {self._get_auth_token()}"}
     
+    def check_lro_job_status(self, job_url: str) -> Optional[Dict[str, Any]]:
+        """
+        Check the status of a long-running operation job.
+        
+        Args:
+            job_url: Full URL to check job status (typically from Location header)
+            
+        Returns:
+            Job result dictionary if completed (status 200), None if still in progress
+            
+        Raises:
+            FabricApiError: If job status check fails
+        """
+        try:
+            response = requests.get(job_url, headers=self.get_headers())
+            
+            if response.status_code == 200:
+                # Job completed
+                return response.json()
+            elif response.status_code == 202:
+                # Still in progress
+                return None
+            else:
+                # Error occurred
+                raise FabricApiError(
+                    f"Job status check failed with status {response.status_code}: {response.text}",
+                    status_code=response.status_code
+                )
+        except requests.RequestException as e:
+            raise FabricApiError(f"Failed to check job status: {str(e)}")
+    
     def get_workspace_file_system_client(self, workspace_name: str) -> FileSystemClient:
         """
         Create a Data Lake file system client for a Fabric workspace.
