@@ -13,7 +13,7 @@ from typing import Optional
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fabric_api import FabricApiError
+from fabric_api import FabricApiError, FabricApiClient
 from helpers.utils import is_valid_guid
 
 
@@ -64,7 +64,7 @@ def detect_principal_type(admin_identifier, graph_client=None):
     return None, None
 
 
-def get_existing_admin_principals(fabric_client, workspace_id):
+def get_existing_admin_principals(fabric_client: FabricApiClient, workspace_id):
     """
     Get existing workspace administrator principals.
     
@@ -76,10 +76,10 @@ def get_existing_admin_principals(fabric_client, workspace_id):
         dict: Dictionary mapping principal identifiers to role information
     """
     try:
-        role_assignments = fabric_client.get_workspace_role_assignments(workspace_id)
+        role_assignments = fabric_client.list_workspace_role_assignments(workspace_id)
         existing_principals = {}
         
-        for assignment in role_assignments.get('value', []):
+        for assignment in role_assignments:
             if assignment.get('role') == 'Admin':
                 principal = assignment.get('principal', {})
                 principal_id = principal.get('id')
@@ -92,6 +92,9 @@ def get_existing_admin_principals(fabric_client, workspace_id):
                     }
         
         return existing_principals
+    except FabricApiError as e:
+        print(f"   ⚠️  Fabric API error retrieving existing admins: {e}")
+        return {}
     except Exception as e:
         print(f"   ⚠️  Could not retrieve existing admins: {e}")
         return {}
@@ -221,57 +224,131 @@ def setup_workspace_administrators(workspace_client,
     """
     print(f"👥 Setting up workspace administrators")
     
-    workspace_id = workspace_client.workspace_id
+    try:
+        workspace_id = workspace_client.workspace_id
+        
+        # Initialize counters
+        admin_assignments_added = 0
+        admin_assignments_skipped = 0
+        
+        # Get existing admin principals
+        existing_admin_principals = get_existing_admin_principals(
+            fabric_client or workspace_client, 
+            workspace_id
+        )
+        
+        # Phase 1: Process fabric_admins (UPNs and object IDs with Graph API resolution)
+        if fabric_admins:
+            print(f"   Processing admins (with Graph API resolution)...")
+            for admin in fabric_admins:
+                success, skipped = add_workspace_admin(
+                    fabric_client or workspace_client,
+                    workspace_id,
+                    admin,
+                    existing_admin_principals,
+                    graph_client
+                )
+                if success:
+                    if skipped:
+                        admin_assignments_skipped += 1
+                    else:
+                        admin_assignments_added += 1
+        
+        # Phase 2: Process fabric_admins_by_object_id (Object IDs with fallback logic)
+        if fabric_admins_by_object_id:
+            print(f"   Processing admins by object ID (with fallback logic)...")
+            for object_id in fabric_admins_by_object_id:
+                success, skipped = add_workspace_admin_by_object_id(
+                    fabric_client or workspace_client,
+                    workspace_id,
+                    object_id,
+                    existing_admin_principals
+                )
+                if success:
+                    if skipped:
+                        admin_assignments_skipped += 1
+                    else:
+                        admin_assignments_added += 1
+        
+        # Summary
+        print(f"   ✅ Admin setup complete:")
+        print(f"      Added: {admin_assignments_added}")
+        print(f"      Skipped (already admin): {admin_assignments_skipped}")
+        
+        return {
+            'added': admin_assignments_added,
+            'skipped': admin_assignments_skipped
+        }
+        
+    except FabricApiError as e:
+        print(f"❌ Failed to setup workspace administrators: {e}")
+        raise
+    except Exception as e:
+        print(f"❌ Unexpected error setting up workspace administrators: {e}")
+        raise FabricApiError(f"Error setting up administrators: {e}")
+
+
+def main():
+    """Main function to add workspace administrators."""
+    import argparse
+    from fabric_api import FabricWorkspaceApiClient, FabricApiError
     
-    # Initialize counters
-    admin_assignments_added = 0
-    admin_assignments_skipped = 0
-    
-    # Get existing admin principals
-    existing_admin_principals = get_existing_admin_principals(
-        fabric_client or workspace_client, 
-        workspace_id
+    parser = argparse.ArgumentParser(
+        description="Add administrators to a Microsoft Fabric workspace",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Add admins by UPN
+  python udf_workspace_admins.py --workspace-id "12345678-1234-1234-1234-123456789012" --admins "user1@contoso.com" "user2@contoso.com"
+  
+  # Add admins by object ID
+  python udf_workspace_admins.py --workspace-id "12345678-1234-1234-1234-123456789012" --admins-by-object-id "87654321-4321-4321-4321-210987654321"
+        """
     )
     
-    # Phase 1: Process fabric_admins (UPNs and object IDs with Graph API resolution)
-    if fabric_admins:
-        print(f"   Processing admins (with Graph API resolution)...")
-        for admin in fabric_admins:
-            success, skipped = add_workspace_admin(
-                fabric_client or workspace_client,
-                workspace_id,
-                admin,
-                existing_admin_principals,
-                graph_client
-            )
-            if success:
-                if skipped:
-                    admin_assignments_skipped += 1
-                else:
-                    admin_assignments_added += 1
+    parser.add_argument(
+        "--workspace-id",
+        required=True,
+        help="ID of the workspace"
+    )
     
-    # Phase 2: Process fabric_admins_by_object_id (Object IDs with fallback logic)
-    if fabric_admins_by_object_id:
-        print(f"   Processing admins by object ID (with fallback logic)...")
-        for object_id in fabric_admins_by_object_id:
-            success, skipped = add_workspace_admin_by_object_id(
-                fabric_client or workspace_client,
-                workspace_id,
-                object_id,
-                existing_admin_principals
-            )
-            if success:
-                if skipped:
-                    admin_assignments_skipped += 1
-                else:
-                    admin_assignments_added += 1
+    parser.add_argument(
+        "--admins",
+        nargs="*",
+        help="List of admin UPNs or object IDs to add (resolved via Graph API if available)"
+    )
     
-    # Summary
-    print(f"   ✅ Admin setup complete:")
-    print(f"      Added: {admin_assignments_added}")
-    print(f"      Skipped (already admin): {admin_assignments_skipped}")
+    parser.add_argument(
+        "--admins-by-object-id",
+        nargs="*",
+        help="List of admin object IDs to add (fallback logic without Graph API)"
+    )
     
-    return {
-        'added': admin_assignments_added,
-        'skipped': admin_assignments_skipped
-    }
+    args = parser.parse_args()
+    
+    try:
+        from fabric_api import FabricWorkspaceApiClient, FabricApiError
+        
+        workspace_client = FabricWorkspaceApiClient(workspace_id=args.workspace_id)
+        
+        result = setup_workspace_administrators(
+            workspace_client=workspace_client,
+            fabric_admins=args.admins,
+            fabric_admins_by_object_id=args.admins_by_object_id
+        )
+        
+        print(f"\n🎉 Final Results:")
+        print(f"   Workspace ID: {args.workspace_id}")
+        print(f"   Admins Added: {result.get('added', 0)}")
+        print(f"   Admins Skipped: {result.get('skipped', 0)}")
+        
+    except FabricApiError as e:
+        print(f"❌ Fabric API Error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

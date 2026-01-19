@@ -52,7 +52,10 @@ def setup_data_agent_lakehouse(workspace_client: FabricWorkspaceApiClient,
     
     try:
         # Check if Data Agent already exists
-        existing_agent = workspace_client.get_data_agent_by_name(data_agent_name)
+        try:
+            existing_agent = workspace_client.get_data_agent_by_name(data_agent_name)
+        except FabricApiError:
+            existing_agent = None
         if existing_agent:
             data_agent = existing_agent
             print(f"   ℹ️  Data Agent '{data_agent_name}' already exists")
@@ -118,7 +121,10 @@ def setup_data_agent_lakehouse(workspace_client: FabricWorkspaceApiClient,
         print(f"   📓 Creating/updating notebook: '{notebook_name}'")
         
         # Check if notebook already exists
-        notebook = workspace_client.get_notebook_by_name(notebook_name)
+        try:
+            notebook = workspace_client.get_notebook_by_name(notebook_name)
+        except FabricApiError:
+            notebook = None
         
         # Parse and encode notebook content as base64
         notebook_json = json.loads(configured_notebook_content)
@@ -162,6 +168,127 @@ def setup_data_agent_lakehouse(workspace_client: FabricWorkspaceApiClient,
     except FabricApiError as e:
         print(f"❌ Failed to create/configure Data Agent '{data_agent_name}': {e}")
         raise
+    except FileNotFoundError as e:
+        print(f"❌ Configuration file not found: {e}")
+        raise FabricApiError(f"Configuration file error: {e}")
+    except json.JSONDecodeError as e:
+        print(f"❌ Invalid JSON in configuration file: {e}")
+        raise FabricApiError(f"JSON parsing error: {e}")
     except Exception as e:
-        print(f"❌ Unexpected error creating/configure Data Agent '{data_agent_name}': {e}")
+        print(f"❌ Unexpected error creating/configuring Data Agent '{data_agent_name}': {e}")
         raise FabricApiError(f"Error creating Data Agent: {e}")
+
+
+def main():
+    """Main function to create a Data Agent and configure it with Lakehouse data source."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description="Create a Microsoft Fabric Data Agent and configure it with Lakehouse data source via notebook",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Create and configure Data Agent with Lakehouse
+  python udf_data_agent.py --workspace-id "12345678-1234-1234-1234-123456789012" --data-agent-name "Sales Agent" --lakehouse-id "87654321-4321-4321-4321-210987654321" --lakehouse-workspace-id "87654321-4321-4321-4321-210987654321" --environment-id "99999999-8888-7777-6666-555544443333" --selected-tables "customers" "orders" "products"
+  
+  # Create Data Agent with custom notebook name
+  python udf_data_agent.py --workspace-id "12345678-1234-1234-1234-123456789012" --data-agent-name "Sales Agent" --lakehouse-id "87654321-4321-4321-4321-210987654321" --lakehouse-workspace-id "87654321-4321-4321-4321-210987654321" --environment-id "99999999-8888-7777-6666-555544443333" --selected-tables "customers" --notebook-name "My Custom Config"
+        """
+    )
+    
+    parser.add_argument(
+        "--workspace-id",
+        required=True,
+        help="ID of the workspace where the Data Agent will be created"
+    )
+    
+    parser.add_argument(
+        "--data-agent-name",
+        required=True,
+        help="Name of the Data Agent to create"
+    )
+    
+    parser.add_argument(
+        "--lakehouse-id",
+        required=True,
+        help="ID of the Lakehouse to add as a data source"
+    )
+    
+    parser.add_argument(
+        "--lakehouse-workspace-id",
+        required=True,
+        help="ID of the workspace containing the Lakehouse"
+    )
+    
+    parser.add_argument(
+        "--environment-id",
+        required=True,
+        help="ID of the environment for data agent configuration"
+    )
+    
+    parser.add_argument(
+        "--selected-tables",
+        nargs="+",
+        required=True,
+        help="List of table names to include in the data agent"
+    )
+    
+    parser.add_argument(
+        "--notebook-name",
+        required=False,
+        default=None,
+        help="Name of the configuration notebook (default: 'Configure Data Agent - <data-agent-name>')"
+    )
+    
+    parser.add_argument(
+        "--notebook-folder-id",
+        required=False,
+        help="Optional folder ID where to create the notebook"
+    )
+    
+    parser.add_argument(
+        "--data-agent-folder-id",
+        required=False,
+        help="Optional folder ID where to create the data agent"
+    )
+    
+    args = parser.parse_args()
+    
+    # Set default notebook name if not provided
+    notebook_name = args.notebook_name or f"Configure Data Agent - {args.data_agent_name}"
+    
+    try:
+        from fabric_api import FabricWorkspaceApiClient, FabricApiError
+        
+        workspace_client = FabricWorkspaceApiClient(workspace_id=args.workspace_id)
+        
+        result = setup_data_agent_lakehouse(
+            workspace_client=workspace_client,
+            data_agent_name=args.data_agent_name,
+            lakehouse_id=args.lakehouse_id,
+            lakehouse_workspace_id=args.lakehouse_workspace_id,
+            environment_id=args.environment_id,
+            selected_tables=args.selected_tables,
+            notebook_name=notebook_name,
+            notebook_folder_id=args.notebook_folder_id,
+            data_agent_folder_id=args.data_agent_folder_id
+        )
+        
+        print(f"\n🎉 Final Results:")
+        print(f"   Data Agent ID: {result.get('id', 'N/A')}")
+        print(f"   Data Agent Name: {args.data_agent_name}")
+        print(f"   Lakehouse ID: {args.lakehouse_id}")
+        print(f"   Selected Tables: {', '.join(args.selected_tables)}")
+        print(f"   Configuration Status: Complete")
+        print(f"   Ready for use in Microsoft Fabric!")
+        
+    except FabricApiError as e:
+        print(f"❌ Fabric API Error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

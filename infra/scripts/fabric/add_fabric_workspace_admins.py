@@ -69,7 +69,7 @@ def get_existing_admin_principals(fabric_client, workspace_id):
     """Get set of existing admin principal IDs for duplicate checking."""
     try:
         print(f"    🔍 Checking existing role assignments...")
-        assignments = fabric_client.get_workspace_role_assignments(workspace_id, get_all=True)
+        assignments = fabric_client.list_workspace_role_assignments(workspace_id, get_all=True)
         
         existing_principals = set()
         admin_count = 0
@@ -322,7 +322,7 @@ except Exception as e:
 
 print("🔍 Retrieving all available workspaces...")
 try:
-    workspaces = fabric_client.get_workspaces()
+    workspaces = fabric_client.list_workspaces()
     
     if not workspaces:
         print("⚠️ No workspaces found. You may not have access to any workspaces.")

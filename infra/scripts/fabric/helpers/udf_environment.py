@@ -43,7 +43,10 @@ def setup_environment(workspace_client: FabricWorkspaceApiClient,
     
     try:
         # Check if environment already exists
-        existing_environment = workspace_client.get_environment_by_name(environment_name)
+        try:
+            existing_environment = workspace_client.get_environment_by_name(environment_name)
+        except FabricApiError:
+            existing_environment = None
         
         if existing_environment:
             environment_id = existing_environment.get('id')
@@ -97,6 +100,91 @@ def setup_environment(workspace_client: FabricWorkspaceApiClient,
     except FabricApiError as e:
         print(f"❌ Failed to setup environment '{environment_name}': {e}")
         raise
+    except FileNotFoundError as e:
+        print(f"❌ Environment configuration file not found: {e}")
+        raise FabricApiError(f"Configuration file error: {e}")
     except Exception as e:
         print(f"❌ Unexpected error setting up environment '{environment_name}': {e}")
         raise FabricApiError(f"Error setting up environment: {e}")
+
+
+def main():
+    """Main function to create/setup a Fabric environment."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description="Create or setup a Microsoft Fabric environment with custom libraries",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Create basic environment
+  python udf_environment.py --workspace-id "12345678-1234-1234-1234-123456789012" --environment-name "MyEnvironment"
+  
+  # Create environment with custom libraries
+  python udf_environment.py --workspace-id "12345678-1234-1234-1234-123456789012" --environment-name "MyEnvironment" --environment-yml "path/to/environment.yml"
+  
+  # Create environment with description
+  python udf_environment.py --workspace-id "12345678-1234-1234-1234-123456789012" --environment-name "MyEnvironment" --description "Development environment"
+        """
+    )
+    
+    parser.add_argument(
+        "--workspace-id",
+        required=True,
+        help="ID of the workspace"
+    )
+    
+    parser.add_argument(
+        "--environment-name",
+        required=True,
+        help="Name of the environment to create"
+    )
+    
+    parser.add_argument(
+        "--description",
+        help="Optional description for the environment"
+    )
+    
+    parser.add_argument(
+        "--environment-yml",
+        help="Optional path to environment.yml file with library specifications"
+    )
+    
+    parser.add_argument(
+        "--folder-id",
+        help="Optional folder ID where to create the environment"
+    )
+    
+    args = parser.parse_args()
+    
+    try:
+        from fabric_api import FabricWorkspaceApiClient, FabricApiError
+        
+        workspace_client = FabricWorkspaceApiClient(workspace_id=args.workspace_id)
+        
+        environment = setup_environment(
+            workspace_client=workspace_client,
+            environment_name=args.environment_name,
+            description=args.description,
+            environment_yml_path=args.environment_yml,
+            folder_id=args.folder_id
+        )
+        
+        print(f"\n🎉 Final Results:")
+        print(f"   Environment Name: {args.environment_name}")
+        print(f"   Environment ID: {environment.get('id')}")
+        print(f"   Workspace ID: {args.workspace_id}")
+        if args.environment_yml:
+            print(f"   Custom Libraries: Configured")
+        print(f"   Status: Ready for use!")
+        
+    except FabricApiError as e:
+        print(f"❌ Fabric API Error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

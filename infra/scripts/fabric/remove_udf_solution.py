@@ -76,7 +76,7 @@ try:
     # If workspace name is provided, look it up to get the ID
     if workspace_name:
         print(f"🔍 Looking up workspace: '{workspace_name}'")
-        workspaces = fabric_client.get_workspaces()
+        workspaces = fabric_client.list_workspaces()
         workspace = next(
             (w for w in workspaces if w['displayName'].lower() == workspace_name.lower()), None)
         
@@ -94,7 +94,7 @@ try:
     else:
         # If workspace ID is provided, verify it exists
         print(f"🔍 Verifying workspace ID: '{workspace_id}'")
-        workspaces = fabric_client.get_workspaces()
+        workspaces = fabric_client.list_workspaces()
         workspace = next(
             (w for w in workspaces if w['id'].lower() == workspace_id.lower()), None)
         

@@ -29,9 +29,9 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
     Args:
         workspace_client: Authenticated workspace API client
         notebook_specs: List of notebook specifications, each containing:
-            - local_path: Path to the notebook file
-            - source_lakehouse_name: Optional source lakehouse name
-            - target_lakehouse_name: Optional target lakehouse name
+            - path: Path to the notebook file
+            - source_lakehouse: Optional source lakehouse name
+            - target_lakehouse: Optional target lakehouse name
             - folder_path: Folder path in workspace
         lakehouses: Dictionary mapping lakehouse names to lakehouse objects
         
@@ -43,11 +43,10 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
     """
     print(f"📓 Deploying notebooks to workspace")
     
-    # Get existing notebooks
+    # Get existing notebooks (returns dict of {name: id})
     print(f"   Retrieving existing notebooks...")
-    existing_notebooks = workspace_client.list_notebooks()
-    existing_notebook_map = {nb['displayName']: nb for nb in existing_notebooks}
-    print(f"   Found {len(existing_notebook_map)} existing notebooks")
+    existing_notebook_ids = workspace_client.list_notebooks()
+    print(f"   Found {len(existing_notebook_ids)} existing notebooks")
     
     notebooks = {}
     created_count = 0
@@ -58,12 +57,17 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
     # Process each notebook
     total_notebooks = len(notebook_specs)
     for idx, spec in enumerate(notebook_specs, 1):
-        local_path = spec['local_path']
-        source_lakehouse_name = spec.get('source_lakehouse_name')
-        target_lakehouse_name = spec.get('target_lakehouse_name')
-        folder_path = spec['folder_path']
+        local_path = spec.get('path') or spec.get('local_path')  # Support both key names
+        source_lakehouse_name = spec.get('source_lakehouse') or spec.get('source_lakehouse_name')
+        target_lakehouse_name = spec.get('target_lakehouse') or spec.get('target_lakehouse_name')
+        folder_path = spec.get('folder_path', '')
         folder_id = spec.get('folder_id')
         
+        if not local_path:
+            print(f"   [{idx}/{total_notebooks}] ❌ Skipping: Missing notebook path in spec")
+            failed_count += 1
+            continue
+            
         notebook_name = os.path.splitext(os.path.basename(local_path))[0]
         
         try:
@@ -77,17 +81,17 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
             if source_lakehouse_name or target_lakehouse_name:
                 lakehouse_refs = []
                 
-                if source_lakehouse_name:
+                if source_lakehouse_name and lakehouses:
                     source_lh = lakehouses.get(source_lakehouse_name)
-                    if source_lh:
+                    if source_lh and isinstance(source_lh, dict) and 'id' in source_lh:
                         lakehouse_refs.append({
                             "id": source_lh['id'],
                             "workspaceId": workspace_client.workspace_id
                         })
                 
-                if target_lakehouse_name and target_lakehouse_name != source_lakehouse_name:
+                if target_lakehouse_name and target_lakehouse_name != source_lakehouse_name and lakehouses:
                     target_lh = lakehouses.get(target_lakehouse_name)
-                    if target_lh:
+                    if target_lh and isinstance(target_lh, dict) and 'id' in target_lh:
                         lakehouse_refs.append({
                             "id": target_lh['id'],
                             "workspaceId": workspace_client.workspace_id
@@ -111,30 +115,61 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
                 json.dumps(notebook_json).encode('utf-8')
             ).decode('utf-8')
             
+            # Prepare notebook data for API
+            notebook_data = {
+                "displayName": notebook_name,
+                "definition": {
+                    "format": "ipynb",
+                    "parts": [{
+                        "path": "notebook-content.ipynb",
+                        "payload": notebook_base64,
+                        "payloadType": "InlineBase64"
+                    }]
+                }
+            }
+            
+            # Add folder ID if specified
+            if folder_id:
+                notebook_data["folderId"] = folder_id
+            
             # Check if notebook exists
-            if notebook_name in existing_notebook_map:
+            if notebook_name in existing_notebook_ids:
                 # Update existing notebook
-                notebook_id = existing_notebook_map[notebook_name]['id']
-                workspace_client.update_notebook(
+                notebook_id = existing_notebook_ids[notebook_name]
+                response = workspace_client.update_notebook(
                     notebook_id,
-                    notebook_name,
-                    notebook_base64,
-                    folder_id
+                    notebook_data,
+                    wait_for_lro=True
                 )
-                notebooks[notebook_name] = existing_notebook_map[notebook_name]
+                # Store notebook object with ID
+                notebooks[notebook_name] = {'id': notebook_id, 'displayName': notebook_name}
                 print(f"      ✅ Updated: {notebook_name}")
                 updated_count += 1
             else:
                 # Create new notebook
-                notebook = workspace_client.create_notebook(
-                    notebook_name,
-                    notebook_base64,
-                    folder_id
+                response = workspace_client.create_notebook(
+                    notebook_data,
+                    wait_for_lro=True
                 )
-                notebooks[notebook_name] = notebook
-                print(f"      ✅ Created: {notebook_name}")
-                created_count += 1
+                # Extract notebook ID from response
+                if response.ok:
+                    response_data = response.json()
+                    notebook_id = response_data.get('id', 'unknown')
+                    notebooks[notebook_name] = {'id': notebook_id, 'displayName': notebook_name}
+                    print(f"      ✅ Created: {notebook_name}")
+                    created_count += 1
+                else:
+                    raise FabricApiError(f"Failed to create notebook: {response.text}")
                 
+        except FileNotFoundError as e:
+            print(f"      ❌ Notebook file not found: {notebook_name} - {e}")
+            failed_count += 1
+        except json.JSONDecodeError as e:
+            print(f"      ❌ Invalid notebook JSON format: {notebook_name} - {e}")
+            failed_count += 1
+        except FabricApiError as e:
+            print(f"      ❌ Fabric API error deploying {notebook_name}: {e}")
+            failed_count += 1
         except Exception as e:
             print(f"      ❌ Failed to deploy {notebook_name}: {e}")
             failed_count += 1
@@ -218,6 +253,13 @@ def execute_notebooks_sequential(workspace_client: FabricWorkspaceApiClient,
                     print(f"         Error: {job_result.get('error')}")
                 failed_executions.append(notebook_name)
                 
+        except FabricApiError as e:
+            print(f"      ❌ Fabric API error executing {notebook_name}: {e}")
+            failed_executions.append(notebook_name)
+            execution_results[notebook_name] = {
+                'status': 'Exception',
+                'error': str(e)
+            }
         except Exception as e:
             print(f"      ❌ Failed to execute {notebook_name}: {e}")
             failed_executions.append(notebook_name)
@@ -237,3 +279,118 @@ def execute_notebooks_sequential(workspace_client: FabricWorkspaceApiClient,
             print(f"      - {notebook_name}")
     
     return execution_results
+
+
+def main():
+    """Main function to deploy and execute notebooks."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description="Deploy notebooks to a Microsoft Fabric workspace",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Deploy a single notebook
+  python udf_notebook.py --workspace-id "12345678-1234-1234-1234-123456789012" --notebook-path "path/to/notebook.ipynb" --notebook-name "MyNotebook"
+  
+  # Deploy notebook with lakehouse
+  python udf_notebook.py --workspace-id "12345678-1234-1234-1234-123456789012" --notebook-path "path/to/notebook.ipynb" --notebook-name "MyNotebook" --lakehouse-name "MyLakehouse" --lakehouse-id "87654321-4321-4321-4321-210987654321"
+        """
+    )
+    
+    parser.add_argument(
+        "--workspace-id",
+        required=True,
+        help="ID of the workspace"
+    )
+    
+    parser.add_argument(
+        "--notebook-path",
+        required=True,
+        help="Local path to the notebook file"
+    )
+    
+    parser.add_argument(
+        "--notebook-name",
+        help="Name for the notebook in Fabric (defaults to filename)"
+    )
+    
+    parser.add_argument(
+        "--lakehouse-name",
+        help="Optional lakehouse name to associate with notebook"
+    )
+    
+    parser.add_argument(
+        "--lakehouse-id",
+        help="Optional lakehouse ID (required if lakehouse-name is specified)"
+    )
+    
+    parser.add_argument(
+        "--folder-id",
+        help="Optional folder ID where to create the notebook"
+    )
+    
+    parser.add_argument(
+        "--execute",
+        action="store_true",
+        help="Execute the notebook after deployment"
+    )
+    
+    args = parser.parse_args()
+    
+    try:
+        from fabric_api import FabricWorkspaceApiClient, FabricApiError
+        
+        workspace_client = FabricWorkspaceApiClient(workspace_id=args.workspace_id)
+        
+        # Determine notebook name
+        notebook_name = args.notebook_name or os.path.splitext(os.path.basename(args.notebook_path))[0]
+        
+        # Prepare lakehouse dictionary
+        lakehouses = {}
+        if args.lakehouse_name and args.lakehouse_id:
+            lakehouses[args.lakehouse_name] = {
+                'id': args.lakehouse_id,
+                'displayName': args.lakehouse_name
+            }
+        
+        # Prepare notebook spec (use 'path' to match create_fabric_items.py)
+        notebook_specs = [{
+            'path': args.notebook_path,
+            'source_lakehouse': args.lakehouse_name,
+            'target_lakehouse': args.lakehouse_name,
+            'folder_path': '',
+            'folder_id': args.folder_id
+        }]
+        
+        # Deploy notebook
+        notebooks = deploy_notebooks(
+            workspace_client=workspace_client,
+            notebook_specs=notebook_specs,
+            lakehouses=lakehouses
+        )
+        
+        # Execute if requested
+        if args.execute:
+            execute_notebooks_sequential(
+                workspace_client=workspace_client,
+                notebook_names=[notebook_name],
+                notebooks=notebooks
+            )
+        
+        print(f"\n🎉 Final Results:")
+        print(f"   Notebook: {notebook_name}")
+        print(f"   Workspace ID: {args.workspace_id}")
+        if args.execute:
+            print(f"   Execution: Completed")
+        
+    except FabricApiError as e:
+        print(f"❌ Fabric API Error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

@@ -130,6 +130,31 @@ def is_valid_guid(value):
         return False
 
 
+def build_notebook_spec(notebooks_directory: str, subpath: str, source_lakehouse: Optional[str], 
+                       target_lakehouse: Optional[str], folder_path: str, fabric_folders: dict) -> dict:
+    """
+    Build a notebook specification dictionary for deployment.
+    
+    Args:
+        notebooks_directory: Base directory containing notebooks
+        subpath: Relative path to notebook file
+        source_lakehouse: Optional source lakehouse name
+        target_lakehouse: Optional target lakehouse name
+        folder_path: Folder path in workspace
+        fabric_folders: Dictionary mapping folder paths to folder IDs
+        
+    Returns:
+        Dictionary with notebook specification
+    """
+    return {
+        'local_path': os.path.join(notebooks_directory, subpath),
+        'source_lakehouse_name': source_lakehouse,
+        'target_lakehouse_name': target_lakehouse,
+        'folder_path': folder_path,
+        'folder_id': fabric_folders.get(folder_path)
+    }
+
+
 def print_step(step_number: int, total_steps: int, step_name: str, **kwargs):
     """
     Print a formatted step header with details.

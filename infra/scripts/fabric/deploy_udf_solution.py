@@ -39,7 +39,7 @@ from fabric_api import create_fabric_client, create_workspace_fabric_client, Fab
 from graph_api import create_graph_client, GraphApiError
 
 # Import helper modules
-from helpers.utils import get_required_env_var, print_step, print_steps_summary
+from helpers.utils import get_required_env_var, print_step, print_steps_summary, build_notebook_spec
 from helpers.udf_workspace import setup_workspace
 from helpers.udf_workspace_admins import setup_workspace_administrators
 from helpers.udf_folder import setup_folder_structure
@@ -214,7 +214,7 @@ def main():
     try:
         upload_result = load_csv_data_to_lakehouse(
             workspace_client=workspace_client,
-            bronze_lakehouse=bronze_lakehouse,
+            lakehouse=bronze_lakehouse,
             csv_folder_path=csv_folder_path
         )
         print(f"✅ Successfully completed: load_csv_data_to_lakehouse")
@@ -227,32 +227,68 @@ def main():
     # Step 6: Deploy notebooks
     notebooks_directory = os.path.join(repo_root, 'src', 'fabric', 'notebooks')
     
-    # Build notebook specifications
+    # Build notebook specifications directly as a list
     notebook_specs = [
-        {
-            'local_path': os.path.join(notebooks_directory, 'run_bronze_to_silver.ipynb'),
-            'source_lakehouse_name': None,
-            'target_lakehouse_name': 'maag_silver',
-            'folder_path': 'notebooks',
-            'folder_id': fabric_folders.get('notebooks/bronze_to_silver')
-        },
-        {
-            'local_path': os.path.join(notebooks_directory, 'run_silver_to_gold.ipynb'),
-            'source_lakehouse_name': None,
-            'target_lakehouse_name': 'maag_gold',
-            'folder_path': 'notebooks',
-            'folder_id': fabric_folders.get('notebooks/silver_to_gold')
-        },
-        # Add more notebook specifications here...
-        # (Bronze to Silver notebooks)
-        {
-            'local_path': os.path.join(notebooks_directory, 'bronze_to_silver', 'bronze_to_silver_finance_account.ipynb'),
-            'source_lakehouse_name': 'maag_bronze',
-            'target_lakehouse_name': 'maag_silver',
-            'folder_path': 'notebooks/bronze_to_silver',
-            'folder_id': fabric_folders.get('notebooks/bronze_to_silver')
-        },
-        # ... (add all other notebooks)
+        # Root level notebooks
+        build_notebook_spec(notebooks_directory, 'run_bronze_to_silver.ipynb', None, 'maag_silver', 'notebooks', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'run_silver_to_gold.ipynb', None, 'maag_gold', 'notebooks', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'configure_data_agent_lakehouse.ipynb', None, None, 'notebooks', fabric_folders),
+        
+        # Bronze to Silver transformation notebooks
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_finance_account.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_finance_invoice.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_finance_payment.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_salesadb_order.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_salesadb_orderLine.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_salesadb_orderPayment.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_salesfabric_order.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_salesfabric_orderLine.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_salesfabric_orderPayment.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_shared_customer.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_shared_customeraccount.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_shared_customerRelationshipType.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_shared_customerTradeName.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_shared_location.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_shared_product.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_shared_productCategory.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        
+        # Data management notebooks
+        build_notebook_spec(notebooks_directory, 'data_management/drop_all_tables_gold.ipynb', None, 'maag_gold', 'notebooks/data_management', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'data_management/drop_all_tables_silver.ipynb', None, 'maag_silver', 'notebooks/data_management', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'data_management/trouble_shooting.ipynb', None, None, 'notebooks/data_management', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'data_management/truncate_all_tables_gold.ipynb', None, 'maag_gold', 'notebooks/data_management', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'data_management/truncate_all_tables_silver.ipynb', None, 'maag_silver', 'notebooks/data_management', fabric_folders),
+        
+        # Schema notebooks
+        build_notebook_spec(notebooks_directory, 'schema/model_finance_gold.ipynb', None, 'maag_gold', 'notebooks/schema', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'schema/model_salesadb_gold.ipynb', None, 'maag_gold', 'notebooks/schema', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'schema/model_salesfabric_gold.ipynb', None, 'maag_gold', 'notebooks/schema', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'schema/model_shared_gold.ipynb', None, 'maag_gold', 'notebooks/schema', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'schema/model_finance_silver.ipynb', None, 'maag_silver', 'notebooks/schema', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'schema/model_salesadb_silver.ipynb', None, 'maag_silver', 'notebooks/schema', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'schema/model_salesfabric_silver.ipynb', None, 'maag_silver', 'notebooks/schema', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'schema/model_shared_silver.ipynb', None, 'maag_silver', 'notebooks/schema', fabric_folders),
+        
+        # Silver to Gold transformation notebooks
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_finance_account.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_finance_invoice.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_finance_payment.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_sales_order_line.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_sales_order_payment.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_sales_order.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_salesadb_order.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_salesadb_orderLine.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_salesadb_orderPayment.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_salesfabric_order.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_salesfabric_orderLine.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_salesfabric_orderPayment.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_shared_customer.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_shared_customeraccount.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_shared_customerRelationshipType.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_shared_customerTradeName.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_shared_location.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_shared_product.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_shared_productCategory.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
     ]
     
     print_step(6, 9, "Deploying notebooks", notebook_count=len(notebook_specs))

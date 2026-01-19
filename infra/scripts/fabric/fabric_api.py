@@ -302,7 +302,7 @@ class FabricApiClient:
                                 )
                             
                             # If job completed successfully
-                            elif job_status == 'Completed':
+                            elif job_status in ['Completed', 'Succeeded']:
                                 elapsed_str = self._format_duration(time.time() - start_time)
                                 self._log(f"Operation '{operation_display}' completed successfully ({elapsed_str})")
                                 return response
@@ -415,7 +415,7 @@ class FabricApiClient:
         return service_client.get_file_system_client(file_system=workspace_name)
     
     # Capacity operations
-    def get_capacities(self) -> List[Dict[str, Any]]:
+    def list_capacities(self) -> List[Dict[str, Any]]:
         """
         Get all capacities accessible to the user.
         
@@ -461,7 +461,7 @@ class FabricApiClient:
         Raises:
             FabricApiError: If request fails
         """
-        capacities = self.get_capacities()
+        capacities = self.list_capacities()
         capacity = next((c for c in capacities if c['displayName'].lower() == capacity_name.lower()), None)
         
         if not capacity:
@@ -471,7 +471,7 @@ class FabricApiClient:
         return capacity
 
     # Workspace operations
-    def get_workspaces(self) -> List[Dict[str, Any]]:
+    def list_workspaces(self) -> List[Dict[str, Any]]:
         """
         Get all workspaces accessible to the user.
         
@@ -513,7 +513,7 @@ class FabricApiClient:
         Raises:
             FabricApiError: If request fails
         """
-        workspaces = self.get_workspaces()
+        workspaces = self.list_workspaces()
         workspace = next((w for w in workspaces if w['displayName'].lower() == workspace_name.lower()), None)
         
         if not workspace:
@@ -718,10 +718,10 @@ class FabricApiClient:
             self._log(error_msg, level="ERROR")
             raise FabricApiError(error_msg)
     
-    def get_workspace_role_assignments(self, 
+    def list_workspace_role_assignments(self, 
                                      workspace_id: str,
                                      continuation_token: Optional[str] = None,
-                                     get_all: bool = True) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+                                     get_all: bool = True) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         """
         Get workspace role assignments with support for pagination.
         
@@ -729,14 +729,14 @@ class FabricApiClient:
             workspace_id: Target workspace ID
             continuation_token: Optional token for retrieving the next page of results
             get_all: If True, retrieves all role assignments across all pages. 
-                    If False, returns the raw API response with pagination info.
+                    If False, returns a single page with pagination info.
             
         Returns:
             If get_all=True: List of WorkspaceRoleAssignment objects
-            If get_all=False: Raw API response containing:
-            - value: List of WorkspaceRoleAssignment objects
-            - continuationToken: Token for next page (if more results exist)
-            - continuationUri: URI for next page (if more results exist)
+            If get_all=False: Dictionary containing:
+                - value: List of WorkspaceRoleAssignment objects
+                - continuationToken: Token for next page (if more results exist)
+                - continuationUri: URI for next page (if more results exist)
             
             Each WorkspaceRoleAssignment contains:
             - id: Role assignment ID
@@ -792,9 +792,10 @@ class FabricApiClient:
                         raise FabricApiError(error_msg)
                 
                 self._log(f"Retrieved {len(all_role_assignments)} total role assignment(s)")
+                # Return list directly when fetching all
                 return all_role_assignments
             else:
-                # Return raw response with pagination info
+                # Return response with pagination info
                 role_assignments = response_data.get('value', [])
                 self._log(f"Retrieved {len(role_assignments)} role assignment(s) in current page")
                 return response_data
@@ -821,7 +822,7 @@ class FabricApiClient:
         """
         self._log(f"Searching for role assignment for principal {principal_id} in workspace {workspace_id}")
         
-        role_assignments = self.get_workspace_role_assignments(workspace_id, get_all=True)
+        role_assignments = self.list_workspace_role_assignments(workspace_id, get_all=True)
         
         # Search for the specific principal
         for assignment in role_assignments:
@@ -1068,23 +1069,65 @@ class FabricWorkspaceApiClient(FabricApiClient):
         """
         super().__init__(api_url, resource_url, credential, timeout_sec)
         self.workspace_id = workspace_id
+        self._workspace_info = None  # Cache for workspace information
         self._log(f"Initialized FabricWorkspaceApiClient for workspace {workspace_id}")
     
-    def get_workspace_info(self) -> Dict[str, Any]:
+    def get_workspace_info(self, refresh: bool = False) -> Dict[str, Any]:
         """
-        Get information about the current workspace.
+        Get information about the current workspace with caching.
+        
+        Args:
+            refresh: If True, forces a fresh API call instead of using cached data
         
         Returns:
-            Workspace object
+            Workspace object containing id, displayName, capacityId, etc.
+            
+        Note:
+            Workspace info is cached after the first call to improve performance.
+            Use refresh=True to get the latest data from the API.
         """
+        # Return cached data if available and refresh not requested
+        if self._workspace_info is not None and not refresh:
+            return self._workspace_info
+        
         try:
             response = self._make_request(f"workspaces/{self.workspace_id}")
-            return response.json()
+            self._workspace_info = response.json()
+            return self._workspace_info
         except Exception as e:
             self._log(f"Failed to get workspace info: {str(e)}", "ERROR")
             raise FabricApiError(f"Failed to get workspace {self.workspace_id}: {str(e)}")
     
-    def get_items(self, item_type: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_workspace(self, refresh: bool = False) -> Optional[Dict[str, Any]]:
+        """
+        Get workspace data for the current workspace instance with caching.
+        
+        This method uses the more efficient get_workspace_info() endpoint which directly
+        retrieves the workspace by ID, rather than listing all workspaces.
+        
+        Args:
+            refresh: If True, forces a fresh API call instead of using cached data
+        
+        Returns:
+            Workspace object if found, None otherwise
+            
+        Raises:
+            FabricApiError: If request fails
+            
+        Note:
+            Workspace info is cached after the first call to improve performance.
+            Use refresh=True to get the latest data from the API.
+        """
+        try:
+            return self.get_workspace_info(refresh=refresh)
+        except FabricApiError as e:
+            # If workspace not found (404), return None instead of raising
+            if e.status_code == 404:
+                self._log(f"Workspace with ID '{self.workspace_id}' not found")
+                return None
+            raise
+    
+    def list_items(self, item_type: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Get items from the workspace.
         
@@ -1111,10 +1154,101 @@ class FabricWorkspaceApiClient(FabricApiClient):
         return super().delete_workspace(self.workspace_id)
     
     # Folder operations
-    def get_folders(self) -> List[Dict[str, Any]]:
-        """Get all folders in the workspace."""
-        response = self._make_request(f"workspaces/{self.workspace_id}/folders")
-        return response.json().get('value', [])
+    def list_folders(self, 
+                    root_folder_id: Optional[str] = None,
+                    recursive: bool = True,
+                    continuation_token: Optional[str] = None,
+                    get_all: bool = True) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
+        """
+        Get folders from the workspace with support for filtering and pagination.
+        
+        Args:
+            root_folder_id: Optional root folder ID to filter folders. If not provided, the workspace is used as the root folder.
+            recursive: If True, lists all folders in the folder and its nested folders. 
+                      If False, only lists folders directly under the root folder. Default is True.
+            continuation_token: Optional token for retrieving the next page of results.
+            get_all: If True, retrieves all folders across all pages. 
+                    If False, returns a single page with pagination info.
+            
+        Returns:
+            If get_all=True: List of Folder objects
+            If get_all=False: Dictionary containing:
+                - value: List of Folder objects
+                - continuationToken: Token for next page (if more results exist)
+                - continuationUri: URI for next page (if more results exist)
+            
+            Each Folder object contains:
+            - id: Folder ID (GUID)
+            - displayName: Folder display name
+            - workspaceId: Workspace ID (GUID)
+            - parentFolderId: Parent folder ID (GUID) - not present if parent is workspace
+            
+        Raises:
+            FabricApiError: If request fails (e.g., FolderNotFound)
+            
+        Required Scopes:
+            Workspace.Read.All or Workspace.ReadWrite.All
+            
+        Required Permissions:
+            Viewer workspace role or higher
+            
+        Reference:
+            https://learn.microsoft.com/en-us/rest/api/fabric/core/folders/list-folders
+        """
+        self._log(f"Getting folders from workspace {self.workspace_id}")
+        
+        # Build query parameters
+        params = []
+        if root_folder_id:
+            params.append(f"rootFolderId={root_folder_id}")
+        if not recursive:  # Only add if explicitly False (default is True)
+            params.append(f"recursive=False")
+        if continuation_token:
+            params.append(f"continuationToken={continuation_token}")
+        
+        query_string = f"?{'&'.join(params)}" if params else ""
+        uri = f"workspaces/{self.workspace_id}/folders{query_string}"
+        
+        # Make the API request
+        response = self._make_request(uri)
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            
+            if get_all:
+                # Collect all folders across all pages
+                all_folders = response_data.get('value', [])
+                
+                # Continue fetching while there's a continuation token
+                while 'continuationToken' in response_data:
+                    next_token = response_data['continuationToken']
+                    
+                    # Build URI with continuation token
+                    next_params = []
+                    if root_folder_id:
+                        next_params.append(f"rootFolderId={root_folder_id}")
+                    if not recursive:
+                        next_params.append(f"recursive=False")
+                    next_params.append(f"continuationToken={next_token}")
+                    
+                    next_uri = f"workspaces/{self.workspace_id}/folders?{'&'.join(next_params)}"
+                    
+                    # Fetch next page
+                    next_response = self._make_request(next_uri)
+                    response_data = next_response.json()
+                    all_folders.extend(response_data.get('value', []))
+                
+                self._log(f"Retrieved {len(all_folders)} total folder(s)")
+                return all_folders
+            else:
+                # Return response with pagination info
+                folders = response_data.get('value', [])
+                self._log(f"Retrieved {len(folders)} folder(s) in current page")
+                return response_data
+        else:
+            error_msg = f"Failed to get folders: HTTP {response.status_code}"
+            self._log(error_msg, level="ERROR")
+            raise FabricApiError(error_msg)
     
     def create_folder(self, display_name: str, parent_folder_id: Optional[str] = None) -> str:
         """
@@ -1135,7 +1269,7 @@ class FabricWorkspaceApiClient(FabricApiClient):
         return response.json()['id']
     
     # Notebook operations
-    def get_notebooks(self) -> Dict[str, str]:
+    def list_notebooks(self) -> Dict[str, str]:
         """
         Get all notebooks in the workspace.
         
@@ -1212,7 +1346,7 @@ class FabricWorkspaceApiClient(FabricApiClient):
         )
     
     # Lakehouse operations
-    def get_lakehouses(self) -> List[Dict[str, Any]]:
+    def list_lakehouses(self) -> List[Dict[str, Any]]:
         """
         Get all lakehouses from the workspace.
         
@@ -1254,7 +1388,7 @@ class FabricWorkspaceApiClient(FabricApiClient):
         Raises:
             FabricApiError: If lakehouse not found
         """
-        lakehouses = self.get_lakehouses()
+        lakehouses = self.list_lakehouses()
         lakehouse = next((lh for lh in lakehouses if lh['displayName'].lower() == lakehouse_name.lower()), None)
         
         if not lakehouse:
@@ -1530,7 +1664,7 @@ class FabricWorkspaceApiClient(FabricApiClient):
         except Exception as e:
             raise FabricApiError(f"Unexpected error creating Data Agent '{data_agent_name}': {str(e)}")
     
-    def get_data_agents(self) -> List[Dict[str, Any]]:
+    def list_data_agents(self) -> List[Dict[str, Any]]:
         """
         Get all Data Agents in the workspace.
         
@@ -1596,7 +1730,7 @@ class FabricWorkspaceApiClient(FabricApiClient):
             self._log(f"Searching for Data Agent '{data_agent_name}' in workspace {self.workspace_id}")
             
             # Get all data agents
-            data_agents = self.get_data_agents()
+            data_agents = self.list_data_agents()
             
             # Find the data agent by name
             for agent in data_agents:

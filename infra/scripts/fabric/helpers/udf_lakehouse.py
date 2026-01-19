@@ -15,9 +15,10 @@ from typing import Optional
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fabric_api import FabricWorkspaceApiClient, FabricApiError
+from azure.storage.filedatalake import FileSystemClient
 
 
-def create_lakehouse_directory_structure(file_system_client, 
+def create_lakehouse_directory_structure(file_system_client: FileSystemClient, 
                                         lakehouse_root_path: str, 
                                         folder_path: str) -> None:
     """
@@ -31,20 +32,35 @@ def create_lakehouse_directory_structure(file_system_client,
     Raises:
         Exception: If folder creation fails
     """
-    # Build full path
-    full_path = f"{lakehouse_root_path}/{folder_path}"
+    # Validate input
+    if not folder_path or folder_path == '.':
+        return
     
-    # Split into parts and create each level
-    parts = folder_path.split('/')
-    current_path = lakehouse_root_path
+    # Normalize path separators
+    folder_path = folder_path.replace('\\', '/')
+    lakehouse_root_path = lakehouse_root_path.replace('\\', '/')
     
-    for part in parts:
-        current_path = f"{current_path}/{part}"
+    try:
+        # Split into parts and create each level iteratively
+        parts = folder_path.split('/')
+        current_path = lakehouse_root_path
         
-        # Check if directory exists
-        directory_client = file_system_client.get_directory_client(current_path)
-        if not directory_client.exists():
-            directory_client.create_directory()
+        for part in parts:
+            if not part:  # Skip empty parts from double slashes
+                continue
+                
+            current_path = f"{current_path}/{part}"
+            
+            try:
+                # Check if directory exists
+                directory_client = file_system_client.get_directory_client(current_path)
+                directory_client.get_directory_properties()
+            except Exception:
+                # Directory doesn't exist, create it
+                directory_client.create_directory()
+                
+    except Exception as e:
+        raise Exception(f"Failed to create directory structure '{folder_path}' in '{lakehouse_root_path}': {str(e)}")
 
 
 def setup_lakehouses(workspace_client: FabricWorkspaceApiClient, 
@@ -66,47 +82,56 @@ def setup_lakehouses(workspace_client: FabricWorkspaceApiClient,
     """
     print(f"🏠 Setting up lakehouses")
     
-    # Get existing lakehouses
-    print(f"   Retrieving existing lakehouses...")
-    existing_lakehouses = workspace_client.list_lakehouses()
-    existing_lakehouse_map = {lh['displayName']: lh for lh in existing_lakehouses}
-    
-    lakehouses = {}
-    created_count = 0
-    skipped_count = 0
-    
-    # Create or retrieve each lakehouse
-    for lakehouse_name in lakehouse_names:
-        if lakehouse_name in existing_lakehouse_map:
-            print(f"   ℹ️  Lakehouse already exists: {lakehouse_name}")
-            lakehouses[lakehouse_name] = existing_lakehouse_map[lakehouse_name]
-            skipped_count += 1
-        else:
-            print(f"   ➕ Creating lakehouse: {lakehouse_name}")
-            lakehouse = workspace_client.create_lakehouse(
-                lakehouse_name,
-                folder_id=lakehouse_folder_id
-            )
-            lakehouses[lakehouse_name] = lakehouse
-            print(f"   ✅ Created lakehouse: {lakehouse_name} ({lakehouse['id']})")
-            created_count += 1
-    
-    print(f"   ✅ Lakehouse setup complete:")
-    print(f"      Created: {created_count}")
-    print(f"      Skipped (already exists): {skipped_count}")
-    
-    return lakehouses
+    try:
+        # Get existing lakehouses
+        print(f"   Retrieving existing lakehouses...")
+        existing_lakehouses = workspace_client.list_lakehouses()
+        existing_lakehouse_map = {lh['displayName']: lh for lh in existing_lakehouses}
+        
+        lakehouses = {}
+        created_count = 0
+        skipped_count = 0
+        
+        # Create or retrieve each lakehouse
+        for lakehouse_name in lakehouse_names:
+            if lakehouse_name in existing_lakehouse_map:
+                print(f"   ℹ️  Lakehouse already exists: {lakehouse_name}")
+                lakehouses[lakehouse_name] = existing_lakehouse_map[lakehouse_name]
+                skipped_count += 1
+            else:
+                print(f"   ➕ Creating lakehouse: {lakehouse_name}")
+                lakehouse = workspace_client.create_lakehouse(
+                    lakehouse_name,
+                    folder_id=lakehouse_folder_id
+                )
+                lakehouses[lakehouse_name] = lakehouse
+                print(f"   ✅ Created lakehouse: {lakehouse_name} ({lakehouse['id']})")
+                created_count += 1
+        
+        print(f"   ✅ Lakehouse setup complete:")
+        print(f"      Created: {created_count}")
+        print(f"      Skipped (already exists): {skipped_count}")
+        
+        return lakehouses
+        
+    except FabricApiError as e:
+        print(f"❌ Failed to setup lakehouses: {e}")
+        raise
+    except Exception as e:
+        print(f"❌ Unexpected error setting up lakehouses: {e}")
+        raise FabricApiError(f"Error setting up lakehouses: {e}")
 
 
 def load_csv_data_to_lakehouse(workspace_client: FabricWorkspaceApiClient,
-                               bronze_lakehouse: dict,
+                               lakehouse: dict,
                                csv_folder_path: str) -> dict:
     """
-    Load CSV files from local folder to bronze lakehouse.
+    Load CSV files from local folder to lakehouse.
     
     Args:
         workspace_client: Authenticated workspace API client
-        bronze_lakehouse: Bronze lakehouse object with displayName and id
+        workspace_name: Name of the workspace
+        lakehouse: Lakehouse object with displayName and id
         csv_folder_path: Local path to folder containing CSV files
         
     Returns:
@@ -115,11 +140,12 @@ def load_csv_data_to_lakehouse(workspace_client: FabricWorkspaceApiClient,
     Raises:
         Exception: If upload fails
     """
-    print(f"📊 Uploading sample data to bronze lakehouse")
+    print(f"📊 Uploading sample data to lakehouse")
     
     # Get lakehouse root path
-    bronze_lakehouse_name = bronze_lakehouse['displayName']
-    bronze_lakehouse_onelake_root_path = f"{bronze_lakehouse_name}.Lakehouse/Files"
+    lakehouse_name = lakehouse['displayName']
+    lakehouse_onelake_root_path = f"{lakehouse_name}.Lakehouse/Files"
+    workspace_name = workspace_client.get_workspace()['displayName']
     
     # Get all CSV files
     csv_pattern = os.path.join(csv_folder_path, '**', '*.csv')
@@ -132,8 +158,8 @@ def load_csv_data_to_lakehouse(workspace_client: FabricWorkspaceApiClient,
     print(f"   Found {len(csv_file_paths)} CSV files to upload")
     
     # Connect to lakehouse
-    print(f"   Connecting to OneLake for lakehouse: {bronze_lakehouse_name}")
-    file_system_client = workspace_client.get_lakehouse_file_system_client(bronze_lakehouse_name)
+    print(f"   Connecting to OneLake for workspace: {workspace_name}, lakehouse: {lakehouse_name}")
+    file_system_client = workspace_client.get_workspace_file_system_client(workspace_name)
     
     # Track created folders to avoid recreating
     created_folders = set()
@@ -158,16 +184,16 @@ def load_csv_data_to_lakehouse(workspace_client: FabricWorkspaceApiClient,
             if folder_path and folder_path != '.' and folder_path not in created_folders:
                 create_lakehouse_directory_structure(
                     file_system_client,
-                    bronze_lakehouse_onelake_root_path,
+                    lakehouse_onelake_root_path,
                     folder_path
                 )
                 created_folders.add(folder_path)
             
             # Build target path in lakehouse
             if folder_path and folder_path != '.':
-                target_path = f"{bronze_lakehouse_onelake_root_path}/{folder_path}/{file_name}"
+                target_path = f"{lakehouse_onelake_root_path}/{folder_path}/{file_name}"
             else:
-                target_path = f"{bronze_lakehouse_onelake_root_path}/{file_name}"
+                target_path = f"{lakehouse_onelake_root_path}/{file_name}"
             
             # Check if file already exists
             file_client = file_system_client.get_file_client(target_path)
@@ -183,6 +209,12 @@ def load_csv_data_to_lakehouse(workspace_client: FabricWorkspaceApiClient,
             
             uploaded_count += 1
             
+        except FileNotFoundError as e:
+            print(f"   ❌ File not found {relative_path}: {e}")
+            failed_count += 1
+        except PermissionError as e:
+            print(f"   ❌ Permission denied for {relative_path}: {e}")
+            failed_count += 1
         except Exception as e:
             print(f"   ❌ Failed to upload {relative_path}: {e}")
             failed_count += 1
@@ -198,3 +230,94 @@ def load_csv_data_to_lakehouse(workspace_client: FabricWorkspaceApiClient,
         'skipped': skipped_count,
         'failed': failed_count
     }
+
+
+def main():
+    """Main function to create lakehouses and load data."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description="Create lakehouses in a Microsoft Fabric workspace and optionally load CSV data",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Create a single lakehouse
+  python udf_lakehouse.py --workspace-id "12345678-1234-1234-1234-123456789012" --lakehouse-names "BronzeLakehouse"
+  
+  # Create multiple lakehouses
+  python udf_lakehouse.py --workspace-id "12345678-1234-1234-1234-123456789012" --lakehouse-names "Bronze" "Silver" "Gold"
+  
+  # Create lakehouse and load data
+  python udf_lakehouse.py --workspace-id "12345678-1234-1234-1234-123456789012" --lakehouse-names "Bronze" --csv-folder "./data"
+        """
+    )
+    
+    parser.add_argument(
+        "--workspace-id",
+        required=True,
+        help="ID of the workspace"
+    )
+    
+    parser.add_argument(
+        "--lakehouse-names",
+        nargs="+",
+        required=True,
+        help="Names of lakehouses to create"
+    )
+    
+    parser.add_argument(
+        "--folder-id",
+        help="Optional folder ID where to create lakehouses"
+    )
+    
+    parser.add_argument(
+        "--csv-folder",
+        help="Optional path to folder containing CSV files to upload to first lakehouse"
+    )
+    
+    args = parser.parse_args()
+    
+    try:
+        from fabric_api import FabricWorkspaceApiClient, FabricApiError
+        
+        workspace_client = FabricWorkspaceApiClient(workspace_id=args.workspace_id)
+        
+        # Create lakehouses
+        lakehouses = setup_lakehouses(
+            workspace_client=workspace_client,
+            lakehouse_names=set(args.lakehouse_names),
+            lakehouse_folder_id=args.folder_id
+        )
+        
+        # Load CSV data if specified
+        if args.csv_folder:
+            first_lakehouse_name = args.lakehouse_names[0]
+            lakehouse = lakehouses.get(first_lakehouse_name)
+            if lakehouse:
+                # Get workspace name from workspace client
+                workspace_info = workspace_client.get_workspace()
+                workspace_name = workspace_info['displayName']
+                
+                load_csv_data_to_lakehouse(
+                    workspace_client=workspace_client,
+                    workspace_name=workspace_name,
+                    lakehouse=lakehouse,
+                    csv_folder_path=args.csv_folder
+                )
+        
+        print(f"\n🎉 Final Results:")
+        print(f"   Workspace ID: {args.workspace_id}")
+        print(f"   Lakehouses Created: {len(lakehouses)}")
+        for name in lakehouses:
+            print(f"      - {name} ({lakehouses[name]['id']})")
+        
+    except FabricApiError as e:
+        print(f"❌ Fabric API Error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
