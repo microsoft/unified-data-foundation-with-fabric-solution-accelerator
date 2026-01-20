@@ -86,11 +86,20 @@ def setup_environment(workspace_client: FabricWorkspaceApiClient,
             # Update environment with libraries
             print(f"   🔄 Updating environment with custom libraries...")
             try:
-                workspace_client.update_environment_libraries(
+                success = workspace_client.update_environment_definition(
                     environment_id,
                     environment_yml_base64
                 )
-                print(f"   ✅ Successfully configured custom libraries")
+                
+                if success:
+                    print(f"   ✅ Successfully configured custom libraries")
+                    
+                    # Publish the environment to make it available
+                    print(f"   📤 Publishing environment: '{environment_name}'")
+                    workspace_client.publish_environment(environment_id)
+                    print(f"   ✅ Successfully published environment: '{environment_name}'")
+                else:
+                    print(f"   ⚠️  Warning: Environment definition update returned unsuccessful status")
             except Exception as e:
                 print(f"   ⚠️  Warning: Could not update environment libraries: {e}")
                 print(f"   ℹ️  Environment created but library update failed")

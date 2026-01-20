@@ -12,9 +12,9 @@ Functions executed in order:
 4. setup_lakehouses - Create Bronze, Silver, and Gold lakehouses
 5. load_csv_data_to_lakehouse - Load sample data into Bronze lakehouse
 6. deploy_notebooks - Deploy and configure notebooks with lakehouse connections
-7. setup_environment - Create Fabric Environment with custom libraries
-8. setup_data_agent_lakehouse - Create and configure Data Agent with Lakehouse data source
-9. execute_notebooks_sequential - Run data transformation pipelines
+7. execute_notebooks_sequential - Run data transformation pipelines
+8. setup_environment - Create Fabric Environment with custom libraries
+9. setup_data_agent_lakehouse - Create and configure Data Agent with Lakehouse data source
 
 Usage:
     python deploy_udf_solution.py
@@ -66,6 +66,54 @@ def main():
     fabric_admins_str = os.getenv("AZURE_FABRIC_ADMIN_MEMBERS")
     fabric_admins_by_object_id_str = os.getenv("AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID")
     
+    # Initialize all configuration variables
+    notebooks_directory = os.path.join(repo_root, 'src', 'fabric', 'notebooks')
+    notebook_name_data_agent_config = "configure_data_agent_lakehouse.ipynb"
+    notebook_path_data_agent_config = os.path.join(notebooks_directory, notebook_name_data_agent_config)
+    
+    environment_name = "Data Agent Environment"
+    environment_yml_path = os.path.join(repo_root, "src", "fabric", "definitions", 
+                                       "environment", "Libraries", "PublicLibraries", "environment.yml")
+    
+    data_agent_name = "Data Agent for UDF"
+    
+    selected_tables = [
+        ['finance', 'account'],
+        ['finance', 'invoice'],
+        ['finance', 'payment'],
+        ['shared', 'customer'],
+        ['shared', 'productcategory'],
+        ['salesfabric', 'order'],
+        ['salesfabric', 'orderline'],
+        ['salesfabric', 'orderpayment'],
+        ['shared', 'customeraccount'],
+        ['shared', 'customerrelationshiptype'],
+        ['shared', 'customertradename'],
+        ['shared', 'location'],
+        ['shared', 'product']
+    ]
+    
+    notebooks_to_run = [
+        'run_bronze_to_silver',
+        'run_silver_to_gold'
+    ]
+    
+    folder_paths = [
+        'lakehouses',
+        'notebooks/bronze_to_silver',
+        'notebooks/data_management',
+        'notebooks/schema',
+        'notebooks/silver_to_gold',
+        'reports',
+        'environment'
+    ]
+    
+    lakehouse_names = {
+        'maag_bronze',
+        'maag_silver',
+        'maag_gold'
+    }
+    
     # Process admin lists from environment variables
     fabric_admins = []
     fabric_admins_by_object_id = []
@@ -114,6 +162,7 @@ def main():
         sys.exit(1)
     
     executed_steps = []
+    failed_steps = []
     
     # Step 1: Setup workspace
     print_step(1, 9, "Setting up Fabric workspace and capacity assignment", 
@@ -128,7 +177,8 @@ def main():
         executed_steps.append("setup_workspace")
     except Exception as e:
         print(f"❌ Exception while executing setup_workspace: {e}")
-        print_steps_summary(solution_name, solution_suffix, executed_steps, [])
+        failed_steps.append({"step": "setup_workspace", "error": str(e)})
+        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
         sys.exit(1)
     
     # Create workspace-specific client for subsequent operations
@@ -138,7 +188,8 @@ def main():
         print("✅ Workspace-specific authentication successful")
     except Exception as e:
         print(f"❌ Failed to create workspace-specific client: {e}")
-        print_steps_summary(solution_name, solution_suffix, executed_steps, [])
+        failed_steps.append({"step": "create_workspace_client", "error": str(e)})
+        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
         sys.exit(1)
     
     # Step 2: Setup workspace administrators
@@ -156,20 +207,11 @@ def main():
         executed_steps.append("setup_workspace_administrators")
     except Exception as e:
         print(f"❌ Exception while executing setup_workspace_administrators: {e}")
-        print_steps_summary(solution_name, solution_suffix, executed_steps, [])
+        failed_steps.append({"step": "setup_workspace_administrators", "error": str(e)})
+        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
         sys.exit(1)
     
     # Step 3: Setup folder structure
-    folder_paths = [
-        'lakehouses',
-        'notebooks/bronze_to_silver',
-        'notebooks/data_management',
-        'notebooks/schema',
-        'notebooks/silver_to_gold',
-        'reports',
-        'environment'
-    ]
-    
     print_step(3, 9, "Setting up folder structure", folder_count=len(folder_paths))
     try:
         fabric_folders = setup_folder_structure(
@@ -180,15 +222,11 @@ def main():
         executed_steps.append("setup_folder_structure")
     except Exception as e:
         print(f"❌ Exception while executing setup_folder_structure: {e}")
-        print_steps_summary(solution_name, solution_suffix, executed_steps, [])
+        failed_steps.append({"step": "setup_folder_structure", "error": str(e)})
+        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
         sys.exit(1)
     
     # Step 4: Setup lakehouses
-    lakehouse_names = {
-        'maag_bronze',
-        'maag_silver',
-        'maag_gold'
-    }
     lakehouse_folder_id = fabric_folders.get('lakehouses')
     
     print_step(4, 9, "Setting up lakehouses", lakehouse_count=len(lakehouse_names))
@@ -202,7 +240,8 @@ def main():
         executed_steps.append("setup_lakehouses")
     except Exception as e:
         print(f"❌ Exception while executing setup_lakehouses: {e}")
-        print_steps_summary(solution_name, solution_suffix, executed_steps, [])
+        failed_steps.append({"step": "setup_lakehouses", "error": str(e)})
+        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
         sys.exit(1)
     
     # Step 5: Load CSV data to bronze lakehouse
@@ -221,18 +260,17 @@ def main():
         executed_steps.append("load_csv_data_to_lakehouse")
     except Exception as e:
         print(f"❌ Exception while executing load_csv_data_to_lakehouse: {e}")
-        print_steps_summary(solution_name, solution_suffix, executed_steps, [])
+        failed_steps.append({"step": "load_csv_data_to_lakehouse", "error": str(e)})
+        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
         sys.exit(1)
     
     # Step 6: Deploy notebooks
-    notebooks_directory = os.path.join(repo_root, 'src', 'fabric', 'notebooks')
-    
     # Build notebook specifications directly as a list
     notebook_specs = [
         # Root level notebooks
         build_notebook_spec(notebooks_directory, 'run_bronze_to_silver.ipynb', None, 'maag_silver', 'notebooks', fabric_folders),
         build_notebook_spec(notebooks_directory, 'run_silver_to_gold.ipynb', None, 'maag_gold', 'notebooks', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'configure_data_agent_lakehouse.ipynb', None, None, 'notebooks', fabric_folders),
+        build_notebook_spec(notebooks_directory, notebook_name_data_agent_config, None, None, 'notebooks', fabric_folders),
         
         # Bronze to Silver transformation notebooks
         build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_finance_account.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
@@ -302,16 +340,32 @@ def main():
         executed_steps.append("deploy_notebooks")
     except Exception as e:
         print(f"❌ Exception while executing deploy_notebooks: {e}")
-        print_steps_summary(solution_name, solution_suffix, executed_steps, [])
+        failed_steps.append({"step": "deploy_notebooks", "error": str(e)})
+        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
         sys.exit(1)
     
-    # Step 7: Setup environment
-    environment_name = "Data Agent Environment"
-    environment_yml_path = os.path.join(repo_root, "src", "fabric", "definitions", 
-                                       "environment", "Libraries", "PublicLibraries", "environment.yml")
+    # Step 7: Execute notebooks
+    print_step(7, 9, "Executing data transformation pipelines", 
+               notebook_count=len(notebooks_to_run))
+    try:
+        execution_results = execute_notebooks_sequential(
+            workspace_client=workspace_client,
+            notebook_names=notebooks_to_run,
+            notebooks=fabric_notebooks,
+            monitor_interval=20
+        )
+        print(f"✅ Successfully completed: execute_notebooks_sequential")
+        executed_steps.append("execute_notebooks_sequential")
+    except Exception as e:
+        print(f"❌ Exception while executing notebooks: {e}")
+        failed_steps.append({"step": "execute_notebooks_sequential", "error": str(e)})
+        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
+        sys.exit(1)
+    
+    # Step 8: Setup environment
     environment_folder_id = fabric_folders.get('environment')
     
-    print_step(7, 9, "Setting up Fabric environment", 
+    print_step(8, 9, "Setting up Fabric environment", 
                environment_name=environment_name)
     try:
         environment_info = setup_environment(
@@ -325,28 +379,16 @@ def main():
         executed_steps.append("setup_environment")
     except Exception as e:
         print(f"❌ Exception while executing setup_environment: {e}")
-        print_steps_summary(solution_name, solution_suffix, executed_steps, [])
+        failed_steps.append({"step": "setup_environment", "error": str(e)})
+        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
         sys.exit(1)
     
-    # Step 8: Setup data agent
+    # Step 9: Setup data agent
     if environment_info:
-        data_agent_name = "Unified Data Agent"
         gold_lakehouse = fabric_lakehouses['maag_gold']
         gold_lakehouse_id = gold_lakehouse.get('id')
         
-        # Get list of tables to include in data agent
-        selected_tables = [
-            'shared_customer',
-            'shared_product',
-            'sales_order',
-            'sales_order_line',
-            'finance_account',
-            'finance_invoice'
-        ]
-        
-        notebook_name = f"Configure Data Agent - {data_agent_name}"
-        
-        print_step(8, 9, "Setting up Data Agent", 
+        print_step(9, 9, "Setting up Data Agent", 
                    data_agent_name=data_agent_name,
                    lakehouse_id=gold_lakehouse_id)
         try:
@@ -357,9 +399,9 @@ def main():
                 lakehouse_workspace_id=workspace_id,
                 environment_id=environment_id,
                 selected_tables=selected_tables,
-                notebook_name=notebook_name,
-                notebook_folder_id=environment_folder_id,
-                data_agent_folder_id=environment_folder_id
+                notebook_name=os.path.splitext(notebook_name_data_agent_config)[0],
+                notebook_path=notebook_path_data_agent_config,
+                notebook_folder_id=fabric_folders.get('notebooks')
             )
             print(f"✅ Successfully completed: setup_data_agent_lakehouse")
             executed_steps.append("setup_data_agent_lakehouse")
@@ -370,33 +412,11 @@ def main():
     else:
         print(f"ℹ️  Skipping Data Agent setup (environment not created)")
     
-    # Step 9: Execute notebooks
-    notebooks_to_run = [
-        'run_bronze_to_silver',
-        'run_silver_to_gold'
-    ]
-    
-    print_step(9, 9, "Executing data transformation pipelines", 
-               notebook_count=len(notebooks_to_run))
-    try:
-        execution_results = execute_notebooks_sequential(
-            workspace_client=workspace_client,
-            notebook_names=notebooks_to_run,
-            notebooks=fabric_notebooks,
-            monitor_interval=20
-        )
-        print(f"✅ Successfully completed: execute_notebooks_sequential")
-        executed_steps.append("execute_notebooks_sequential")
-    except Exception as e:
-        print(f"❌ Exception while executing notebooks: {e}")
-        print_steps_summary(solution_name, solution_suffix, executed_steps, [])
-        sys.exit(1)
-    
     # Success!
     print(f"\n🎉 {solution_name} deployment completed successfully!")
     print(f"End time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
-    print_steps_summary(solution_name, solution_suffix, executed_steps)
+    print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
     
     # Print resource URLs
     workspace_url = f"https://app.fabric.microsoft.com/groups/{workspace_id}?experience=fabric-developer"

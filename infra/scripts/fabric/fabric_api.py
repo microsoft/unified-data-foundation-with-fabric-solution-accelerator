@@ -1306,10 +1306,26 @@ class FabricWorkspaceApiClient(FabricApiClient):
         
         Returns:
             Dictionary mapping notebook names to IDs
+            
+        Raises:
+            FabricApiError: If listing fails
         """
-        response = self._make_request(f"workspaces/{self.workspace_id}/notebooks")
-        notebooks = response.json().get('value', [])
-        return {notebook['displayName']: notebook['id'] for notebook in notebooks}
+        try:
+            self._log(f"Getting notebooks from workspace {self.workspace_id}")
+            response = self._make_request(f"workspaces/{self.workspace_id}/notebooks")
+            
+            if response.status_code == 200:
+                notebooks = response.json().get('value', [])
+                notebook_dict = {notebook['displayName']: notebook['id'] for notebook in notebooks}
+                self._log(f"Found {len(notebooks)} notebook(s)")
+                return notebook_dict
+            else:
+                raise FabricApiError(f"Failed to list notebooks: HTTP {response.status_code}")
+                
+        except FabricApiError:
+            raise
+        except Exception as e:
+            raise FabricApiError(f"Unexpected error listing notebooks: {str(e)}")
     
     def get_notebook(self, notebook_id: str) -> Dict[str, Any]:
         """
@@ -1344,37 +1360,157 @@ class FabricWorkspaceApiClient(FabricApiClient):
         self._log(f"Retrieved notebook '{notebook.get('displayName', 'Unknown')}'")
         return notebook
     
-    def create_notebook(self, notebook_data: Dict[str, Any], wait_for_lro: bool = True) -> requests.Response:
+    def create_notebook(self, notebook_name: str, notebook_data_base64: str, folder_id: Optional[str] = None, wait_for_lro: bool = True) -> Dict[str, Any]:
         """
-        Create a new notebook.
+        Create a new notebook in the workspace.
         
         Args:
-            notebook_data: Notebook definition data
+            notebook_name: Display name for the notebook
+            notebook_data_base64: Base64-encoded notebook JSON content
+            folder_id: Optional ID of the folder to create the notebook in
             wait_for_lro: Whether to wait for long running operations to complete
             
         Returns:
-            API response
+            Dictionary with notebook information including ID
+            
+        Raises:
+            FabricApiError: If creation fails or ID cannot be retrieved
         """
-        return self._make_request(f"workspaces/{self.workspace_id}/notebooks", method="POST", data=notebook_data, wait_for_lro=wait_for_lro)
+        try:
+            self._log(f"Creating notebook '{notebook_name}' in workspace {self.workspace_id}")
+            
+            # Construct the notebook data structure
+            notebook_data = {
+                "displayName": notebook_name,
+                "definition": {
+                    "format": "ipynb",
+                    "parts": [{
+                        "path": "notebook-content.ipynb",
+                        "payload": notebook_data_base64,
+                        "payloadType": "InlineBase64"
+                    }]
+                }
+            }
+            
+            # Add folder ID if specified
+            if folder_id:
+                notebook_data["folderId"] = folder_id
+            
+            response = self._make_request(
+                f"workspaces/{self.workspace_id}/notebooks", 
+                method="POST", 
+                data=notebook_data, 
+                wait_for_lro=wait_for_lro
+            )
+            
+            if response.status_code in [200, 201, 202]:
+                # Try to get ID from response
+                notebook_obj = None
+                if response.content:
+                    response_data = response.json()
+                    if 'id' in response_data:
+                        notebook_obj = response_data
+                
+                # If no ID in response, get notebook by name
+                if not notebook_obj or 'id' not in notebook_obj:
+                    notebook_obj = self.get_notebook_by_name(notebook_name)
+                
+                # Ensure we have a notebook object with ID
+                if not notebook_obj or 'id' not in notebook_obj:
+                    raise FabricApiError(f"Failed to retrieve notebook ID after creation for '{notebook_name}'")
+                
+                return notebook_obj
+            else:
+                raise FabricApiError(f"Failed to create notebook: HTTP {response.status_code}")
+                
+        except FabricApiError:
+            raise
+        except Exception as e:
+            raise FabricApiError(f"Unexpected error creating notebook: {str(e)}")
     
-    def update_notebook(self, notebook_id: str, notebook_data: Dict[str, Any], wait_for_lro: bool = True) -> requests.Response:
+    def update_notebook(self, notebook_id: str, notebook_data_base64: str, wait_for_lro: bool = True) -> requests.Response:
         """
-        Update an existing notebook.
+        Update an existing notebook in the workspace.
         
         Args:
             notebook_id: Notebook ID to update
-            notebook_data: Notebook definition data
+            notebook_data_base64: Base64-encoded notebook JSON content
             wait_for_lro: Whether to wait for long running operations to complete
             
         Returns:
             API response
+            
+        Raises:
+            FabricApiError: If update fails
         """
-        return self._make_request(
-            f"workspaces/{self.workspace_id}/notebooks/{notebook_id}/updateDefinition", 
-            method="POST", 
-            data=notebook_data,
-            wait_for_lro=wait_for_lro
-        )
+        try:
+            self._log(f"Updating notebook ({notebook_id}) in workspace {self.workspace_id}")
+            
+            # Construct the notebook data structure
+            notebook_data = {
+                "definition": {
+                    "format": "ipynb",
+                    "parts": [{
+                        "path": "notebook-content.ipynb",
+                        "payload": notebook_data_base64,
+                        "payloadType": "InlineBase64"
+                    }]
+                }
+            }
+            
+            return self._make_request(
+                f"workspaces/{self.workspace_id}/notebooks/{notebook_id}/updateDefinition", 
+                method="POST", 
+                data=notebook_data,
+                wait_for_lro=wait_for_lro
+            )
+                
+        except FabricApiError:
+            raise
+        except Exception as e:
+            raise FabricApiError(f"Unexpected error updating notebook: {str(e)}")
+    
+    def get_notebook_by_name(self, notebook_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Get a notebook by name from the workspace.
+        
+        Args:
+            notebook_name: The name of the notebook to find
+            
+        Returns:
+            Dictionary with notebook information if found, None otherwise
+            
+        Raises:
+            FabricApiError: If listing fails
+        """
+        try:
+            # Validate required parameters
+            if not notebook_name or not notebook_name.strip():
+                raise FabricApiError("notebook_name is required and cannot be empty")
+            
+            self._log(f"Searching for notebook '{notebook_name}' in workspace {self.workspace_id}")
+            
+            # Get all notebooks (raw list)
+            response = self._make_request(f"workspaces/{self.workspace_id}/notebooks")
+            
+            if response.status_code == 200:
+                notebooks = response.json().get('value', [])
+                
+                # Find the notebook by name
+                for notebook in notebooks:
+                    if notebook.get('displayName', '').strip() == notebook_name.strip():
+                        self._log(f"Found notebook '{notebook_name}' with ID: {notebook.get('id', 'N/A')}")
+                        return notebook
+                
+                self._log(f"Notebook '{notebook_name}' not found")
+                return None
+            else:
+                raise FabricApiError(f"Failed to list notebooks: HTTP {response.status_code}")
+                
+        except FabricApiError:
+            raise
+        except Exception as e:
+            raise FabricApiError(f"Unexpected error searching for notebook '{notebook_name}': {str(e)}")
     
     # Lakehouse operations
     def list_lakehouses(self) -> List[Dict[str, Any]]:
@@ -1528,96 +1664,108 @@ class FabricWorkspaceApiClient(FabricApiClient):
             
         Returns:
             Dictionary with execution results including status, duration, and details
+            
+        Raises:
+            FabricApiError: If execution fails
         """
-        job_url = f"workspaces/{self.workspace_id}/items/{notebook_id}/jobs/instances?jobType=RunNotebook"
-        start_time = time.time()
+        
+        try:
+            job_url = f"workspaces/{self.workspace_id}/items/{notebook_id}/jobs/instances?jobType=RunNotebook"
+            start_time = time.time()
 
-        notebook_name = self.get_notebook(notebook_id).get('displayName', 'Unknown')
-        self._log(f"Scheduling execution for notebook '{notebook_name}' (ID: {notebook_id})")
-        response = self._make_request(job_url, method="POST", wait_for_lro=False)
-        
-        # Handle immediate completion (HTTP 200)
-        if response.status_code == 200:
-            job_data = response.json() if response.content else {}
-            duration_str = self._format_duration(time.time() - start_time)
-            self._log(f"Notebook '{notebook_name}' (ID: {notebook_id}) completed immediately (synchronous)")
-            return {'status': 'Completed', 'duration': duration_str, 'details': job_data}
-        
-        # Handle Long Running Operation (HTTP 202)
-        if response.status_code == 202:
-            job_monitoring_url = response.headers.get('location')
-            if not job_monitoring_url:
-                error_msg = 'No location header in 202 response'
+            notebook_name = self.get_notebook(notebook_id).get('displayName', 'Unknown')
+            self._log(f"Scheduling execution for notebook '{notebook_name}' (ID: {notebook_id})")
+            response = self._make_request(job_url, method="POST", wait_for_lro=False)
+            
+            # Handle immediate completion (HTTP 200)
+            if response.status_code == 200:
+                job_data = response.json() if response.content else {}
+                duration_str = self._format_duration(time.time() - start_time)
+                self._log(f"Notebook '{notebook_name}' (ID: {notebook_id}) completed immediately (synchronous)")
+                return {'status': 'Completed', 'duration': duration_str, 'details': job_data}
+            
+            # Handle Long Running Operation (HTTP 202)
+            if response.status_code == 202:
+                job_monitoring_url = response.headers.get('location')
+                if not job_monitoring_url:
+                    error_msg = 'No location header in 202 response'
+                    self._log(f"Failed to start notebook {notebook_id}: {error_msg}", "ERROR")
+                    return {'status': 'Failed', 'error': error_msg}
+                
+                # Monitor the long-running operation
+                try:
+                    lro_response = self._wait_for_lro_completion(
+                        job_url=job_monitoring_url,
+                        operation_name=f"Run notebook '{notebook_name}' (ID: {notebook_id})",
+                        max_wait_time=1800,  # 30 minutes for notebook execution
+                        check_interval=20   # 20 seconds between checks
+                    )
+                    
+                    # Calculate duration
+                    elapsed_time = time.time() - start_time
+                    duration_str = self._format_duration(elapsed_time)
+                    
+                    # Parse response to extract job status
+                    if lro_response.status_code == 200:
+                        try:
+                            job_data = lro_response.json()
+                            job_status = job_data.get('status', 'Completed')
+                            
+                            return {
+                                'status': job_status,
+                                'duration': duration_str,
+                                'details': job_data
+                            }
+                        except (ValueError, KeyError):
+                            # Response doesn't have JSON or status field - treat as completed
+                            return {
+                                'status': 'Completed',
+                                'duration': duration_str,
+                                'details': {}
+                            }
+                            
+                    else:
+                        return {
+                            'status': 'Failed',
+                            'duration': duration_str,
+                            'error': f"Unexpected response status: {lro_response.status_code}"
+                        }
+                        
+                except FabricApiError as e:
+                    elapsed_time = time.time() - start_time
+                    duration_str = self._format_duration(elapsed_time)
+                    
+                    # Determine if it's a timeout or other error
+                    if "timed out" in str(e):
+                        return {
+                            'status': 'Timeout',
+                            'duration': duration_str,
+                            'error': str(e)
+                        }
+                    else:
+                        return {
+                            'status': 'Failed',
+                            'duration': duration_str,
+                            'error': str(e)
+                        }
+            
+            # Handle errors (HTTP 4xx/5xx)
+            if response.status_code >= 400:
+                error_msg = f"HTTP {response.status_code}: {response.text}"
                 self._log(f"Failed to start notebook {notebook_id}: {error_msg}", "ERROR")
                 return {'status': 'Failed', 'error': error_msg}
             
-            # Monitor the long-running operation
-            try:
-                lro_response = self._wait_for_lro_completion(
-                    job_url=job_monitoring_url,
-                    operation_name=f"Run notebook '{notebook_name}' (ID: {notebook_id})",
-                    max_wait_time=1800,  # 30 minutes for notebook execution
-                    check_interval=20   # 20 seconds between checks
-                )
-                
-                # Calculate duration
-                elapsed_time = time.time() - start_time
-                duration_str = self._format_duration(elapsed_time)
-                
-                # Parse response to extract job status
-                if lro_response.status_code == 200:
-                    try:
-                        job_data = lro_response.json()
-                        job_status = job_data.get('status', 'Completed')
-                        
-                        return {
-                            'status': job_status,
-                            'duration': duration_str,
-                            'details': job_data
-                        }
-                    except (ValueError, KeyError):
-                        # Response doesn't have JSON or status field - treat as completed
-                        return {
-                            'status': 'Completed',
-                            'duration': duration_str,
-                            'details': {}
-                        }
-                        
-                else:
-                    return {
-                        'status': 'Failed',
-                        'duration': duration_str,
-                        'error': f"Unexpected response status: {lro_response.status_code}"
-                    }
-                    
-            except FabricApiError as e:
-                elapsed_time = time.time() - start_time
-                duration_str = self._format_duration(elapsed_time)
-                
-                # Determine if it's a timeout or other error
-                if "timed out" in str(e):
-                    return {
-                        'status': 'Timeout',
-                        'duration': duration_str,
-                        'error': str(e)
-                    }
-                else:
-                    return {
-                        'status': 'Failed',
-                        'duration': duration_str,
-                        'error': str(e)
-                    }
-        
-        # Handle errors (HTTP 4xx/5xx)
-        if response.status_code >= 400:
-            error_msg = f"HTTP {response.status_code}: {response.text}"
-            self._log(f"Failed to start notebook {notebook_id}: {error_msg}", "ERROR")
+            # Handle unexpected status codes
+            error_msg = f"Unexpected HTTP status {response.status_code}: {response.text}"
+            self._log(f"Unexpected response for notebook {notebook_id}: {error_msg}", "ERROR")
             return {'status': 'Failed', 'error': error_msg}
-        
-        # Handle unexpected status codes
-        error_msg = f"Unexpected HTTP status {response.status_code}: {response.text}"
-        self._log(f"Unexpected response for notebook {notebook_id}: {error_msg}", "ERROR")
-        return {'status': 'Failed', 'error': error_msg}
+            
+        except FabricApiError:
+            raise
+        except Exception as e:
+            elapsed_time = time.time() - start_time
+            duration_str = self._format_duration(elapsed_time)
+            raise FabricApiError(f"Unexpected error executing notebook {notebook_id}: {str(e)}")
 
     # Data Agent operations
     def create_data_agent(self, data_agent_name: str, folder_id: Optional[str] = None) -> Dict[str, Any]:

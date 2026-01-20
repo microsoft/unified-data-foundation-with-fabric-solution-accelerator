@@ -26,6 +26,7 @@ def setup_data_agent_lakehouse(workspace_client: FabricWorkspaceApiClient,
                                environment_id: str,
                                selected_tables: list,
                                notebook_name: str,
+                               notebook_path: str,
                                notebook_folder_id: Optional[str] = None,
                                data_agent_folder_id: Optional[str] = None) -> dict:
     """
@@ -37,8 +38,10 @@ def setup_data_agent_lakehouse(workspace_client: FabricWorkspaceApiClient,
         lakehouse_id: ID of the Lakehouse to connect as data source
         lakehouse_workspace_id: ID of the workspace containing the Lakehouse
         environment_id: ID of the environment for data agent configuration
-        selected_tables: List of table names to include in data agent
+        selected_tables: List of [schema, table_name] pairs to include in data agent
+                        Example: [["dbo", "customers"], ["dbo", "orders"]]
         notebook_name: Name of the configuration notebook to create
+        notebook_path: Path to the configuration notebook template file
         notebook_folder_id: Optional folder ID where to create the notebook
         data_agent_folder_id: Optional folder ID where to create the data agent
         
@@ -76,8 +79,7 @@ def setup_data_agent_lakehouse(workspace_client: FabricWorkspaceApiClient,
         # Read configuration files
         print(f"   📖 Reading configuration files from: {repo_dir}")
         
-        # Paths to configuration files
-        notebook_path = os.path.join(repo_dir, "src", "fabric", "notebooks", "configure_data_agent.ipynb")
+        # Paths to configuration files (notebook path is provided as argument)
         agent_instructions_path = os.path.join(repo_dir, "src", "fabric", "data_agent", "agent_instructions.md")
         data_source_description_path = os.path.join(repo_dir, "src", "fabric", "data_agent", "data_source_description.md")
         data_source_instructions_path = os.path.join(repo_dir, "src", "fabric", "data_agent", "data_source_instructions.md")
@@ -138,7 +140,7 @@ def setup_data_agent_lakehouse(workspace_client: FabricWorkspaceApiClient,
             if not notebook_id:
                 raise FabricApiError(f"Failed to retrieve notebook ID for existing notebook '{notebook_name}'")
             print(f"   ℹ️  Notebook '{notebook_name}' already exists, updating...")
-            workspace_client.update_notebook(notebook_id, notebook_name, notebook_base64, notebook_folder_id)
+            workspace_client.update_notebook(notebook_id, notebook_base64)
             print(f"   ✅ Successfully updated notebook: {notebook_name} ({notebook_id})")
         else:
             # Create new notebook
@@ -189,10 +191,10 @@ def main():
         epilog="""
 Examples:
   # Create and configure Data Agent with Lakehouse
-  python udf_data_agent.py --workspace-id "12345678-1234-1234-1234-123456789012" --data-agent-name "Sales Agent" --lakehouse-id "87654321-4321-4321-4321-210987654321" --lakehouse-workspace-id "87654321-4321-4321-4321-210987654321" --environment-id "99999999-8888-7777-6666-555544443333" --selected-tables "customers" "orders" "products"
+  python udf_data_agent.py --workspace-id "12345678-1234-1234-1234-123456789012" --data-agent-name "Sales Agent" --lakehouse-id "87654321-4321-4321-4321-210987654321" --lakehouse-workspace-id "87654321-4321-4321-4321-210987654321" --environment-id "99999999-8888-7777-6666-555544443333" --notebook-path "/path/to/configure_data_agent.ipynb" --selected-tables "dbo:customers" "dbo:orders" "sales:products"
   
   # Create Data Agent with custom notebook name
-  python udf_data_agent.py --workspace-id "12345678-1234-1234-1234-123456789012" --data-agent-name "Sales Agent" --lakehouse-id "87654321-4321-4321-4321-210987654321" --lakehouse-workspace-id "87654321-4321-4321-4321-210987654321" --environment-id "99999999-8888-7777-6666-555544443333" --selected-tables "customers" --notebook-name "My Custom Config"
+  python udf_data_agent.py --workspace-id "12345678-1234-1234-1234-123456789012" --data-agent-name "Sales Agent" --lakehouse-id "87654321-4321-4321-4321-210987654321" --lakehouse-workspace-id "87654321-4321-4321-4321-210987654321" --environment-id "99999999-8888-7777-6666-555544443333" --notebook-path "/path/to/configure_data_agent.ipynb" --selected-tables "dbo:customers" --notebook-name "My Custom Config"
         """
     )
     
@@ -230,7 +232,7 @@ Examples:
         "--selected-tables",
         nargs="+",
         required=True,
-        help="List of table names to include in the data agent"
+        help="List of table names to include in the data agent. Use format: schema:table (e.g., dbo:customers dbo:orders sales:products)"
     )
     
     parser.add_argument(
@@ -238,6 +240,12 @@ Examples:
         required=False,
         default=None,
         help="Name of the configuration notebook (default: 'Configure Data Agent - <data-agent-name>')"
+    )
+    
+    parser.add_argument(
+        "--notebook-path",
+        required=True,
+        help="Path to the configuration notebook template file"
     )
     
     parser.add_argument(
@@ -254,6 +262,16 @@ Examples:
     
     args = parser.parse_args()
     
+    # Parse selected_tables from schema:table format to list of [schema, table] pairs
+    selected_tables_parsed = []
+    for table_spec in args.selected_tables:
+        if ':' in table_spec:
+            schema, table = table_spec.split(':', 1)
+            selected_tables_parsed.append([schema, table])
+        else:
+            # Default to dbo schema if not specified
+            selected_tables_parsed.append(["dbo", table_spec])
+    
     # Set default notebook name if not provided
     notebook_name = args.notebook_name or f"Configure Data Agent - {args.data_agent_name}"
     
@@ -268,8 +286,9 @@ Examples:
             lakehouse_id=args.lakehouse_id,
             lakehouse_workspace_id=args.lakehouse_workspace_id,
             environment_id=args.environment_id,
-            selected_tables=args.selected_tables,
+            selected_tables=selected_tables_parsed,
             notebook_name=notebook_name,
+            notebook_path=args.notebook_path,
             notebook_folder_id=args.notebook_folder_id,
             data_agent_folder_id=args.data_agent_folder_id
         )
@@ -278,7 +297,7 @@ Examples:
         print(f"   Data Agent ID: {result.get('id', 'N/A')}")
         print(f"   Data Agent Name: {args.data_agent_name}")
         print(f"   Lakehouse ID: {args.lakehouse_id}")
-        print(f"   Selected Tables: {', '.join(args.selected_tables)}")
+        print(f"   Selected Tables: {', '.join([f'{schema}.{table}' for schema, table in selected_tables_parsed])}")
         print(f"   Configuration Status: Complete")
         print(f"   Ready for use in Microsoft Fabric!")
         

@@ -196,7 +196,13 @@ def print_steps_summary(solution_name: str, solution_suffix: str, executed_steps
     
     if failed_steps:
         print(f"\n❌ Failed Steps ({len(failed_steps)}):")
-        for i, step in enumerate(failed_steps, 1):
-            print(f"   {i}. {step}")
+        for i, step_info in enumerate(failed_steps, 1):
+            if isinstance(step_info, dict):
+                step_name = step_info.get('step', 'Unknown step')
+                error_msg = step_info.get('error', 'No error details')
+                print(f"   {i}. {step_name}")
+                print(f"      Error: {error_msg}")
+            else:
+                print(f"   {i}. {step_info}")
     
     print(f"{'='*60}")

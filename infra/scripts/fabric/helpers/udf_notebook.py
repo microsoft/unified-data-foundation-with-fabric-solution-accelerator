@@ -113,23 +113,6 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
                 json.dumps(notebook_json).encode('utf-8')
             ).decode('utf-8')
             
-            # Prepare notebook data for API
-            notebook_data = {
-                "displayName": notebook_name,
-                "definition": {
-                    "format": "ipynb",
-                    "parts": [{
-                        "path": "notebook-content.ipynb",
-                        "payload": notebook_base64,
-                        "payloadType": "InlineBase64"
-                    }]
-                }
-            }
-            
-            # Add folder ID if specified
-            if folder_id:
-                notebook_data["folderId"] = folder_id
-            
             # Submit create or update operation without waiting for LRO completion
             if notebook_name in existing_notebook_ids:
                 # Update existing notebook
@@ -137,7 +120,7 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
                 print(f"   [{idx}/{total_notebooks}] Updating: {notebook_name}")
                 response = workspace_client.update_notebook(
                     notebook_id,
-                    notebook_data,
+                    notebook_base64,
                     wait_for_lro=False  # Don't wait, batch process instead
                 )
                 operation_type = 'update'
@@ -145,7 +128,9 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
                 # Create new notebook
                 print(f"   [{idx}/{total_notebooks}] Creating: {notebook_name}")
                 response = workspace_client.create_notebook(
-                    notebook_data,
+                    notebook_name,
+                    notebook_base64,
+                    folder_id=folder_id,
                     wait_for_lro=False  # Don't wait, batch process instead
                 )
                 operation_type = 'create'
