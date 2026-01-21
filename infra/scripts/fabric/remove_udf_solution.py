@@ -24,7 +24,7 @@ def get_required_env_var(var_name: str) -> str:
 # Variables set up #
 ####################
 
-solution_name = "Unified Data Foundation"
+SOLUTION_NAME = "Unified Data Foundation"
 script_dir = os.path.dirname(os.path.abspath(__file__))
 # Go up three levels from infra/scripts/fabric to repo root
 repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
@@ -34,17 +34,15 @@ repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
 ##############################
 
 # Load configuration from environment variables
-solution_suffix = get_required_env_var("AZURE_SOLUTION_SUFFIX")
-
-# Optional environment variables
-workspace_name = os.getenv("AZURE_FABRIC_WORKSPACE_NAME",f"{solution_name} - {solution_suffix}")
-workspace_id = os.getenv("AZURE_FABRIC_WORKSPACE_ID")
+solution_suffix = get_required_env_var("SOLUTION_SUFFIX")
+workspace_name = os.getenv("FABRIC_WORKSPACE_NAME", f"{SOLUTION_NAME} - {solution_suffix}")
+workspace_id = os.getenv("FABRIC_WORKSPACE_ID")
 if workspace_name and workspace_id:
-    print("⚠️ WARNING: Both AZURE_FABRIC_WORKSPACE_NAME and AZURE_FABRIC_WORKSPACE_ID are set")
+    print("⚠️ WARNING: Both FABRIC_WORKSPACE_NAME and FABRIC_WORKSPACE_ID are set")
     print("   Using workspace name and ignoring workspace ID...")
     workspace_id = None
 
-print(f"🗑️  Starting {solution_name} workspace removal from Microsoft Fabric")
+print(f"🗑️  Starting {SOLUTION_NAME} workspace removal from Microsoft Fabric")
 print(f"📋 Solution suffix: {solution_suffix}")
 if workspace_name:
     print(f"📋 Target workspace name: {workspace_name}")
@@ -185,7 +183,7 @@ except Exception as e:
 ##################
 
 print("-" * 60)
-print(f"🎉 {solution_name} workspace removal completed successfully!")
+print(f"🎉 {SOLUTION_NAME} workspace removal completed successfully!")
 print(f"✅ Deleted workspace: {workspace_display_name}")
 print(f"✅ Workspace ID: {workspace_id}")
 print("-" * 60)
