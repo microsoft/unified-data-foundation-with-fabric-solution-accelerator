@@ -195,15 +195,9 @@ def load_csv_data_to_lakehouse(workspace_client: FabricWorkspaceApiClient,
             else:
                 target_path = f"{lakehouse_onelake_root_path}/{file_name}"
             
-            # Check if file already exists
-            file_client = file_system_client.get_file_client(target_path)
-            if file_client.exists():
-                print(f"   ℹ️  File already exists: {relative_path}")
-                skipped_count += 1
-                continue
-            
-            # Upload file
+            # Upload file (always overwrite)
             print(f"   ⬆️  Uploading: {relative_path}")
+            file_client = file_system_client.get_file_client(target_path)
             with open(local_file_path, 'rb') as data:
                 file_client.upload_data(data, overwrite=True)
             

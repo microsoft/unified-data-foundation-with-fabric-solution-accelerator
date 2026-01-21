@@ -124,15 +124,19 @@ jobs:
         env:
           # Required environment variables from Bicep outputs
           AZURE_FABRIC_CAPACITY_NAME: ${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }}
-          AZURE_SOLUTION_SUFFIX: ${{ steps.bicep-deploy.outputs.SOLUTION_SUFFIX }}
-          AZURE_FABRIC_ADMIN_MEMBERS: ${{ steps.bicep-deploy.outputs.AZURE_FABRIC_ADMIN_MEMBERS }}
+          SOLUTION_SUFFIX: ${{ steps.bicep-deploy.outputs.SOLUTION_SUFFIX }}
+          AZURE_FABRIC_CAPACITY_ADMINISTRATORS: ${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_ADMINISTRATORS }}
+          # Optional environment variables from GitHub variables
+          FABRIC_WORKSPACE_NAME: ${{ vars.FABRIC_WORKSPACE_NAME }}
+          FABRIC_WORKSPACE_ADMINISTRATORS: ${{ vars.FABRIC_WORKSPACE_ADMINISTRATORS }}
         run: |
           echo "Running UDF fabric provisioning script..."
           echo "Environment configuration:"
           echo "  Capacity: $AZURE_FABRIC_CAPACITY_NAME"
-          echo "  Solution Suffix: $AZURE_SOLUTION_SUFFIX"
-          echo "  Workspace: ${AZURE_FABRIC_WORKSPACE_NAME:-'(auto-generated)'}"
-          echo "  Admins: ${AZURE_FABRIC_ADMIN_MEMBERS:-'(none specified)'}"
+          echo "  Solution Suffix: $SOLUTION_SUFFIX"
+          echo "  Workspace: ${FABRIC_WORKSPACE_NAME:-'(auto-generated)'}"
+          echo "  Capacity Admins: ${AZURE_FABRIC_CAPACITY_ADMINISTRATORS:-'(none specified)'}"
+          echo "  Workspace Admins: ${FABRIC_WORKSPACE_ADMINISTRATORS:-'(none specified)'}"
           echo ""
 
           # Run the Python deployment script directly with environment variables

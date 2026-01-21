@@ -130,28 +130,37 @@ def is_valid_guid(value):
         return False
 
 
-def build_notebook_spec(notebooks_directory: str, subpath: str, source_lakehouse: Optional[str], 
-                       target_lakehouse: Optional[str], folder_path: str, fabric_folders: dict) -> dict:
+def build_notebook_spec(relative_path: str, source_lakehouse: Optional[str], 
+                       target_lakehouse: Optional[str], fabric_folders: dict) -> dict:
     """
     Build a notebook specification dictionary for deployment.
     
     Args:
-        notebooks_directory: Base directory containing notebooks
-        subpath: Relative path to notebook file
+        relative_path: Relative path to notebook file (e.g., 'run_notebook.ipynb' or 'bronze_to_silver/notebook.ipynb')
         source_lakehouse: Optional source lakehouse name
         target_lakehouse: Optional target lakehouse name
-        folder_path: Folder path in workspace
         fabric_folders: Dictionary mapping folder paths to folder IDs
         
     Returns:
         Dictionary with notebook specification
     """
+    # Calculate notebooks directory from current file location
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(script_dir))))
+    notebooks_directory = os.path.join(repo_root, 'src', 'fabric', 'notebooks')
+    
+    # Extract directory from relative_path and prepend 'notebooks' to build folder_path
+    notebook_dir = os.path.dirname(relative_path)
+    if notebook_dir:
+        folder_path = f"notebooks/{notebook_dir}"
+    else:
+        folder_path = "notebooks"
+    
     return {
-        'local_path': os.path.join(notebooks_directory, subpath),
+        'notebook_local_path': os.path.join(notebooks_directory, relative_path),
         'source_lakehouse_name': source_lakehouse,
         'target_lakehouse_name': target_lakehouse,
-        'folder_path': folder_path,
-        'folder_id': fabric_folders.get(folder_path)
+        'fabric_folder_id': fabric_folders.get(folder_path)
     }
 
 
@@ -176,15 +185,16 @@ def print_step(step_number: int, total_steps: int, step_name: str, **kwargs):
             print(f"   {formatted_key}: {value}")
 
 
-def print_steps_summary(solution_name: str, solution_suffix: str, executed_steps: list, failed_steps: list = None):
+def print_steps_summary(solution_name: str, solution_suffix: str, executed_steps: list, failed_steps: list = None, uncompleted_steps: list = None):
     """
-    Print a summary of executed and failed steps.
+    Print a summary of executed, failed, and uncompleted steps.
     
     Args:
         solution_name: Name of the solution being deployed
         solution_suffix: Solution suffix identifier
         executed_steps: List of successfully executed step names
         failed_steps: Optional list of failed step names
+        uncompleted_steps: Optional list of steps that were not reached
     """
     print(f"\n{'='*60}")
     print(f"📊 {solution_name} Deployment Summary")
@@ -204,5 +214,10 @@ def print_steps_summary(solution_name: str, solution_suffix: str, executed_steps
                 print(f"      Error: {error_msg}")
             else:
                 print(f"   {i}. {step_info}")
+    
+    if uncompleted_steps:
+        print(f"\n⏭️  Uncompleted Steps ({len(uncompleted_steps)}):")
+        for i, step in enumerate(uncompleted_steps, 1):
+            print(f"   {i}. {step}")
     
     print(f"{'='*60}")

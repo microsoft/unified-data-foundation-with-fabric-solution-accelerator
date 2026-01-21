@@ -12,9 +12,9 @@ Functions executed in order:
 4. setup_lakehouses - Create Bronze, Silver, and Gold lakehouses
 5. load_csv_data_to_lakehouse - Load sample data into Bronze lakehouse
 6. deploy_notebooks - Deploy and configure notebooks with lakehouse connections
-7. execute_notebooks_sequential - Run data transformation pipelines
+7. schedule_notebook_jobs_sequential - Run data transformation pipelines
 8. setup_environment - Create Fabric Environment with custom libraries
-9. setup_data_agent_lakehouse - Create and configure Data Agent with Lakehouse data source
+9. setup_data_agent - Create and configure Data Agent with Lakehouse data source
 
 Usage:
     python deploy_udf_solution.py
@@ -23,12 +23,13 @@ Environment Variables:
     AZURE_FABRIC_CAPACITY_NAME - The name of the Fabric capacity resource
     AZURE_SOLUTION_SUFFIX - The solution name suffix used for resource naming
     AZURE_FABRIC_WORKSPACE_NAME - Custom name for the Fabric workspace (optional)
-    AZURE_FABRIC_ADMIN_MEMBERS - JSON array of workspace administrator identities (optional)
-    AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID - JSON array of administrator object IDs (optional)
+    AZURE_FABRIC_CAPACITY_ADMINISTRATORS - JSON array of capacity administrator identities (optional)
+    FABRIC_WORKSPACE_ADMINS - Comma-separated list of workspace administrator identities (optional)
 """
 
 import os
 import sys
+import json
 from datetime import datetime
 
 # Add current directory to path so we can import local modules
@@ -44,40 +45,45 @@ from helpers.udf_workspace import setup_workspace
 from helpers.udf_workspace_admins import setup_workspace_administrators
 from helpers.udf_folder import setup_folder_structure
 from helpers.udf_lakehouse import setup_lakehouses, load_csv_data_to_lakehouse
-from helpers.udf_notebook import deploy_notebooks, execute_notebooks_sequential
+from helpers.udf_notebook import deploy_notebooks
+from helpers.udf_jobs import schedule_notebook_jobs_sequential
 from helpers.udf_environment import setup_environment
-from helpers.udf_data_agent import setup_data_agent_lakehouse
+from helpers.udf_data_agent import setup_data_agent
 
 
 def main():
     """Main function to deploy the Unified Data Foundation solution."""
     
-    # Variables set up
-    solution_name = "Unified Data Foundation"
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
+    # Constants
+    SOLUTION_NAME = "Unified Data Foundation"
+    ENVIRONMENT_NAME = "Data Agent Environment"
     
-    # Load configuration from environment variables
-    capacity_name = get_required_env_var("AZURE_FABRIC_CAPACITY_NAME")
-    solution_suffix = get_required_env_var("AZURE_SOLUTION_SUFFIX")
+    LAKEHOUSE_BRONZE = 'maag_bronze'
+    LAKEHOUSE_SILVER = 'maag_silver'
+    LAKEHOUSE_GOLD = 'maag_gold'
     
-    # Optional environment variables with defaults
-    workspace_name = os.getenv("AZURE_FABRIC_WORKSPACE_NAME", f"{solution_name} - {solution_suffix}")
-    fabric_admins_str = os.getenv("AZURE_FABRIC_ADMIN_MEMBERS")
-    fabric_admins_by_object_id_str = os.getenv("AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID")
+    LAKEHOUSE_NAMES = {
+        LAKEHOUSE_BRONZE,
+        LAKEHOUSE_SILVER,
+        LAKEHOUSE_GOLD
+    }
     
-    # Initialize all configuration variables
-    notebooks_directory = os.path.join(repo_root, 'src', 'fabric', 'notebooks')
-    notebook_name_data_agent_config = "configure_data_agent_lakehouse.ipynb"
-    notebook_path_data_agent_config = os.path.join(notebooks_directory, notebook_name_data_agent_config)
+    # Fabric folder names - root level
+    FABRIC_FOLDER_LAKEHOUSES = 'lakehouses'
+    FABRIC_FOLDER_NOTEBOOKS = 'notebooks'
+    FABRIC_FOLDER_REPORTS = 'reports'
+    FABRIC_FOLDER_ENVIRONMENT = 'environment'
     
-    environment_name = "Data Agent Environment"
-    environment_yml_path = os.path.join(repo_root, "src", "fabric", "definitions", 
-                                       "environment", "Libraries", "PublicLibraries", "environment.yml")
+    # Fabric folder names - notebook subfolders
+    FABRIC_FOLDER_BRONZE_TO_SILVER = 'bronze_to_silver'
+    FABRIC_FOLDER_DATA_MANAGEMENT = 'data_management'
+    FABRIC_FOLDER_SCHEMA = 'schema'
+    FABRIC_FOLDER_SILVER_TO_GOLD = 'silver_to_gold'
+    FABRIC_FOLDER_DATA_AGENT = 'data_agent'
     
-    data_agent_name = "Data Agent for UDF"
-    
-    selected_tables = [
+    DATA_AGENT_CONFIG_NOTEBOOK_NAME = "data_agent_setup.ipynb"
+    DATA_AGENT_NAME = "Data Agent for UDF"
+    DATA_AGENT_CONFIG_SELECTED_TABLES = [
         ['finance', 'account'],
         ['finance', 'invoice'],
         ['finance', 'payment'],
@@ -93,55 +99,78 @@ def main():
         ['shared', 'product']
     ]
     
-    notebooks_to_run = [
+    NOTEBOOKS_TO_RUN = [
         'run_bronze_to_silver',
         'run_silver_to_gold'
     ]
     
-    folder_paths = [
-        'lakehouses',
-        'notebooks/bronze_to_silver',
-        'notebooks/data_management',
-        'notebooks/schema',
-        'notebooks/silver_to_gold',
-        'reports',
-        'environment'
+    # All deployment steps in order
+    ALL_DEPLOYMENT_STEPS = [
+        'setup_workspace',
+        'setup_workspace_administrators',
+        'setup_folder_structure',
+        'setup_lakehouses',
+        'load_csv_data_to_lakehouse',
+        'deploy_notebooks',
+        'schedule_notebook_jobs_sequential',
+        'setup_environment',
+        'setup_data_agent'
     ]
     
-    lakehouse_names = {
-        'maag_bronze',
-        'maag_silver',
-        'maag_gold'
-    }
+    FABRIC_FOLDER_STRUCTURE = [
+        FABRIC_FOLDER_LAKEHOUSES,
+        f'{FABRIC_FOLDER_NOTEBOOKS}/{FABRIC_FOLDER_BRONZE_TO_SILVER}',
+        f'{FABRIC_FOLDER_NOTEBOOKS}/{FABRIC_FOLDER_DATA_MANAGEMENT}',
+        f'{FABRIC_FOLDER_NOTEBOOKS}/{FABRIC_FOLDER_SCHEMA}',
+        f'{FABRIC_FOLDER_NOTEBOOKS}/{FABRIC_FOLDER_SILVER_TO_GOLD}',
+        f'{FABRIC_FOLDER_NOTEBOOKS}/{FABRIC_FOLDER_DATA_AGENT}',
+        FABRIC_FOLDER_REPORTS,
+        FABRIC_FOLDER_ENVIRONMENT
+    ]
     
-    # Process admin lists from environment variables
-    fabric_admins = []
-    fabric_admins_by_object_id = []
+    # Path initialization
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
+    notebooks_directory = os.path.join(repo_root, 'src', 'fabric', FABRIC_FOLDER_NOTEBOOKS)
+    notebook_path_data_agent_config = os.path.join(notebooks_directory, FABRIC_FOLDER_DATA_AGENT, DATA_AGENT_CONFIG_NOTEBOOK_NAME)
+    environment_yml_path = os.path.join(repo_root, "src", "fabric", "definitions", 
+                                       "environment", "Libraries", "PublicLibraries", "environment.yml")
     
-    if fabric_admins_str:
+    # Load configuration from environment variables
+    capacity_name = get_required_env_var("AZURE_FABRIC_CAPACITY_NAME")
+    solution_suffix = get_required_env_var("SOLUTION_SUFFIX")
+    workspace_name = os.getenv("FABRIC_WORKSPACE_NAME", f"{SOLUTION_NAME} - {solution_suffix}")
+    
+    # Parse capacity administrators from JSON array format
+    capacity_administrators_json = os.getenv("AZURE_FABRIC_CAPACITY_ADMINISTRATORS")
+    capacity_administrators_list = []
+    if capacity_administrators_json:
         try:
-            import json
-            fabric_admins = json.loads(fabric_admins_str)
+            capacity_administrators_list = json.loads(capacity_administrators_json)
         except json.JSONDecodeError:
-            print(f"⚠️  Warning: Failed to parse AZURE_FABRIC_ADMIN_MEMBERS as JSON")
+            print(f"⚠️  Warning: Failed to parse AZURE_FABRIC_CAPACITY_ADMINISTRATORS as JSON")
     
-    if fabric_admins_by_object_id_str:
-        try:
-            import json
-            fabric_admins_by_object_id = json.loads(fabric_admins_by_object_id_str)
-        except json.JSONDecodeError:
-            print(f"⚠️  Warning: Failed to parse AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID as JSON")
+    # Get additional workspace administrators from environment
+    fabric_workspace_admins = os.getenv("FABRIC_WORKSPACE_ADMINISTRATORS")
+    
+    # Combine capacity administrators and workspace administrators into single list
+    workspace_administrators = []
+    if capacity_administrators_list:
+        workspace_administrators.extend(capacity_administrators_list)
+    if fabric_workspace_admins:
+        workspace_administrators.extend([admin.strip() for admin in fabric_workspace_admins.split(',') if admin.strip()])
+    
+    # Convert to None if empty for cleaner handling
+    workspace_administrators = workspace_administrators if workspace_administrators else None
     
     # Show deployment summary
-    print(f"🏭 {solution_name} Initialization")
+    print(f"🏭 {SOLUTION_NAME} Initialization")
     print("="*60)
     print(f"Capacity: {capacity_name}")
     print(f"Workspace: {workspace_name}")
     print(f"Solution Suffix: {solution_suffix}")
-    if fabric_admins:
-        print(f"Fabric Admins: {', '.join(fabric_admins)}")
-    if fabric_admins_by_object_id:
-        print(f"Fabric Admins (by Object ID): {', '.join(fabric_admins_by_object_id)}")
+    if workspace_administrators:
+        print(f"Workspace Administrators: {', '.join(workspace_administrators)}")
     print(f"Start time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("="*60)
     
@@ -178,7 +207,10 @@ def main():
     except Exception as e:
         print(f"❌ Exception while executing setup_workspace: {e}")
         failed_steps.append({"step": "setup_workspace", "error": str(e)})
-        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
+        # Calculate uncompleted steps
+        completed_step_names = executed_steps + [step['step'] for step in failed_steps]
+        uncompleted_steps = [step for step in ALL_DEPLOYMENT_STEPS if step not in completed_step_names]
+        print_steps_summary(SOLUTION_NAME, solution_suffix, executed_steps, failed_steps, uncompleted_steps)
         sys.exit(1)
     
     # Create workspace-specific client for subsequent operations
@@ -189,18 +221,19 @@ def main():
     except Exception as e:
         print(f"❌ Failed to create workspace-specific client: {e}")
         failed_steps.append({"step": "create_workspace_client", "error": str(e)})
-        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
+        # Calculate uncompleted steps
+        completed_step_names = executed_steps + [step['step'] for step in failed_steps]
+        uncompleted_steps = [step for step in ALL_DEPLOYMENT_STEPS if step not in completed_step_names]
+        print_steps_summary(SOLUTION_NAME, solution_suffix, executed_steps, failed_steps, uncompleted_steps)
         sys.exit(1)
     
     # Step 2: Setup workspace administrators
     print_step(2, 9, "Setting up Fabric workspace administrators", 
-               workspace_id=workspace_id)
+               workspace_id=workspace_id, admin_list=', '.join(workspace_administrators) if workspace_administrators else "None")
     try:
         admin_result = setup_workspace_administrators(
             workspace_client=workspace_client,
-            fabric_admins=fabric_admins,
-            fabric_admins_by_object_id=fabric_admins_by_object_id,
-            fabric_client=fabric_client,
+            fabric_admins=workspace_administrators,
             graph_client=graph_client
         )
         print(f"✅ Successfully completed: setup_workspace_administrators")
@@ -208,32 +241,38 @@ def main():
     except Exception as e:
         print(f"❌ Exception while executing setup_workspace_administrators: {e}")
         failed_steps.append({"step": "setup_workspace_administrators", "error": str(e)})
-        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
+        # Calculate uncompleted steps
+        completed_step_names = executed_steps + [step['step'] for step in failed_steps]
+        uncompleted_steps = [step for step in ALL_DEPLOYMENT_STEPS if step not in completed_step_names]
+        print_steps_summary(SOLUTION_NAME, solution_suffix, executed_steps, failed_steps, uncompleted_steps)
         sys.exit(1)
     
     # Step 3: Setup folder structure
-    print_step(3, 9, "Setting up folder structure", folder_count=len(folder_paths))
+    print_step(3, 9, "Setting up folder structure", folder_count=len(FABRIC_FOLDER_STRUCTURE))
     try:
         fabric_folders = setup_folder_structure(
             workspace_client=workspace_client,
-            folder_paths=folder_paths
+            folder_paths=FABRIC_FOLDER_STRUCTURE
         )
         print(f"✅ Successfully completed: setup_folder_structure")
         executed_steps.append("setup_folder_structure")
     except Exception as e:
         print(f"❌ Exception while executing setup_folder_structure: {e}")
         failed_steps.append({"step": "setup_folder_structure", "error": str(e)})
-        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
+        # Calculate uncompleted steps
+        completed_step_names = executed_steps + [step['step'] for step in failed_steps]
+        uncompleted_steps = [step for step in ALL_DEPLOYMENT_STEPS if step not in completed_step_names]
+        print_steps_summary(SOLUTION_NAME, solution_suffix, executed_steps, failed_steps, uncompleted_steps)
         sys.exit(1)
     
     # Step 4: Setup lakehouses
-    lakehouse_folder_id = fabric_folders.get('lakehouses')
+    lakehouse_folder_id = fabric_folders.get(FABRIC_FOLDER_LAKEHOUSES)
     
-    print_step(4, 9, "Setting up lakehouses", lakehouse_count=len(lakehouse_names))
+    print_step(4, 9, "Setting up lakehouses", lakehouse_count=len(LAKEHOUSE_NAMES))
     try:
         fabric_lakehouses = setup_lakehouses(
             workspace_client=workspace_client,
-            lakehouse_names=lakehouse_names,
+            lakehouse_names=LAKEHOUSE_NAMES,
             lakehouse_folder_id=lakehouse_folder_id
         )
         print(f"✅ Successfully completed: setup_lakehouses")
@@ -241,12 +280,15 @@ def main():
     except Exception as e:
         print(f"❌ Exception while executing setup_lakehouses: {e}")
         failed_steps.append({"step": "setup_lakehouses", "error": str(e)})
-        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
+        # Calculate uncompleted steps
+        completed_step_names = executed_steps + [step['step'] for step in failed_steps]
+        uncompleted_steps = [step for step in ALL_DEPLOYMENT_STEPS if step not in completed_step_names]
+        print_steps_summary(SOLUTION_NAME, solution_suffix, executed_steps, failed_steps, uncompleted_steps)
         sys.exit(1)
     
     # Step 5: Load CSV data to bronze lakehouse
     csv_folder_path = os.path.join(repo_root, 'infra', 'data')
-    bronze_lakehouse = fabric_lakehouses['maag_bronze']
+    bronze_lakehouse = fabric_lakehouses[LAKEHOUSE_BRONZE]
     
     print_step(5, 9, "Loading sample data to bronze lakehouse", 
                csv_folder=csv_folder_path)
@@ -261,72 +303,74 @@ def main():
     except Exception as e:
         print(f"❌ Exception while executing load_csv_data_to_lakehouse: {e}")
         failed_steps.append({"step": "load_csv_data_to_lakehouse", "error": str(e)})
-        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
+        # Calculate uncompleted steps
+        completed_step_names = executed_steps + [step['step'] for step in failed_steps]
+        uncompleted_steps = [step for step in ALL_DEPLOYMENT_STEPS if step not in completed_step_names]
+        print_steps_summary(SOLUTION_NAME, solution_suffix, executed_steps, failed_steps, uncompleted_steps)
         sys.exit(1)
     
     # Step 6: Deploy notebooks
     # Build notebook specifications directly as a list
     notebook_specs = [
         # Root level notebooks
-        build_notebook_spec(notebooks_directory, 'run_bronze_to_silver.ipynb', None, 'maag_silver', 'notebooks', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'run_silver_to_gold.ipynb', None, 'maag_gold', 'notebooks', fabric_folders),
-        build_notebook_spec(notebooks_directory, notebook_name_data_agent_config, None, None, 'notebooks', fabric_folders),
+        build_notebook_spec('run_bronze_to_silver.ipynb', None, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec('run_silver_to_gold.ipynb', None, LAKEHOUSE_GOLD, fabric_folders),
         
         # Bronze to Silver transformation notebooks
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_finance_account.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_finance_invoice.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_finance_payment.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_salesadb_order.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_salesadb_orderLine.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_salesadb_orderPayment.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_salesfabric_order.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_salesfabric_orderLine.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_salesfabric_orderPayment.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_shared_customer.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_shared_customeraccount.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_shared_customerRelationshipType.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_shared_customerTradeName.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_shared_location.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_shared_product.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'bronze_to_silver/bronze_to_silver_shared_productCategory.ipynb', 'maag_bronze', 'maag_silver', 'notebooks/bronze_to_silver', fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_finance_account.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_finance_invoice.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_finance_payment.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_salesadb_order.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_salesadb_orderLine.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_salesadb_orderPayment.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_salesfabric_order.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_salesfabric_orderLine.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_salesfabric_orderPayment.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_shared_customer.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_shared_customeraccount.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_shared_customerRelationshipType.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_shared_customerTradeName.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_shared_location.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_shared_product.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_BRONZE_TO_SILVER}/bronze_to_silver_shared_productCategory.ipynb', LAKEHOUSE_BRONZE, LAKEHOUSE_SILVER, fabric_folders),
         
         # Data management notebooks
-        build_notebook_spec(notebooks_directory, 'data_management/drop_all_tables_gold.ipynb', None, 'maag_gold', 'notebooks/data_management', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'data_management/drop_all_tables_silver.ipynb', None, 'maag_silver', 'notebooks/data_management', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'data_management/trouble_shooting.ipynb', None, None, 'notebooks/data_management', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'data_management/truncate_all_tables_gold.ipynb', None, 'maag_gold', 'notebooks/data_management', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'data_management/truncate_all_tables_silver.ipynb', None, 'maag_silver', 'notebooks/data_management', fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_DATA_MANAGEMENT}/drop_all_tables_gold.ipynb', None, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_DATA_MANAGEMENT}/drop_all_tables_silver.ipynb', None, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_DATA_MANAGEMENT}/trouble_shooting.ipynb', None, None, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_DATA_MANAGEMENT}/truncate_all_tables_gold.ipynb', None, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_DATA_MANAGEMENT}/truncate_all_tables_silver.ipynb', None, LAKEHOUSE_SILVER, fabric_folders),
         
         # Schema notebooks
-        build_notebook_spec(notebooks_directory, 'schema/model_finance_gold.ipynb', None, 'maag_gold', 'notebooks/schema', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'schema/model_salesadb_gold.ipynb', None, 'maag_gold', 'notebooks/schema', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'schema/model_salesfabric_gold.ipynb', None, 'maag_gold', 'notebooks/schema', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'schema/model_shared_gold.ipynb', None, 'maag_gold', 'notebooks/schema', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'schema/model_finance_silver.ipynb', None, 'maag_silver', 'notebooks/schema', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'schema/model_salesadb_silver.ipynb', None, 'maag_silver', 'notebooks/schema', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'schema/model_salesfabric_silver.ipynb', None, 'maag_silver', 'notebooks/schema', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'schema/model_shared_silver.ipynb', None, 'maag_silver', 'notebooks/schema', fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SCHEMA}/model_finance_gold.ipynb', None, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SCHEMA}/model_salesadb_gold.ipynb', None, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SCHEMA}/model_salesfabric_gold.ipynb', None, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SCHEMA}/model_shared_gold.ipynb', None, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SCHEMA}/model_finance_silver.ipynb', None, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SCHEMA}/model_salesadb_silver.ipynb', None, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SCHEMA}/model_salesfabric_silver.ipynb', None, LAKEHOUSE_SILVER, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SCHEMA}/model_shared_silver.ipynb', None, LAKEHOUSE_SILVER, fabric_folders),
         
         # Silver to Gold transformation notebooks
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_finance_account.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_finance_invoice.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_finance_payment.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_sales_order_line.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_sales_order_payment.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_sales_order.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_salesadb_order.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_salesadb_orderLine.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_salesadb_orderPayment.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_salesfabric_order.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_salesfabric_orderLine.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_salesfabric_orderPayment.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_shared_customer.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_shared_customeraccount.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_shared_customerRelationshipType.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_shared_customerTradeName.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_shared_location.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_shared_product.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
-        build_notebook_spec(notebooks_directory, 'silver_to_gold/silver_to_gold_shared_productCategory.ipynb', 'maag_silver', 'maag_gold', 'notebooks/silver_to_gold', fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_finance_account.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_finance_invoice.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_finance_payment.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_sales_order_line.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_sales_order_payment.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_sales_order.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_salesadb_order.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_salesadb_orderLine.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_salesadb_orderPayment.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_salesfabric_order.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_salesfabric_orderLine.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_salesfabric_orderPayment.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_shared_customer.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_shared_customeraccount.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_shared_customerRelationshipType.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_shared_customerTradeName.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_shared_location.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_shared_product.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
+        build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_shared_productCategory.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
     ]
     
     print_step(6, 9, "Deploying notebooks", notebook_count=len(notebook_specs))
@@ -341,36 +385,51 @@ def main():
     except Exception as e:
         print(f"❌ Exception while executing deploy_notebooks: {e}")
         failed_steps.append({"step": "deploy_notebooks", "error": str(e)})
-        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
+        # Calculate uncompleted steps
+        completed_step_names = executed_steps + [step['step'] for step in failed_steps]
+        uncompleted_steps = [step for step in ALL_DEPLOYMENT_STEPS if step not in completed_step_names]
+        print_steps_summary(SOLUTION_NAME, solution_suffix, executed_steps, failed_steps, uncompleted_steps)
         sys.exit(1)
     
     # Step 7: Execute notebooks
     print_step(7, 9, "Executing data transformation pipelines", 
-               notebook_count=len(notebooks_to_run))
+               notebook_count=len(NOTEBOOKS_TO_RUN))
     try:
-        execution_results = execute_notebooks_sequential(
+        # Prepare notebook specs with IDs
+        notebook_specs_to_run = [
+            {
+                'name': notebook_name,
+                'id': fabric_notebooks[notebook_name]
+            }
+            for notebook_name in NOTEBOOKS_TO_RUN
+            if notebook_name in fabric_notebooks
+        ]
+        
+        execution_results = schedule_notebook_jobs_sequential(
             workspace_client=workspace_client,
-            notebook_names=notebooks_to_run,
-            notebooks=fabric_notebooks,
+            notebook_specs=notebook_specs_to_run,
             monitor_interval=20
         )
-        print(f"✅ Successfully completed: execute_notebooks_sequential")
-        executed_steps.append("execute_notebooks_sequential")
+        print(f"✅ Successfully completed: schedule_notebook_jobs_sequential")
+        executed_steps.append("schedule_notebook_jobs_sequential")
     except Exception as e:
         print(f"❌ Exception while executing notebooks: {e}")
-        failed_steps.append({"step": "execute_notebooks_sequential", "error": str(e)})
-        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
+        failed_steps.append({"step": "schedule_notebook_jobs_sequential", "error": str(e)})
+        # Calculate uncompleted steps
+        completed_step_names = executed_steps + [step['step'] for step in failed_steps]
+        uncompleted_steps = [step for step in ALL_DEPLOYMENT_STEPS if step not in completed_step_names]
+        print_steps_summary(SOLUTION_NAME, solution_suffix, executed_steps, failed_steps, uncompleted_steps)
         sys.exit(1)
     
     # Step 8: Setup environment
-    environment_folder_id = fabric_folders.get('environment')
+    environment_folder_id = fabric_folders.get(FABRIC_FOLDER_ENVIRONMENT)
     
     print_step(8, 9, "Setting up Fabric environment", 
-               environment_name=environment_name)
+               environment_name=ENVIRONMENT_NAME)
     try:
         environment_info = setup_environment(
             workspace_client=workspace_client,
-            environment_name=environment_name,
+            environment_name=ENVIRONMENT_NAME,
             environment_yml_path=environment_yml_path if os.path.exists(environment_yml_path) else None,
             folder_id=environment_folder_id
         )
@@ -380,31 +439,33 @@ def main():
     except Exception as e:
         print(f"❌ Exception while executing setup_environment: {e}")
         failed_steps.append({"step": "setup_environment", "error": str(e)})
-        print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
+        # Calculate uncompleted steps
+        completed_step_names = executed_steps + [step['step'] for step in failed_steps]
+        uncompleted_steps = [step for step in ALL_DEPLOYMENT_STEPS if step not in completed_step_names]
+        print_steps_summary(SOLUTION_NAME, solution_suffix, executed_steps, failed_steps, uncompleted_steps)
         sys.exit(1)
     
     # Step 9: Setup data agent
     if environment_info:
-        gold_lakehouse = fabric_lakehouses['maag_gold']
+        gold_lakehouse = fabric_lakehouses[LAKEHOUSE_GOLD]
         gold_lakehouse_id = gold_lakehouse.get('id')
         
         print_step(9, 9, "Setting up Data Agent", 
-                   data_agent_name=data_agent_name,
+                   data_agent_name=DATA_AGENT_NAME,
                    lakehouse_id=gold_lakehouse_id)
         try:
-            data_agent_result = setup_data_agent_lakehouse(
+            data_agent_result = setup_data_agent(
                 workspace_client=workspace_client,
-                data_agent_name=data_agent_name,
+                data_agent_name=DATA_AGENT_NAME,
                 lakehouse_id=gold_lakehouse_id,
                 lakehouse_workspace_id=workspace_id,
                 environment_id=environment_id,
-                selected_tables=selected_tables,
-                notebook_name=os.path.splitext(notebook_name_data_agent_config)[0],
+                selected_tables=DATA_AGENT_CONFIG_SELECTED_TABLES,
                 notebook_path=notebook_path_data_agent_config,
-                notebook_folder_id=fabric_folders.get('notebooks')
+                notebook_fabric_folder_id=fabric_folders.get(f'{FABRIC_FOLDER_NOTEBOOKS}/{FABRIC_FOLDER_DATA_AGENT}')
             )
-            print(f"✅ Successfully completed: setup_data_agent_lakehouse")
-            executed_steps.append("setup_data_agent_lakehouse")
+            print(f"✅ Successfully completed: setup_data_agent")
+            executed_steps.append("setup_data_agent")
         except Exception as e:
             print(f"⚠️  Warning: Data Agent setup failed: {e}")
             print(f"   Data Agent is a preview feature and may not be available in all regions")
@@ -413,27 +474,31 @@ def main():
         print(f"ℹ️  Skipping Data Agent setup (environment not created)")
     
     # Success!
-    print(f"\n🎉 {solution_name} deployment completed successfully!")
+    print(f"\n🎉 {SOLUTION_NAME} deployment completed successfully!")
     print(f"End time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
-    print_steps_summary(solution_name, solution_suffix, executed_steps, failed_steps)
+    # Calculate uncompleted steps (if any - e.g., data agent might be skipped)
+    completed_step_names = executed_steps + [step['step'] for step in failed_steps]
+    uncompleted_steps = [step for step in ALL_DEPLOYMENT_STEPS if step not in completed_step_names]
+    
+    print_steps_summary(SOLUTION_NAME, solution_suffix, executed_steps, failed_steps, uncompleted_steps)
     
     # Print resource URLs
     workspace_url = f"https://app.fabric.microsoft.com/groups/{workspace_id}?experience=fabric-developer"
     
     print(f"\n" + "="*60)
-    print(f"🎉 {solution_name.upper()} DEPLOYMENT COMPLETE!")
+    print(f"🎉 {SOLUTION_NAME.upper()} DEPLOYMENT COMPLETE!")
     print(f"="*60)
     print(f"📅 Completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"🏷️  Solution: {solution_suffix}")
     
     print(f"\n✅ DEPLOYED RESOURCES:")
-    print(f"   🏠 Workspace:     {workspace_name}")
-    print(f"   🏛️  Lakehouses:    {', '.join(lakehouse_names)}")
+    print(f"   ☁️ Workspace:     {workspace_name}")
+    print(f"   🏠 Lakehouses:    {', '.join(LAKEHOUSE_NAMES)}")
     print(f"   📓 Notebooks:     {len(fabric_notebooks)} deployed")
-    print(f"   🌍 Environment:   {environment_name}")
-    if 'setup_data_agent_lakehouse' in executed_steps:
-        print(f"   🤖 Data Agent:    {data_agent_name} (✅ Configured)")
+    print(f"   🌍 Environment:   {ENVIRONMENT_NAME}")
+    if 'setup_data_agent' in executed_steps:
+        print(f"   🤖 Data Agent:    {DATA_AGENT_NAME} (✅ Configured)")
     
     print(f"\n📦 FABRIC URLS:")
     print(f"   🏠 Workspace:     {workspace_url}")

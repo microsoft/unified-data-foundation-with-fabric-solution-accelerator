@@ -19,15 +19,14 @@ from fabric_api import FabricWorkspaceApiClient, FabricApiError
 from helpers.utils import read_file_content, replace_tokens_in_content
 
 
-def setup_data_agent_lakehouse(workspace_client: FabricWorkspaceApiClient, 
+def setup_data_agent(workspace_client: FabricWorkspaceApiClient, 
                                data_agent_name: str,
                                lakehouse_id: str,
                                lakehouse_workspace_id: str,
                                environment_id: str,
                                selected_tables: list,
-                               notebook_name: str,
                                notebook_path: str,
-                               notebook_folder_id: Optional[str] = None,
+                               notebook_fabric_folder_id: Optional[str] = None,
                                data_agent_folder_id: Optional[str] = None) -> dict:
     """
     Create a Data Agent and configure it with a Lakehouse data source via notebook.
@@ -40,9 +39,8 @@ def setup_data_agent_lakehouse(workspace_client: FabricWorkspaceApiClient,
         environment_id: ID of the environment for data agent configuration
         selected_tables: List of [schema, table_name] pairs to include in data agent
                         Example: [["dbo", "customers"], ["dbo", "orders"]]
-        notebook_name: Name of the configuration notebook to create
-        notebook_path: Path to the configuration notebook template file
-        notebook_folder_id: Optional folder ID where to create the notebook
+        notebook_path: Path to the configuration notebook template file (name will be extracted from path)
+        notebook_fabric_folder_id: Optional folder ID where to create the notebook
         data_agent_folder_id: Optional folder ID where to create the data agent
         
     Returns:
@@ -52,6 +50,9 @@ def setup_data_agent_lakehouse(workspace_client: FabricWorkspaceApiClient,
         FabricApiError: If creation fails
     """
     print(f"🤖 Creating Data Agent: '{data_agent_name}'")
+    
+    # Extract notebook name from notebook path
+    notebook_name = os.path.splitext(os.path.basename(notebook_path))[0]
     
     try:
         # Check if Data Agent already exists
@@ -143,8 +144,13 @@ def setup_data_agent_lakehouse(workspace_client: FabricWorkspaceApiClient,
             workspace_client.update_notebook(notebook_id, notebook_base64)
             print(f"   ✅ Successfully updated notebook: {notebook_name} ({notebook_id})")
         else:
-            # Create new notebook
-            notebook = workspace_client.create_notebook(notebook_name, notebook_base64, notebook_folder_id)
+            # Create new notebook (LRO returns empty dict)
+            workspace_client.create_notebook(notebook_name, notebook_base64, notebook_fabric_folder_id)
+            
+            # Retrieve notebook details after creation
+            notebook = workspace_client.get_notebook_by_name(notebook_name)
+            if not notebook:
+                raise FabricApiError(f"Failed to retrieve notebook '{notebook_name}' after creation")
             notebook_id = notebook.get('id')
             if not notebook_id:
                 raise FabricApiError(f"Failed to retrieve notebook ID for created notebook '{notebook_name}'")
@@ -192,9 +198,6 @@ def main():
 Examples:
   # Create and configure Data Agent with Lakehouse
   python udf_data_agent.py --workspace-id "12345678-1234-1234-1234-123456789012" --data-agent-name "Sales Agent" --lakehouse-id "87654321-4321-4321-4321-210987654321" --lakehouse-workspace-id "87654321-4321-4321-4321-210987654321" --environment-id "99999999-8888-7777-6666-555544443333" --notebook-path "/path/to/configure_data_agent.ipynb" --selected-tables "dbo:customers" "dbo:orders" "sales:products"
-  
-  # Create Data Agent with custom notebook name
-  python udf_data_agent.py --workspace-id "12345678-1234-1234-1234-123456789012" --data-agent-name "Sales Agent" --lakehouse-id "87654321-4321-4321-4321-210987654321" --lakehouse-workspace-id "87654321-4321-4321-4321-210987654321" --environment-id "99999999-8888-7777-6666-555544443333" --notebook-path "/path/to/configure_data_agent.ipynb" --selected-tables "dbo:customers" --notebook-name "My Custom Config"
         """
     )
     
@@ -236,20 +239,13 @@ Examples:
     )
     
     parser.add_argument(
-        "--notebook-name",
-        required=False,
-        default=None,
-        help="Name of the configuration notebook (default: 'Configure Data Agent - <data-agent-name>')"
-    )
-    
-    parser.add_argument(
         "--notebook-path",
         required=True,
-        help="Path to the configuration notebook template file"
+        help="Path to the configuration notebook template file (notebook name will be extracted from filename)"
     )
     
     parser.add_argument(
-        "--notebook-folder-id",
+        "--notebook-fabric-folder-id",
         required=False,
         help="Optional folder ID where to create the notebook"
     )
@@ -272,24 +268,20 @@ Examples:
             # Default to dbo schema if not specified
             selected_tables_parsed.append(["dbo", table_spec])
     
-    # Set default notebook name if not provided
-    notebook_name = args.notebook_name or f"Configure Data Agent - {args.data_agent_name}"
-    
     try:
         from fabric_api import FabricWorkspaceApiClient, FabricApiError
         
         workspace_client = FabricWorkspaceApiClient(workspace_id=args.workspace_id)
         
-        result = setup_data_agent_lakehouse(
+        result = setup_data_agent(
             workspace_client=workspace_client,
             data_agent_name=args.data_agent_name,
             lakehouse_id=args.lakehouse_id,
             lakehouse_workspace_id=args.lakehouse_workspace_id,
             environment_id=args.environment_id,
             selected_tables=selected_tables_parsed,
-            notebook_name=notebook_name,
             notebook_path=args.notebook_path,
-            notebook_folder_id=args.notebook_folder_id,
+            notebook_fabric_folder_id=args.notebook_fabric_folder_id,
             data_agent_folder_id=args.data_agent_folder_id
         )
         

@@ -29,50 +29,52 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
     Args:
         workspace_client: Authenticated workspace API client
         notebook_specs: List of notebook specifications, each containing:
-            - path: Path to the notebook file
-            - source_lakehouse: Optional source lakehouse name
-            - target_lakehouse: Optional target lakehouse name
-            - folder_path: Folder path in workspace
+            - path or notebook_local_path: Path to the notebook file
+            - source_lakehouse or source_lakehouse_name: Optional source lakehouse name
+            - target_lakehouse or target_lakehouse_name: Optional target lakehouse name
+            - fabric_folder_id: Optional folder ID where to create the notebook
         lakehouses: Dictionary mapping lakehouse names to lakehouse objects
         
     Returns:
-        dict: Dictionary mapping notebook names to notebook objects
+        dict: Dictionary mapping notebook names (displayName) to notebook IDs
         
     Raises:
         FabricApiError: If notebook deployment fails
+        ValueError: If notebook spec is invalid or notebook JSON is malformed
+        FileNotFoundError: If notebook file is not found
+        TimeoutError: If notebook operations timeout
     """
     print(f"📓 Deploying notebooks to workspace using batch processing")
     
-    # Get existing notebooks (returns dict of {name: id})
+    # Get existing notebooks and create a mapping of {name: id}
     print(f"   Retrieving existing notebooks...")
-    existing_notebook_ids = workspace_client.list_notebooks()
+    existing_notebooks = workspace_client.list_notebooks()
+    existing_notebook_ids = {nb['displayName']: nb['id'] for nb in existing_notebooks}
     print(f"   Found {len(existing_notebook_ids)} existing notebooks")
     
     notebooks = {}
     upload_jobs = []  # Track LRO jobs for batch monitoring
     created_count = 0
     updated_count = 0
-    failed_count = 0
     
     # Process each notebook and submit jobs without waiting
     total_notebooks = len(notebook_specs)
     for idx, spec in enumerate(notebook_specs, 1):
-        local_path = spec.get('path') or spec.get('local_path')  # Support both key names
-        source_lakehouse_name = spec.get('source_lakehouse') or spec.get('source_lakehouse_name')
-        target_lakehouse_name = spec.get('target_lakehouse') or spec.get('target_lakehouse_name')
-        folder_path = spec.get('folder_path', '')
-        folder_id = spec.get('folder_id')
+        notebook_local_path = spec.get('notebook_local_path') 
+        source_lakehouse_name = spec.get('source_lakehouse_name')
+        target_lakehouse_name = spec.get('target_lakehouse_name')
+        fabric_folder_id = spec.get('fabric_folder_id')
         
-        if not local_path:
-            print(f"   [{idx}/{total_notebooks}] ❌ Skipping: Missing notebook path in spec")
-            failed_count += 1
-            continue
+        if not notebook_local_path:
+            error_msg = f"Missing notebook path in spec at index {idx}"
+            print(f"   [{idx}/{total_notebooks}] ❌ {error_msg}")
+            raise ValueError(error_msg)
             
-        notebook_name = os.path.splitext(os.path.basename(local_path))[0]
+        notebook_name = os.path.splitext(os.path.basename(notebook_local_path))[0]
         
         try:
             # Read notebook content
-            notebook_content = read_file_content(local_path)
+            notebook_content = read_file_content(notebook_local_path)
             notebook_json = json.loads(notebook_content)
             
             # Add lakehouse connections if specified
@@ -130,7 +132,7 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
                 response = workspace_client.create_notebook(
                     notebook_name,
                     notebook_base64,
-                    folder_id=folder_id,
+                    folder_id=fabric_folder_id,
                     wait_for_lro=False  # Don't wait, batch process instead
                 )
                 operation_type = 'create'
@@ -147,9 +149,7 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
                     })
             elif response.ok:
                 # Immediate success (no LRO)
-                response_data = response.json()
-                notebook_id = response_data.get('id', existing_notebook_ids.get(notebook_name, 'unknown'))
-                notebooks[notebook_name] = {'id': notebook_id, 'displayName': notebook_name}
+                notebooks[notebook_name] = operation_type
                 if operation_type == 'create':
                     created_count += 1
                 else:
@@ -158,17 +158,21 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
                 raise FabricApiError(f"Failed to {operation_type} notebook: {response.text}")
                 
         except FileNotFoundError as e:
-            print(f"      ❌ Notebook file not found: {notebook_name} - {e}")
-            failed_count += 1
+            error_msg = f"Notebook file not found: {notebook_name}"
+            print(f"      ❌ {error_msg} - {e}")
+            raise FileNotFoundError(error_msg) from e
         except json.JSONDecodeError as e:
-            print(f"      ❌ Invalid notebook JSON format: {notebook_name} - {e}")
-            failed_count += 1
+            error_msg = f"Invalid notebook JSON format: {notebook_name}"
+            print(f"      ❌ {error_msg} - {e}")
+            raise ValueError(error_msg) from e
         except FabricApiError as e:
-            print(f"      ❌ Fabric API error deploying {notebook_name}: {e}")
-            failed_count += 1
+            error_msg = f"Fabric API error deploying {notebook_name}: {e}"
+            print(f"      ❌ {error_msg}")
+            raise
         except Exception as e:
-            print(f"      ❌ Failed to deploy {notebook_name}: {e}")
-            failed_count += 1
+            error_msg = f"Failed to deploy {notebook_name}: {e}"
+            print(f"      ❌ {error_msg}")
+            raise
     
     # Wait for all LRO jobs to complete
     if upload_jobs:
@@ -188,11 +192,7 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
                     
                     if job_result:
                         # Job completed successfully
-                        notebook_id = job_result.get('id', 'unknown')
-                        notebooks[job['notebook_name']] = {
-                            'id': notebook_id,
-                            'displayName': job['notebook_name']
-                        }
+                        notebooks[job['notebook_name']] = job['operation_type']
                         
                         print(f"      ✅ {job['operation_type'].capitalize()}d: {job['notebook_name']}")
                         
@@ -206,9 +206,9 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
                 except Exception as e:
                     # Check if job has timed out
                     if time.time() - job['start_time'] > max_wait_time:
-                        print(f"      ❌ Operation timed out for '{job['notebook_name']}': {str(e)}")
-                        failed_count += 1
-                        jobs_to_remove.append(job)
+                        error_msg = f"Operation timed out for '{job['notebook_name']}': {str(e)}"
+                        print(f"      ❌ {error_msg}")
+                        raise TimeoutError(error_msg) from e
                     # Otherwise continue monitoring
             
             # Remove completed/failed jobs
@@ -221,126 +221,26 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
         
         # Handle any remaining pending jobs that timed out
         if pending_jobs:
-            print(f"      ⚠️  {len(pending_jobs)} operations did not complete within timeout")
-            for job in pending_jobs:
-                print(f"         - {job['notebook_name']}")
-                failed_count += 1
+            timeout_notebooks = [job['notebook_name'] for job in pending_jobs]
+            error_msg = f"{len(pending_jobs)} operations did not complete within timeout: {', '.join(timeout_notebooks)}"
+            print(f"      ❌ {error_msg}")
+            raise TimeoutError(error_msg)
     
-    # Refresh notebooks list to ensure we have all IDs
-    try:
-        final_notebook_ids = workspace_client.list_notebooks()
-        # Update notebooks dict with any missing entries
-        for name, notebook_id in final_notebook_ids.items():
-            if name not in notebooks:
-                notebooks[name] = {'id': notebook_id, 'displayName': name}
-    except Exception as e:
-        print(f"      ⚠️  Could not refresh notebooks list: {e}")
     
     print(f"\n   ✅ Notebook deployment complete:")
     print(f"      Created: {created_count}")
     print(f"      Updated: {updated_count}")
-    if failed_count > 0:
-        print(f"      Failed: {failed_count}")
     
-    return notebooks
+    # Retrieve all notebooks to get IDs and create name-to-id mapping
+    print(f"\n   📋 Retrieving notebook IDs from workspace...")
+    all_notebooks = workspace_client.list_notebooks()
+    notebook_id_map = {nb['displayName']: nb['id'] for nb in all_notebooks}
+    print(f"   Retrieved {len(notebook_id_map)} notebook IDs")
+    
+    return notebook_id_map
 
 
-def execute_notebooks_sequential(workspace_client: FabricWorkspaceApiClient,
-                                notebook_names: list,
-                                notebooks: dict,
-                                monitor_interval: int = 20) -> dict:
-    """
-    Execute notebooks sequentially with monitoring.
-    
-    Args:
-        workspace_client: Authenticated workspace API client
-        notebook_names: List of notebook names to execute in order
-        notebooks: Dictionary mapping notebook names to notebook objects
-        monitor_interval: Seconds to wait between status checks (default: 20)
-        
-    Returns:
-        dict: Dictionary mapping notebook names to execution results
-    """
-    print(f"🚀 Executing data transformation pipelines sequentially")
-    
-    execution_results = {}
-    successful_executions = []
-    failed_executions = []
-    
-    for idx, notebook_name in enumerate(notebook_names, 1):
-        print(f"\n   [{idx}/{len(notebook_names)}] Executing: {notebook_name}")
-        
-        # Get notebook ID
-        notebook = notebooks.get(notebook_name)
-        if not notebook:
-            print(f"      ❌ Notebook not found: {notebook_name}")
-            failed_executions.append(notebook_name)
-            execution_results[notebook_name] = {
-                'status': 'NotFound',
-                'error': 'Notebook not found in deployed notebooks'
-            }
-            continue
-        
-        notebook_id = notebook.get('id')
-        if not notebook_id:
-            print(f"      ❌ Could not get notebook ID for: {notebook_name}")
-            failed_executions.append(notebook_name)
-            execution_results[notebook_name] = {
-                'status': 'Error',
-                'error': 'Could not retrieve notebook ID'
-            }
-            continue
-        
-        try:
-            # Schedule notebook job
-            print(f"      ▶️  Scheduling job...")
-            job_result = workspace_client.schedule_notebook_job(notebook_id)
-            
-            # Get execution status
-            status = job_result.get('status', 'Unknown')
-            duration = job_result.get('duration', 'N/A')
-            
-            print(f"      📊 Execution completed:")
-            print(f"         Status: {status}")
-            print(f"         Duration: {duration}")
-            
-            execution_results[notebook_name] = job_result
-            
-            if status == 'Completed':
-                print(f"      ✅ Successfully executed: {notebook_name}")
-                successful_executions.append(notebook_name)
-            else:
-                print(f"      ❌ Execution failed: {notebook_name}")
-                if 'error' in job_result:
-                    print(f"         Error: {job_result.get('error')}")
-                failed_executions.append(notebook_name)
-                
-        except FabricApiError as e:
-            print(f"      ❌ Fabric API error executing {notebook_name}: {e}")
-            failed_executions.append(notebook_name)
-            execution_results[notebook_name] = {
-                'status': 'Exception',
-                'error': str(e)
-            }
-        except Exception as e:
-            print(f"      ❌ Failed to execute {notebook_name}: {e}")
-            failed_executions.append(notebook_name)
-            execution_results[notebook_name] = {
-                'status': 'Exception',
-                'error': str(e)
-            }
-    
-    # Print summary
-    print(f"\n   ✅ Notebook execution complete:")
-    print(f"      Successful: {len(successful_executions)}")
-    print(f"      Failed: {len(failed_executions)}")
-    
-    if failed_executions:
-        print(f"\n   ⚠️  Failed notebooks:")
-        for notebook_name in failed_executions:
-            print(f"      - {notebook_name}")
-    
-    return execution_results
+
 
 
 def main():
@@ -392,12 +292,6 @@ Examples:
         help="Optional folder ID where to create the notebook"
     )
     
-    parser.add_argument(
-        "--execute",
-        action="store_true",
-        help="Execute the notebook after deployment"
-    )
-    
     args = parser.parse_args()
     
     try:
@@ -421,8 +315,7 @@ Examples:
             'path': args.notebook_path,
             'source_lakehouse': args.lakehouse_name,
             'target_lakehouse': args.lakehouse_name,
-            'folder_path': '',
-            'folder_id': args.folder_id
+            'fabric_folder_id': args.folder_id
         }]
         
         # Deploy notebook
@@ -432,19 +325,10 @@ Examples:
             lakehouses=lakehouses
         )
         
-        # Execute if requested
-        if args.execute:
-            execute_notebooks_sequential(
-                workspace_client=workspace_client,
-                notebook_names=[notebook_name],
-                notebooks=notebooks
-            )
-        
         print(f"\n🎉 Final Results:")
         print(f"   Notebook: {notebook_name}")
         print(f"   Workspace ID: {args.workspace_id}")
-        if args.execute:
-            print(f"   Execution: Completed")
+        print(f"   Deployment: Completed")
         
     except FabricApiError as e:
         print(f"❌ Fabric API Error: {e}")
