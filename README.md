@@ -107,12 +107,25 @@ You can modify the data models and notebooks in different folders under the `src
 Quick deploy
 </h2>
 
-### How to install or deploy
-If you choose option 1, "Core Medallion Architecture in Microsoft Fabric only", you can deploy using either:
-- [Automated deployment with Azure Developer CLI](./docs/DeploymentGuideFabric.md) (recommended for quick setup)
-- [Manual deployment scripts](./docs/DeploymentGuideFabricManual.md) for users who prefer more granular control over the deployment process
+### Deployment methods
 
-For other architecture options, please follow the instructions provided in [deployment guide for all options](./docs/DeploymentGuide.md).
+Deploy this solution accelerator to your Azure subscription using either automated or manual deployment methods.
+
+> ⚠️ **Important:** Before deploying, check [capacity requirements](./docs/DeploymentGuideFabric.md#software-requirements) to ensure sufficient Azure Fabric capacity is available in your subscription.
+
+#### Option 1: Automated Deployment (Recommended)
+
+📖 **[Click here to launch the automated deployment guide](./docs/DeploymentGuideFabric.md)** and choose your preferred environment for one-click automated deployment:
+
+| [![Open in Azure Cloud Shell](https://img.shields.io/static/v1?style=for-the-badge&label=Azure%20Cloud%20Shell&message=Open&color=0078D4&logo=microsoft-azure&logoColor=white)](https://shell.azure.com) | [![Open in GitHub Codespaces](https://img.shields.io/static/v1?style=for-the-badge&label=GitHub%20Codespaces&message=Open&color=181717&logo=github&logoColor=white)](https://codespaces.new/microsoft/unified-data-foundation-with-fabric-solution-accelerator?quickstart=1) | [![Open in Dev Container](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Container&message=Open&color=blue&logo=docker&logoColor=white)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator) | [![Open in Visual Studio Code Web](https://img.shields.io/static/v1?style=for-the-badge&label=Visual%20Studio%20Code%20(Web)&message=Open&color=blue&logo=visualstudiocode&logoColor=white)](https://vscode.dev/azure/?vscode-azure-exp=foundry&agentPayload=eyJiYXNlVXJsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9taWNyb3NvZnQvdW5pZmllZC1kYXRhLWZvdW5kYXRpb24td2l0aC1mYWJyaWMtc29sdXRpb24tYWNjZWxlcmF0b3IvcmVmcy9oZWFkcy9tYWluL2luZnJhL3ZzY29kZV93ZWIiLCAiaW5kZXhVcmwiOiAiL2luZGV4Lmpzb24iLCAidmFyaWFibGVzIjogeyJhZ2VudElkIjogIiIsICJjb25uZWN0aW9uU3RyaW5nIjogIiIsICJ0aHJlYWRJZCI6ICIiLCAidXNlck1lc3NhZ2UiOiAiIiwgInBsYXlncm91bmROYW1lIjogIiIsICJsb2NhdGlvbiI6ICIiLCAic3Vic2NyaXB0aW9uSWQiOiAiIiwgInJlc291cmNlSWQiOiAiIiwgInByb2plY3RSZXNvdXJjZUlkIjogIiIsICJlbmRwb2ludCI6ICIifSwgImNvZGVSb3V0ZSI6IFsiYWktcHJvamVjdHMtc2RrIiwgInB5dGhvbiIsICJkZWZhdWx0LWF6dXJlLWF1dGgiLCAiZW5kcG9pbnQiXX0=) |
+|---|---|---|---|
+
+#### Option 2: Manual Deployment
+
+For granular control over each deployment step or to integrate with existing resources:
+
+- **Fabric-only architecture:** Follow the [manual deployment guide](./docs/DeploymentGuideFabricManual.md) for step-by-step instructions with options to use existing Fabric capacity
+- **Full architecture (Fabric + Purview + Databricks):** Use the [comprehensive deployment guide](./docs/DeploymentGuide.md) for all architecture options
 <br/>
 
 ### Prerequisites and costs
