@@ -119,7 +119,7 @@ jobs:
           python -m pip install -r requirements.txt
 
       - name: Run Fabric Provisioning Script
-        working-directory: infra/scripts/fabric
+        working-directory: infra/scripts/utils
         env:
           # Required environment variables from Bicep outputs
           AZURE_FABRIC_CAPACITY_NAME: ${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }}
