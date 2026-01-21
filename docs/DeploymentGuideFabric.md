@@ -92,7 +92,7 @@ This phase creates the physical resources in your Azure subscription.
 ### 2️⃣ Phase 2: Data Platform (Fabric)
 
 *Powered by Python & Fabric REST APIs*
-This phase configures the logical architecture inside Microsoft Fabric through 9 deployment steps:
+This phase configures the logical architecture inside Microsoft Fabric through 10 deployment steps:
 
 1. **Workspace Setup**: Creates or configures the workspace on your Capacity
 2. **Workspace Administrators**: Adds administrators to the workspace
@@ -101,8 +101,9 @@ This phase configures the logical architecture inside Microsoft Fabric through 9
 5. **Sample Data**: Loads sample CSV datasets into the Bronze lakehouse
 6. **Notebooks**: Deploys 50+ notebooks for data transformation and management
 7. **Data Pipelines**: Executes sequential data transformation jobs (Bronze→Silver→Gold)
-8. **Environment**: Creates Fabric Environment with custom Python libraries
-9. **Data Agent**: Configures AI Data Agent with Lakehouse data source (preview feature)
+8. **Power BI Reports**: Deploys Power BI reports and configures dataset connections
+9. **Environment**: Creates Fabric Environment with custom Python libraries
+10. **Data Agent**: Configures AI Data Agent with Lakehouse data source (preview feature)
 
 #### Deployment Architecture
 
@@ -116,6 +117,7 @@ The Fabric deployment is orchestrated by [`deploy_udf_solution.py`](../infra/scr
 | [`udf_lakehouse.py`](../infra/scripts/fabric/helpers/udf_lakehouse.py) | Lakehouse deployment and data loading | `setup_lakehouses()`, `load_csv_data_to_lakehouse()` |
 | [`udf_notebook.py`](../infra/scripts/fabric/helpers/udf_notebook.py) | Notebook deployment with lakehouse references | `deploy_notebooks()` |
 | [`udf_jobs.py`](../infra/scripts/fabric/helpers/udf_jobs.py) | Sequential notebook execution | `schedule_notebook_jobs_sequential()` |
+| [`udf_powerbi.py`](../infra/scripts/fabric/helpers/udf_powerbi.py) | Power BI report deployment and dataset configuration | `deploy_powerbi_reports()` |
 | [`udf_environment.py`](../infra/scripts/fabric/helpers/udf_environment.py) | Environment creation with custom libraries | `setup_environment()` |
 | [`udf_data_agent.py`](../infra/scripts/fabric/helpers/udf_data_agent.py) | Data Agent configuration | `setup_data_agent()` |
 | [`utils.py`](../infra/scripts/fabric/helpers/utils.py) | Common utilities | Token replacement, file operations, logging |
@@ -375,12 +377,17 @@ The solution includes sample data for:
 
 #### Power BI Reports
 
-Any `.pbix` files found in the `reports/` directory will be automatically deployed to the workspace's reports folder. The deployment process:
+Power BI reports are automatically deployed as part of **Step 8** of the deployment process. Any `.pbix` files found in the `reports/` directory will be deployed to the workspace's reports folder with automatic dataset configuration:
 
-- Scans recursively through the reports directory
-- Uploads each Power BI report with conflict resolution (Create or Overwrite)
-- Assigns reports to the appropriate folder within the workspace
-- Provides deployment tracking and verification
+- **Report Deployment**: Scans recursively through the reports directory and uploads each report
+- **Conflict Resolution**: Uses Create or Overwrite mode for idempotent deployments
+- **Dataset Configuration**: Automatically configures dataset parameters to connect to the Gold lakehouse SQL endpoint
+  - Updates `ServerName` parameter with lakehouse connection string
+  - Updates `DatabaseName` parameter with lakehouse name
+- **Folder Organization**: Assigns reports to the reports folder within the workspace
+- **Error Handling**: Continues deployment if individual reports fail, with detailed logging
+
+**Note**: Dataset parameter updates require appropriate Power BI API permissions. Service Principals may experience limitations - see [Known Limitations](#7-known-limitations) for details.
 
 ##### PowerBI files
 

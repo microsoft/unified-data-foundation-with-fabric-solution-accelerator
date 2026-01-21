@@ -21,10 +21,10 @@ Usage:
 
 Environment Variables:
     AZURE_FABRIC_CAPACITY_NAME - The name of the Fabric capacity resource
-    AZURE_SOLUTION_SUFFIX - The solution name suffix used for resource naming
-    AZURE_FABRIC_WORKSPACE_NAME - Custom name for the Fabric workspace (optional)
-    AZURE_FABRIC_CAPACITY_ADMINISTRATORS - JSON array of capacity administrator identities (optional)
-    FABRIC_WORKSPACE_ADMINS - Comma-separated list of workspace administrator identities (optional)
+    AZURE_FABRIC_CAPACITY_ADMINISTRATORS - JSON array of capacity administrator identities (obtained in main.bicep)
+    SOLUTION_SUFFIX - The solution name suffix used for resource naming
+    FABRIC_WORKSPACE_NAME - Custom name for the Fabric workspace (optional)
+    FABRIC_WORKSPACE_ADMINISTRATORS - Comma-separated list of workspace administrator identities (optional)
 """
 
 import os
@@ -38,6 +38,7 @@ sys.path.append(os.path.dirname(__file__))
 # Import Fabric API clients
 from fabric_api import create_fabric_client, create_workspace_fabric_client, FabricApiError
 from graph_api import create_graph_client, GraphApiError
+from powerbi_api import create_powerbi_client
 
 # Import helper modules
 from helpers.utils import get_required_env_var, print_step, print_steps_summary, build_notebook_spec
@@ -47,6 +48,7 @@ from helpers.udf_folder import setup_folder_structure
 from helpers.udf_lakehouse import setup_lakehouses, load_csv_data_to_lakehouse
 from helpers.udf_notebook import deploy_notebooks
 from helpers.udf_jobs import schedule_notebook_jobs_sequential
+from helpers.udf_powerbi import deploy_powerbi_reports
 from helpers.udf_environment import setup_environment
 from helpers.udf_data_agent import setup_data_agent
 
@@ -113,6 +115,7 @@ def main():
         'load_csv_data_to_lakehouse',
         'deploy_notebooks',
         'schedule_notebook_jobs_sequential',
+        'deploy_powerbi_reports',
         'setup_environment',
         'setup_data_agent'
     ]
@@ -190,11 +193,18 @@ def main():
         print(f"❌ Failed to authenticate Graph API client: {e}")
         sys.exit(1)
     
+    try:
+        powerbi_client = create_powerbi_client()
+        print("✅ Power BI API client authenticated")
+    except Exception as e:
+        print(f"❌ Failed to authenticate Power BI API client: {e}")
+        sys.exit(1)
+    
     executed_steps = []
     failed_steps = []
     
     # Step 1: Setup workspace
-    print_step(1, 9, "Setting up Fabric workspace and capacity assignment", 
+    print_step(1, 10, "Setting up Fabric workspace and capacity assignment", 
                capacity_name=capacity_name, workspace_name=workspace_name)
     try:
         workspace_id = setup_workspace(
@@ -228,7 +238,7 @@ def main():
         sys.exit(1)
     
     # Step 2: Setup workspace administrators
-    print_step(2, 9, "Setting up Fabric workspace administrators", 
+    print_step(2, 10, "Setting up Fabric workspace administrators", 
                workspace_id=workspace_id, admin_list=', '.join(workspace_administrators) if workspace_administrators else "None")
     try:
         admin_result = setup_workspace_administrators(
@@ -248,7 +258,7 @@ def main():
         sys.exit(1)
     
     # Step 3: Setup folder structure
-    print_step(3, 9, "Setting up folder structure", folder_count=len(FABRIC_FOLDER_STRUCTURE))
+    print_step(3, 10, "Setting up folder structure", folder_count=len(FABRIC_FOLDER_STRUCTURE))
     try:
         fabric_folders = setup_folder_structure(
             workspace_client=workspace_client,
@@ -268,7 +278,7 @@ def main():
     # Step 4: Setup lakehouses
     lakehouse_folder_id = fabric_folders.get(FABRIC_FOLDER_LAKEHOUSES)
     
-    print_step(4, 9, "Setting up lakehouses", lakehouse_count=len(LAKEHOUSE_NAMES))
+    print_step(4, 10, "Setting up lakehouses", lakehouse_count=len(LAKEHOUSE_NAMES))
     try:
         fabric_lakehouses = setup_lakehouses(
             workspace_client=workspace_client,
@@ -290,7 +300,7 @@ def main():
     csv_folder_path = os.path.join(repo_root, 'infra', 'data')
     bronze_lakehouse = fabric_lakehouses[LAKEHOUSE_BRONZE]
     
-    print_step(5, 9, "Loading sample data to bronze lakehouse", 
+    print_step(5, 10, "Loading sample data to bronze lakehouse", 
                csv_folder=csv_folder_path)
     try:
         upload_result = load_csv_data_to_lakehouse(
@@ -373,7 +383,7 @@ def main():
         build_notebook_spec(f'{FABRIC_FOLDER_SILVER_TO_GOLD}/silver_to_gold_shared_productCategory.ipynb', LAKEHOUSE_SILVER, LAKEHOUSE_GOLD, fabric_folders),
     ]
     
-    print_step(6, 9, "Deploying notebooks", notebook_count=len(notebook_specs))
+    print_step(6, 10, "Deploying notebooks", notebook_count=len(notebook_specs))
     try:
         fabric_notebooks = deploy_notebooks(
             workspace_client=workspace_client,
@@ -392,7 +402,7 @@ def main():
         sys.exit(1)
     
     # Step 7: Execute notebooks
-    print_step(7, 9, "Executing data transformation pipelines", 
+    print_step(7, 10, "Executing data transformation pipelines", 
                notebook_count=len(NOTEBOOKS_TO_RUN))
     try:
         # Prepare notebook specs with IDs
@@ -421,10 +431,39 @@ def main():
         print_steps_summary(SOLUTION_NAME, solution_suffix, executed_steps, failed_steps, uncompleted_steps)
         sys.exit(1)
     
-    # Step 8: Setup environment
+    # Step 8: Deploy Power BI reports
+    reports_folder_path = os.path.join(repo_root, 'reports')
+    reports_fabric_folder_id = fabric_folders.get(FABRIC_FOLDER_REPORTS)
+    gold_lakehouse = fabric_lakehouses[LAKEHOUSE_GOLD]
+    gold_lakehouse_id = gold_lakehouse.get('id')
+    
+    print_step(8, 10, "Deploying Power BI reports", 
+               reports_folder=reports_folder_path)
+    try:
+        deployed_reports = deploy_powerbi_reports(
+            workspace_client=workspace_client,
+            powerbi_client=powerbi_client,
+            workspace_id=workspace_id,
+            reports_folder_path=reports_folder_path,
+            gold_lakehouse_id=gold_lakehouse_id,
+            gold_lakehouse_name=LAKEHOUSE_GOLD,
+            reports_fabric_folder_id=reports_fabric_folder_id
+        )
+        print(f"✅ Successfully completed: deploy_powerbi_reports")
+        executed_steps.append("deploy_powerbi_reports")
+    except Exception as e:
+        print(f"❌ Exception while executing deploy_powerbi_reports: {e}")
+        failed_steps.append({"step": "deploy_powerbi_reports", "error": str(e)})
+        # Calculate uncompleted steps
+        completed_step_names = executed_steps + [step['step'] for step in failed_steps]
+        uncompleted_steps = [step for step in ALL_DEPLOYMENT_STEPS if step not in completed_step_names]
+        print_steps_summary(SOLUTION_NAME, solution_suffix, executed_steps, failed_steps, uncompleted_steps)
+        sys.exit(1)
+    
+    # Step 9: Setup environment
     environment_folder_id = fabric_folders.get(FABRIC_FOLDER_ENVIRONMENT)
     
-    print_step(8, 9, "Setting up Fabric environment", 
+    print_step(9, 10, "Setting up Fabric environment", 
                environment_name=ENVIRONMENT_NAME)
     try:
         environment_info = setup_environment(
@@ -445,12 +484,12 @@ def main():
         print_steps_summary(SOLUTION_NAME, solution_suffix, executed_steps, failed_steps, uncompleted_steps)
         sys.exit(1)
     
-    # Step 9: Setup data agent
+    # Step 10: Setup data agent
     if environment_info:
         gold_lakehouse = fabric_lakehouses[LAKEHOUSE_GOLD]
         gold_lakehouse_id = gold_lakehouse.get('id')
         
-        print_step(9, 9, "Setting up Data Agent", 
+        print_step(10, 10, "Setting up Data Agent", 
                    data_agent_name=DATA_AGENT_NAME,
                    lakehouse_id=gold_lakehouse_id)
         try:
@@ -496,6 +535,8 @@ def main():
     print(f"   ☁️ Workspace:     {workspace_name}")
     print(f"   🏠 Lakehouses:    {', '.join(LAKEHOUSE_NAMES)}")
     print(f"   📓 Notebooks:     {len(fabric_notebooks)} deployed")
+    if 'deploy_powerbi_reports' in executed_steps:
+        print(f"   📊 Reports:       {len(deployed_reports)} Power BI reports")
     print(f"   🌍 Environment:   {ENVIRONMENT_NAME}")
     if 'setup_data_agent' in executed_steps:
         print(f"   🤖 Data Agent:    {DATA_AGENT_NAME} (✅ Configured)")
