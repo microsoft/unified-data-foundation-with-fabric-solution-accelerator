@@ -92,3 +92,9 @@ You can deploy the Power BI report using either of the following approaches:
 | Capacity/Performance | Resource limits or slow refresh | Consider scaling Fabric capacity |
 
 ---
+
+## Next Steps
+
+Once your Power BI report is deployed and working, you can start using **Copilot for Power BI** to interact with your data using natural language. For detailed guidance on using Copilot with this solution, including sample questions for the sales dashboard, see [Copilot for Power BI Guide](./CopilotForPowerBIGuide.md).
+
+---

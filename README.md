@@ -23,7 +23,6 @@ We have built flexibility and options so that you do not have to provision all t
 <br/>
 
 <div align="center">
-
 [**SOLUTION OVERVIEW**](#solution-overview) \| [**QUICK DEPLOY**](#quick-deploy) \| [**BUSINESS SCENARIO**](#business-use-case) \| [**SUPPORTING DOCUMENTATION**](#supporting-documentation)
 
 </div>
@@ -77,7 +76,9 @@ You can modify the data models and notebooks in different folders under the `src
 
 [Microsoft Fabric Blog](https://blog.fabric.microsoft.com/en-us/blog)
 
-[Microsoft Fabric Power BI Adoption roadmap](https://learn.microsoft.com/en-us/power-bi/guidance/fabric-adoption-roadmap) 
+[Microsoft Fabric Power BI Adoption roadmap](https://learn.microsoft.com/en-us/power-bi/guidance/fabric-adoption-roadmap)
+
+[Copilot for Power BI Guide](./docs/CopilotForPBI.md) 
 
 <br/>
 
@@ -90,7 +91,7 @@ You can modify the data models and notebooks in different folders under the `src
   - **Silver Lakehouse Data Flows into Gold Lakehouse with Automated Execution** <br/>Completed and automated process for validated data in silver tables flowing into gold tables for enrichment and utilization. 
   - **Power BI Semantic Models and Sales Analysis Dashboard** <br/>Power BI semantic models using gold tables, producing dashboards with comprehensive sales analysis. 
   - **Fabric Data Agent for Business Data Analysis** <br/>Fabric Data Agent can help you perform data analysis using natural business language. For detailed setup and usage, refer to [Fabric Data Agent Guide](./docs/FabricDataAgentGuide.md).
-  - **Copilot for Power BI** <br/>The built-in Copilot for Power BI can help you perform report analysis using natural business language. For details, refer to [Overview of Copilot for Power BI - Power BI](https://learn.microsoft.com/en-us/power-bi/create-reports/copilot-introduction). 
+  - **Copilot for Power BI** <br/>The built-in Copilot for Power BI can help you perform report analysis using natural business language. For detailed setup and usage, refer to [Copilot for Power BI Guide](./docs/CopilotForPowerBIGuide.md).
   - **Integration with Azure Databricks** <br/>
     Integration with Azure Databricks with Mirroring and Shortcut to eliminate the need for data movement. Additional sales data from Azure Databricks is made available to Fabric via data mirroring and shortcut. 
   - **Microsoft Purview for Data Governance** <br/>
@@ -153,7 +154,7 @@ After successful deployment of the Core Medallion Architecture in Microsoft Fabr
 - Sales Analysts create or update Power BI Semantic models based off Gold tier lakehouse.
 - Sales Analysts create or update Power BI dashboards. 
 - Sales Analysts or other business users can interact with the Fabric Data Agent using natural language to get quick insights and perform data analysis without writing code. For details, please refer to [Fabric Data Agent Guide](./docs/FabricDataAgentGuide.md).
-- Business users can also use Copilot for Power BI to ask questions directly within Power BI reports using natural language.
+- Business users can also use Copilot for Power BI to ask questions directly within Power BI reports using natural language.For details, please refer to [Copilot for Power BI Guide](./docs/CopilotForPowerBIGuide.md).
 
 Interactive PowerBI Report is illustrated below. 
 ![image](./docs/images/readme/pbi-report-ui.png)
