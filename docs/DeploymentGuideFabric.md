@@ -92,13 +92,39 @@ This phase creates the physical resources in your Azure subscription.
 ### 2️⃣ Phase 2: Data Platform (Fabric)
 
 *Powered by Python & Fabric REST APIs*
-This phase configures the logical architecture inside Microsoft Fabric.
+This phase configures the logical architecture inside Microsoft Fabric through 9 deployment steps:
 
-- **Workspace**: Creates or configures the workspace on your Capacity.
-- **Lakehouses**: Deploys the Medallion Architecture (`Bronze` → `Silver` → `Gold`).
-- **Notebooks**: Uploads 40+ notebooks for data processing and orchestration.
-- **Sample Data**: Ingests sample datasets (Finance, Sales) into the Bronze layer.
-- **Power BI**: Deploys pre-built reports and dashboards.
+1. **Workspace Setup**: Creates or configures the workspace on your Capacity
+2. **Workspace Administrators**: Adds administrators to the workspace
+3. **Folder Structure**: Creates organized folder structure (lakehouses, notebooks, reports, environment)
+4. **Lakehouses**: Deploys the Medallion Architecture (`Bronze` → `Silver` → `Gold`)
+5. **Sample Data**: Loads sample CSV datasets into the Bronze lakehouse
+6. **Notebooks**: Deploys 50+ notebooks for data transformation and management
+7. **Data Pipelines**: Executes sequential data transformation jobs (Bronze→Silver→Gold)
+8. **Environment**: Creates Fabric Environment with custom Python libraries
+9. **Data Agent**: Configures AI Data Agent with Lakehouse data source (preview feature)
+
+#### Deployment Architecture
+
+The Fabric deployment is orchestrated by [`deploy_udf_solution.py`](../infra/scripts/fabric/deploy_udf_solution.py), which coordinates modular helper functions:
+
+| Helper Module | Purpose | Key Functions |
+|---------------|---------|---------------|
+| [`udf_workspace.py`](../infra/scripts/fabric/helpers/udf_workspace.py) | Workspace creation and capacity assignment | `setup_workspace()` |
+| [`udf_workspace_admins.py`](../infra/scripts/fabric/helpers/udf_workspace_admins.py) | Administrator management with Graph API integration | `setup_workspace_administrators()` |
+| [`udf_folder.py`](../infra/scripts/fabric/helpers/udf_folder.py) | Folder structure creation | `setup_folder_structure()` |
+| [`udf_lakehouse.py`](../infra/scripts/fabric/helpers/udf_lakehouse.py) | Lakehouse deployment and data loading | `setup_lakehouses()`, `load_csv_data_to_lakehouse()` |
+| [`udf_notebook.py`](../infra/scripts/fabric/helpers/udf_notebook.py) | Notebook deployment with lakehouse references | `deploy_notebooks()` |
+| [`udf_jobs.py`](../infra/scripts/fabric/helpers/udf_jobs.py) | Sequential notebook execution | `schedule_notebook_jobs_sequential()` |
+| [`udf_environment.py`](../infra/scripts/fabric/helpers/udf_environment.py) | Environment creation with custom libraries | `setup_environment()` |
+| [`udf_data_agent.py`](../infra/scripts/fabric/helpers/udf_data_agent.py) | Data Agent configuration | `setup_data_agent()` |
+| [`utils.py`](../infra/scripts/fabric/helpers/utils.py) | Common utilities | Token replacement, file operations, logging |
+
+This modular architecture enables:
+- **Independent testing** of each deployment component
+- **Graceful error handling** with detailed progress tracking
+- **Easy customization** by modifying individual helper modules
+- **Reusability** across different deployment scenarios
 
 ### 🔄 Idempotency & Re-runs
 
@@ -336,11 +362,14 @@ The solution includes sample data for:
 
 #### Notebooks
 
-**Automation Components**:
+**Automation Components** (50+ notebooks total):
 
-- **Orchestration notebooks**: `run_bronze_to_silver`, `run_silver_to_gold`
-- **Transformation notebooks**: Domain-specific data processing for each entity
-- **Management utilities**: Table operations, schema definitions, troubleshooting tools
+- **Orchestration notebooks** (2): `run_bronze_to_silver`, `run_silver_to_gold` - Main pipeline execution
+- **Bronze to Silver transformations** (17): Domain-specific data processing for finance, sales, and shared entities
+- **Silver to Gold transformations** (19): Business-ready aggregations and data modeling
+- **Schema definitions** (8): Data models for Silver and Gold layers across all domains
+- **Data management utilities** (5): Table operations, troubleshooting, and maintenance tools
+- **Data Agent configuration** (1): AI Data Agent setup notebook
 
 ![Screenshot of resulting Fabric notebooks](./images/deployment/fabric/fabric_notebooks.png)
 
@@ -372,7 +401,8 @@ The solution accelerator provides flexible configuration options to customize yo
 > - Infrastructure: [`infra/main.bicep`](../infra/main.bicep) - Azure resource definitions
 > - Deployment orchestration: [`azure.yaml`](../azure.yaml) - AZD project configuration  
 > - CI/CD workflow: [`.github/workflows/azure-dev.yml`](../.github/workflows/azure-dev.yml) - GitHub Actions pipeline
-> - Fabric deployment: [`infra/scripts/fabric/create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) - Fabric workspace setup
+> - Fabric deployment: [`infra/scripts/fabric/deploy_udf_solution.py`](../infra/scripts/fabric/deploy_udf_solution.py) - Fabric workspace setup orchestrator
+> - Helper modules: [`infra/scripts/fabric/helpers/`](../infra/scripts/fabric/helpers/) - Modular deployment functions
 
 ### 🏗️ Infrastructure Configuration
 
@@ -437,15 +467,17 @@ For detailed capacity planning, see [Fabric capacity planning](https://learn.mic
 
 ### 🏢 Fabric Workspace Configuration
 
-Customize the Fabric workspace setup and naming conventions. These parameters are used by the [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) script during post-provisioning.
+Customize the Fabric workspace setup and naming conventions. These parameters are used by the [`deploy_udf_solution.py`](../infra/scripts/fabric/deploy_udf_solution.py) script during post-provisioning.
+
+> **⚠️ Important**: Variables marked as "Bicep output" (like `AZURE_FABRIC_CAPACITY_NAME`, `SOLUTION_SUFFIX`, `AZURE_FABRIC_CAPACITY_ADMINISTRATORS`) are automatically set by the deployment process and should **NOT** be manually configured. These are outputs from [`main.bicep`](../infra/main.bicep) and will be populated after infrastructure deployment.
 
 <details>
 <summary><strong>Workspace Settings</strong></summary>
 
 | Parameter | AZD Environment Variable | GitHub Actions Variable | Description | Default | Example |
 |-----------|-------------------------|------------------------|-------------|---------|---------|
-| **Capacity Name** | `AZURE_FABRIC_CAPACITY_NAME` | Bicep output | Microsoft Fabric capacity name (auto-generated from deployment) | Generated from Bicep | `fc-udfwfsa-abc123` |
-| **Workspace Name** | `AZURE_FABRIC_WORKSPACE_NAME` | `AZURE_FABRIC_WORKSPACE_NAME_DEV` | Custom name for the Fabric workspace | `Unified Data Foundation with Fabric workspace` | `"MyCompany Data Foundation"`, `"Analytics Platform - DEV"` |
+| **Capacity Name** | `AZURE_FABRIC_CAPACITY_NAME` | Bicep output (auto-set) | Microsoft Fabric capacity name - **DO NOT SET MANUALLY** (automatically populated from Bicep deployment) | Generated from Bicep | `fc-udfwfsa-abc123` |
+| **Workspace Name** | `FABRIC_WORKSPACE_NAME` | `AZURE_FABRIC_WORKSPACE_NAME_DEV` | Custom name for the Fabric workspace | `Unified Data Foundation - {solution_suffix}` | `"MyCompany Data Foundation"`, `"Analytics Platform - DEV"` |
 
 **Configuration Examples:**
 
@@ -453,7 +485,7 @@ Customize the Fabric workspace setup and naming conventions. These parameters ar
 <summary><strong>🖥️ Azure Developer CLI</strong></summary>
 
 ```bash
-azd env set AZURE_FABRIC_WORKSPACE_NAME "Analytics Platform - DEV"
+azd env set FABRIC_WORKSPACE_NAME "Analytics Platform - DEV"
 azd up
 ```
 
@@ -482,23 +514,27 @@ env:
 
 ### 👥 Fabric Workspace Administrator Configuration
 
-Manage workspace administrators and security permissions for the Fabric workspace. These parameters are processed by both the Bicep template ([`main.bicep`](../infra/main.bicep)) for capacity-level admins and the Fabric deployment script ([`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py)) for workspace-level admins.
+Manage workspace administrators and security permissions for the Fabric workspace. These parameters are processed by both the Bicep template ([`main.bicep`](../infra/main.bicep)) for capacity-level admins and the Fabric deployment script ([`deploy_udf_solution.py`](../infra/scripts/fabric/deploy_udf_solution.py)) for workspace-level admins.
 
 <details>
 <summary><strong>Admin Assignment Options</strong></summary>
 
 | Parameter | AZD Environment Variable | GitHub Actions Support | Description | Format | Example |
 |-----------|-------------------------|------------------------|-------------|--------|---------|
-| **Fabric Admins** | `AZURE_FABRIC_ADMIN_MEMBERS` | Bicep output | List of administrators (UPNs and Service Principal IDs) | JSON array | `["user1@contoso.com", "12345678-1234-1234-1234-123456789012"]` |
-| **Admins by Object ID** | `AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID` | Not directly supported* | List of object IDs with fallback user/service principal detection | JSON array | `["87654321-4321-4321-4321-210987654321"]` |
+| **Capacity Administrators** | `AZURE_FABRIC_CAPACITY_ADMINISTRATORS` | Bicep output (auto-set) | **DO NOT SET MANUALLY** - Automatically populated from Bicep deployment with capacity-level administrators | JSON array (read-only) | `["user1@contoso.com", "12345678-1234-1234-1234-123456789012"]` |
+| **Workspace Administrators** | `FABRIC_WORKSPACE_ADMINISTRATORS` | Via environment variables | Comma-separated list of workspace-level administrator identities. Accepts **User Principal Names (UPNs)** like `user@domain.com` OR **Azure Entra ID Object IDs (GUIDs)** obtained from Azure portal | Comma-separated string | `"user@contoso.com, admin@contoso.com"` OR `"87654321-4321-4321-4321-210987654321, 12345678-1234-1234-1234-123456789012"` |
 
 *GitHub Actions workflow uses Bicep output for admin configuration. See examples below for customization.*
 
-**Administrator Types Supported:**
+**Administrator Identity Formats:**
 
-- **User Principal Names (UPNs)**: `user@domain.com` format for individual users
-- **Service Principal IDs**: GUID format for application registrations  
-- **Object IDs**: Direct Azure AD object identifiers with automatic type detection
+`FABRIC_WORKSPACE_ADMINISTRATORS` accepts flexible identity formats:
+
+- **User Principal Names (UPNs)**: `user@domain.com` format for individual users (requires Graph API permissions to resolve)
+- **Azure Entra ID Object IDs (GUIDs)**: `12345678-1234-1234-1234-123456789012` format - recommended when Graph API permissions are unavailable
+  - Get user object IDs: `az ad user show --id user@contoso.com --query id -o tsv`
+  - Get service principal object IDs: `az ad sp show --id <app-id> --query id -o tsv`
+- **Mixed Format**: Combine UPNs and GUIDs in the same comma-separated list
 
 **Configuration Examples:**
 
@@ -506,8 +542,17 @@ Manage workspace administrators and security permissions for the Fabric workspac
 <summary><strong>🖥️ Azure Developer CLI</strong></summary>
 
 ```bash
-azd env set AZURE_FABRIC_ADMIN_MEMBERS '["user@contoso.com", "sp-guid"]'
-azd env set AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID '["object-id-guid"]'
+# NOTE: Do NOT manually set AZURE_FABRIC_CAPACITY_ADMINISTRATORS - it's automatically set by Bicep deployment
+
+# Option 1: Set workspace administrators using UPNs (requires Graph API permissions)
+azd env set FABRIC_WORKSPACE_ADMINISTRATORS "user@contoso.com, admin@contoso.com"
+
+# Option 2: Set workspace administrators using Azure Entra ID Object IDs (recommended when Graph API unavailable)
+azd env set FABRIC_WORKSPACE_ADMINISTRATORS "87654321-4321-4321-4321-210987654321, 12345678-1234-1234-1234-123456789012"
+
+# Option 3: Mix UPNs and Object IDs
+azd env set FABRIC_WORKSPACE_ADMINISTRATORS "user@contoso.com, 12345678-1234-1234-1234-123456789012"
+
 azd up
 ```
 
@@ -560,7 +605,7 @@ Administrators configured through these parameters will have **Admin** role on t
 
 ### 🐍 Python Environment Configuration Options
 
-Configure deployment behavior and troubleshooting options. These parameters are handled by the PowerShell orchestration script ([`run_python_script_fabric.ps1`](../infra/scripts/utils/run_python_script_fabric.ps1)).
+Configure deployment behavior and troubleshooting options. These parameters are handled by the PowerShell orchestration script ([`Run-PythonScript.ps1`](../infra/scripts/utils/Run-PythonScript.ps1)).
 
 <details>
 <summary><strong>Deployment Customization</strong></summary>
@@ -578,30 +623,30 @@ These options are primarily used for configuring the appropriate environment for
 <details>
 <summary><strong>🖥️ Azure Developer CLI</strong></summary>
 
-These parameters are automatically optimized in [`azure.yml`](../azure.yaml):
+These parameters are automatically optimized in [`azure.yaml`](../azure.yaml):
 
 ```yaml
 hooks:
   postprovision:
     windows:
       shell: pwsh
-      run: ./infra/scripts/utils/run_python_script_fabric.ps1
+      run: ./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
       interactive: true
       continueOnError: false
     posix:
       shell: pwsh
-      run: ./infra/scripts/utils/run_python_script_fabric.ps1 -SkipPythonVirtualEnvironment
+      run: ./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py" -SkipPythonVirtualEnvironment
       interactive: true
       continueOnError: false
   predown:
     windows:
       shell: pwsh
-      run: ./infra/scripts/utils/run_python_script_fabric_remove.ps1
+      run: ./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/remove_udf_solution.py"
       interactive: true
       continueOnError: false
     posix:
       shell: pwsh
-      run: ./infra/scripts/utils/run_python_script_fabric_remove.ps1 -SkipPythonVirtualEnvironment
+      run: ./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/remove_udf_solution.py" -SkipPythonVirtualEnvironment
       interactive: true
       continueOnError: false
 ```
@@ -616,9 +661,10 @@ These parameters are automatically optimized in [`azure-dev.yml`](../.github/wor
 ```yaml
 - name: Run Fabric Provisioning Script
   run: |
-    pwsh ./run_python_script_fabric.ps1 \
-      -SkipPythonVirtualEnvironment \
-      -SkipPythonDependencies \
+    pwsh ./infra/scripts/utils/Run-PythonScript.ps1 `
+      -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py" `
+      -SkipPythonVirtualEnvironment `
+      -SkipPythonDependencies `
       -SkipPipUpgrade
 ```
 
@@ -642,21 +688,23 @@ This section documents known limitations in the deployment process and their wor
 - Reports may show connection errors until manually configured
 
 **Technical Details**:
-The [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) script handles this gracefully:
+Power BI dataset parameter updates are handled by the deployment process. Note that Service Principals may have restricted API access for this operation.
 
 ```python
+# From the deployment helper modules
 try:
-    powerbi_client.update_powerbi_dataset_parameters(dataset_id=dataset['id'], parameters=[
-        {"name": "sqlEndpoint", "newValue": sql_endpoint},
-        {"name": "database", "newValue": database_name}
-    ])
+    powerbi_client.update_powerbi_dataset_parameters(
+        dataset_id=dataset['id'], 
+        parameters=[
+            {"name": "sqlEndpoint", "newValue": sql_endpoint},
+            {"name": "database", "newValue": lakehouse_name}
+        ]
+    )
     print(f"✅ Dataset parameters updated successfully for '{report_name}'")
 except Exception as param_error:
     if "HTTP 403" in str(param_error):
-        print(f"⚠️ WARNING: Cannot update dataset parameters automatically for '{report_name}'")
-        print(f"    Reason: API access restricted for service principal: {str(param_error)}")
-        print(f"    Manual action required:")
-        print(f"📋 Continuing deployment without dataset parameter updates...")
+        print(f"⚠️ WARNING: Cannot update dataset parameters automatically")
+        print(f"    Manual configuration required in Power BI service")
 ```
 
 **Workaround**:
@@ -678,7 +726,7 @@ except Exception as param_error:
 - This can result in workspaces that are only accessible to the deployment service principal
 
 **Technical Details**:
-The [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) script implements fallback logic:
+The [`udf_workspace_admins.py`](../infra/scripts/fabric/helpers/udf_workspace_admins.py) helper module implements fallback logic:
 
 ```python
 def detect_principal_type(admin_identifier, graph_client=None):
@@ -696,23 +744,20 @@ def detect_principal_type(admin_identifier, graph_client=None):
 
 **Workarounds**:
 
-1. **Use Object IDs Instead**: Configure administrators using the `--fabricAdminsByObjectId` parameter or `AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID` environment variable as described in the [advanced configuration options](#6-advanced-configuration-options):
+1. **Use Object IDs Directly**: Configure administrators using their Azure AD object IDs, which don't require Graph API resolution. Get object IDs using Azure CLI:
 
    ```bash
-   azd env set AZURE_FABRIC_ADMIN_MEMBERS_BY_OBJECT_ID '["87654321-4321-4321-4321-210987654321"]'
+   # Get user object ID
+   az ad user show --id user@contoso.com --query id -o tsv
+   
+   # Set administrators using object IDs (comma-separated)
+   azd env set FABRIC_WORKSPACE_ADMINISTRATORS "87654321-4321-4321-4321-210987654321, 12345678-1234-1234-1234-123456789012"
+   azd up
    ```
 
-   The script automatically tries both User and ServicePrincipal types for object IDs:
+   The helper module automatically detects whether an identifier is a UPN or object ID and handles accordingly.
 
-   ```python
-   for principal_type in ["User", "ServicePrincipal"]:
-       # Try both User and ServicePrincipal types
-   ```
-
-2. **Post-Deployment Admin Assignment**: Use the dedicated admin management scripts:
-   - [`add_fabric_workspace_admins.py`](../infra/scripts/fabric/add_fabric_workspace_admins.py) - Direct Python script for admin assignment
-   - [`run_python_script_fabric_admins.ps1`](../infra/scripts/utils/run_python_script_fabric_admins.ps1) - PowerShell orchestrator script
-   These scripts can add administrators to all available Fabric workspaces after initial deployment.
+2. **Post-Deployment Admin Assignment**: If Graph API permissions cannot be granted, add administrators manually after deployment through the Fabric portal workspace settings, or use the dedicated helper module [`udf_workspace_admins.py`](../infra/scripts/fabric/helpers/udf_workspace_admins.py) with appropriate credentials that have Graph API access.
 
 ---
 
@@ -726,7 +771,7 @@ def detect_principal_type(admin_identifier, graph_client=None):
 - Graceful exit with clear guidance on permission requirements
 
 **Technical Details**:
-The [`create_fabric_items.py`](../infra/scripts/fabric/create_fabric_items.py) script provides specific error handling for authorization failures:
+The [`deploy_udf_solution.py`](../infra/scripts/fabric/deploy_udf_solution.py) script provides specific error handling for authorization failures:
 
 ```python
 except FabricApiError as e:
@@ -783,22 +828,22 @@ Before removing Azure infrastructure, the cleanup process first handles the Micr
 **Windows (PowerShell):**
 
 ```powershell
-./infra/scripts/utils/run_python_script_fabric_remove.ps1
+./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/remove_udf_solution.py"
 ```
 
 **Unix/Linux (PowerShell Core):**
 
 ```bash
-./infra/scripts/utils/run_python_script_fabric_remove.ps1 -SkipPythonVirtualEnvironment
+./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/remove_udf_solution.py" -SkipPythonVirtualEnvironment
 ```
 
-This orchestration script ([`run_python_script_fabric_remove.ps1`](../infra/scripts/utils/run_python_script_fabric_remove.ps1)) manages:
+This orchestration script ([`Run-PythonScript.ps1`](../infra/scripts/utils/Run-PythonScript.ps1)) manages:
 
 - **Python Environment Setup**: Creates or reuses Python virtual environment with required dependencies
-- **Workspace Identification**: Locates the target workspace using environment variables or defaults
-- **Safe Deletion**: Executes the Python removal script with proper error handling and user guidance
+- **Script Execution**: Runs the specified Python script with proper error handling
+- **Cross-Platform Support**: Handles differences between Windows and Unix-based systems
 
-The core removal logic is handled by [`remove_fabric_workspace.py`](../infra/scripts/fabric/remove_fabric_workspace.py), which:
+The core removal logic is handled by [`remove_udf_solution.py`](../infra/scripts/fabric/remove_udf_solution.py), which:
 
 - **Workspace Lookup**: Finds the workspace by name or ID (defaults to "Unified Data Foundation with Fabric workspace")
 - **Comprehensive Removal**: Deletes all workspace items including notebooks, lakehouses, and datasets
