@@ -79,7 +79,7 @@ You can modify the data models and notebooks in different folders under the `src
 
 [Microsoft Fabric Power BI Adoption roadmap](https://learn.microsoft.com/en-us/power-bi/guidance/fabric-adoption-roadmap)
 
-[Copilot for Power BI Guide](./docs/CopilotForPBI.md) 
+[Copilot for Power BI Guide](./docs/CopilotForPowerBIGuide.md) 
 
 <br/>
 
