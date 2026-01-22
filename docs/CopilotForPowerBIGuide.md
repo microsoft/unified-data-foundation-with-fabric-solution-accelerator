@@ -34,11 +34,15 @@ Once the Power BI reports are deployed and connected to your `maag_gold` lakehou
 ### How to Access Copilot
 
 1. Open the **Sales Dashboard** report in your Fabric workspace
-2. Click on the **Copilot** button in the report toolbar
+2. Click on the **Copilot** button in the report toolbar (upper right)
 3. The Copilot pane will open on the right side of your screen
 4. Start asking questions about your sales data
 
    ![Locate Copilot](./images/deployment/copilotforPBI-locatecopilot.png)
+   
+   On right side of below image, you can see example interactions with Copilot for PBI. 
+   
+   ![Locate Copilot](./images/readme/pbi-report-ui.png)
 
 
 ---
