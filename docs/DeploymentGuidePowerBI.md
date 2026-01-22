@@ -59,7 +59,7 @@ You can deploy the Power BI report using either of the following approaches:
 ### Steps
 
 1. **Download the `.pbit` Template**
-   - From the repository’s [reports](./reports) folder, download the `.pbit` template file.
+   - From the repository's [reports](../reports) folder, download the `.pbit` template file.
 
 2. **Open in Power BI Desktop**
    - Launch Power BI Desktop and open the downloaded `.pbit` file.  
