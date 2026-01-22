@@ -23,6 +23,7 @@ We have built flexibility and options so that you do not have to provision all t
 <br/>
 
 <div align="center">
+
 [**SOLUTION OVERVIEW**](#solution-overview) \| [**QUICK DEPLOY**](#quick-deploy) \| [**BUSINESS SCENARIO**](#business-use-case) \| [**SUPPORTING DOCUMENTATION**](#supporting-documentation)
 
 </div>
