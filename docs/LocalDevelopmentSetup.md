@@ -32,7 +32,7 @@ $env:AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 
 # Run Deployment Script
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\run_python_script_fabric.ps1
+.\Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 #### Option 2: Windows with WSL2 (Recommended)
@@ -53,8 +53,8 @@ export AZURE_FABRIC_CAPACITY_NAME="your-existing-capacity-name"
 export AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 
 # Run deployment
-chmod +x run_python_script_fabric.ps1
-pwsh ./run_python_script_fabric.ps1
+chmod +x Run-PythonScript.ps1
+pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 ### Linux Development
@@ -74,8 +74,8 @@ export AZURE_FABRIC_CAPACITY_NAME="your-existing-capacity-name"
 export AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 
 # Run deployment
-chmod +x run_python_script_fabric.ps1
-pwsh ./run_python_script_fabric.ps1
+chmod +x Run-PythonScript.ps1
+pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 #### RHEL/CentOS/Fedora
@@ -93,8 +93,8 @@ export AZURE_FABRIC_CAPACITY_NAME="your-existing-capacity-name"
 export AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 
 # Run deployment
-chmod +x run_python_script_fabric.ps1
-pwsh ./run_python_script_fabric.ps1
+chmod +x Run-PythonScript.ps1
+pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 ### macOS Development
@@ -115,8 +115,8 @@ export AZURE_FABRIC_CAPACITY_NAME="your-existing-capacity-name"
 export AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 
 # Run deployment
-chmod +x run_python_script_fabric.ps1
-pwsh ./run_python_script_fabric.ps1
+chmod +x Run-PythonScript.ps1
+pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 > **Note**: Manual scripts do **not** create the Fabric capacity or Azure infrastructure. These must exist beforehand. For complete infrastructure deployment, use `azd up` instead.
@@ -222,8 +222,8 @@ export AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 
 ```bash
 cd infra/scripts/utils
-chmod +x run_python_script_fabric.ps1
-pwsh ./run_python_script_fabric.ps1
+chmod +x Run-PythonScript.ps1
+pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 **For Windows PowerShell:**
@@ -231,7 +231,7 @@ pwsh ./run_python_script_fabric.ps1
 ```powershell
 cd infra\scripts\utils
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\run_python_script_fabric.ps1
+.\Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 ### Step 4: Monitor Deployment Progress
@@ -343,7 +343,7 @@ In your Fabric workspace, verify:
 | Issue | Possible Cause | Resolution |
 |-------|----------------|------------|
 | Script not found | Incorrect directory | Ensure you're in `infra/scripts/utils` directory |
-| Permission denied | Script not executable | Run `chmod +x run_python_script_fabric.ps1` |
+| Permission denied | Script not executable | Run `chmod +x Run-PythonScript.ps1` |
 | Authentication error | Not logged into Azure | Run `az login` and verify authentication |
 | Capacity not found | Wrong capacity name | Verify capacity name with `az fabric capacity list` |
 | Workspace creation failed | Insufficient permissions | Ensure Fabric admin permissions on capacity |
@@ -380,14 +380,14 @@ In your Fabric workspace, verify:
 **For Linux/macOS/Cloud Shell:**
 
 ```bash
-pwsh -c './run_python_script_fabric.ps1 -Verbose'
+pwsh -c './Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py" -Verbose'
 ```
 
 **For Windows PowerShell:**
 
 ```powershell
 $VerbosePreference = "Continue"
-.\run_python_script_fabric.ps1 -Verbose
+.\Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py" -Verbose
 ```
 
 #### Check Environment Variables
@@ -467,7 +467,8 @@ Create a pipeline step for manual deployment:
     azureSubscription: '$(serviceConnectionName)'
     scriptType: 'powershell'
     scriptLocation: 'scriptPath'
-    scriptPath: 'infra/scripts/utils/run_python_script_fabric.ps1'
+    scriptPath: 'infra/scripts/utils/Run-PythonScript.ps1'
+    arguments: '-ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"'
   env:
     AZURE_FABRIC_CAPACITY_NAME: $(fabricCapacityName)
     AZURE_FABRIC_WORKSPACE_NAME: $(fabricWorkspaceName)
@@ -481,8 +482,8 @@ Create a workflow step for manual deployment:
 - name: Deploy Fabric Components
   run: |
     cd infra/scripts/utils
-    chmod +x run_python_script_fabric.ps1
-    pwsh ./run_python_script_fabric.ps1
+    chmod +x Run-PythonScript.ps1
+    pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
   env:
     AZURE_FABRIC_CAPACITY_NAME: ${{ secrets.FABRIC_CAPACITY_NAME }}
     AZURE_FABRIC_WORKSPACE_NAME: ${{ vars.FABRIC_WORKSPACE_NAME }}
