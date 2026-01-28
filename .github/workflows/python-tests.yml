@@ -116,3 +116,32 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
           cd src/fabric && python -m coverage report >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
+          cd ../../..
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📈 Total Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Calculate total coverage across all modules
+          FABRIC_STATS=$(cd infra/scripts/fabric && python -m coverage report | grep "TOTAL" | awk '{print $2, $3}')
+          DATABRICKS_STATS=$(cd infra/scripts/databricks && python -m coverage report | grep "TOTAL" | awk '{print $2, $3}')
+          UTILS_STATS=$(cd src/fabric && python -m coverage report | grep "TOTAL" | awk '{print $2, $3}')
+          
+          FABRIC_STMTS=$(echo $FABRIC_STATS | awk '{print $1}')
+          FABRIC_MISS=$(echo $FABRIC_STATS | awk '{print $2}')
+          DATABRICKS_STMTS=$(echo $DATABRICKS_STATS | awk '{print $1}')
+          DATABRICKS_MISS=$(echo $DATABRICKS_STATS | awk '{print $2}')
+          UTILS_STMTS=$(echo $UTILS_STATS | awk '{print $1}')
+          UTILS_MISS=$(echo $UTILS_STATS | awk '{print $2}')
+          
+          TOTAL_STMTS=$((FABRIC_STMTS + DATABRICKS_STMTS + UTILS_STMTS))
+          TOTAL_MISS=$((FABRIC_MISS + DATABRICKS_MISS + UTILS_MISS))
+          TOTAL_COVERED=$((TOTAL_STMTS - TOTAL_MISS))
+          TOTAL_PERCENT=$(echo "scale=0; $TOTAL_COVERED * 100 / $TOTAL_STMTS" | bc)
+          
+          echo "| Module | Statements | Missing | Coverage |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|------------|---------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Fabric APIs | $FABRIC_STMTS | $FABRIC_MISS | $((($FABRIC_STMTS - $FABRIC_MISS) * 100 / $FABRIC_STMTS))% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Databricks Scripts | $DATABRICKS_STMTS | $DATABRICKS_MISS | $((($DATABRICKS_STMTS - $DATABRICKS_MISS) * 100 / $DATABRICKS_STMTS))% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Utility Modules | $UTILS_STMTS | $UTILS_MISS | $((($UTILS_STMTS - $UTILS_MISS) * 100 / $UTILS_STMTS))% |" >> $GITHUB_STEP_SUMMARY
+          echo "| **TOTAL** | **$TOTAL_STMTS** | **$TOTAL_MISS** | **${TOTAL_PERCENT}%** |" >> $GITHUB_STEP_SUMMARY
