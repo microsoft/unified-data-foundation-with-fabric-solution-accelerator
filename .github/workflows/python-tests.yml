@@ -40,20 +40,20 @@ jobs:
       - name: Run Fabric API tests
         working-directory: infra/scripts/fabric
         run: |
-          python -m coverage run --source=. -m unittest discover -s . -p "test_*.py" -v
-          python -m coverage report --omit="*test_*" --fail-under=80
+          python -m coverage run --source=fabric_api,graph_api,powerbi_api -m unittest discover -s . -p "test_*.py" -v
+          python -m coverage report --fail-under=80
 
       - name: Run Databricks tests
         working-directory: infra/scripts/databricks
         run: |
-          python -m coverage run --source=. -m unittest discover -s . -p "test_*.py" -v
-          python -m coverage report --omit="*test_*" --fail-under=75
+          python -m coverage run --source=create_databricks_items_maag -m unittest discover -s . -p "test_*.py" -v
+          python -m coverage report --fail-under=75
 
       - name: Run Fabric Utility tests
         working-directory: src/fabric
         run: |
-          python -m coverage run --source=. -m unittest discover -s . -p "test_*.py" -v
-          python -m coverage report --omit="*test_*" --fail-under=95
+          python -m coverage run --source=util_replace_lakhouse_name,util_replace_workspace_name -m unittest discover -s . -p "test_*.py" -v
+          python -m coverage report --fail-under=95
 
   coverage-report:
     runs-on: ubuntu-latest
@@ -77,19 +77,19 @@ jobs:
         run: |
           # Run Fabric API tests
           cd infra/scripts/fabric
-          python -m coverage run --source=. -m unittest discover -s . -p "test_*.py"
+          python -m coverage run --source=fabric_api,graph_api,powerbi_api -m unittest discover -s . -p "test_*.py"
           cp .coverage ../../../.coverage.fabric
           cd ../../..
           
           # Run Databricks tests
           cd infra/scripts/databricks
-          python -m coverage run --source=. -m unittest discover -s . -p "test_*.py"
+          python -m coverage run --source=create_databricks_items_maag -m unittest discover -s . -p "test_*.py"
           cp .coverage ../../../.coverage.databricks
           cd ../../..
           
           # Run Utility tests
           cd src/fabric
-          python -m coverage run --source=. -m unittest discover -s . -p "test_*.py"
+          python -m coverage run --source=util_replace_lakhouse_name,util_replace_workspace_name -m unittest discover -s . -p "test_*.py"
           cp .coverage ../../.coverage.utils
           cd ../..
 
@@ -100,19 +100,19 @@ jobs:
           
           echo "### Fabric APIs (infra/scripts/fabric/)" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          cd infra/scripts/fabric && python -m coverage report --omit="*test_*" >> $GITHUB_STEP_SUMMARY
+          cd infra/scripts/fabric && python -m coverage report >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           cd ../../..
           
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Databricks Scripts (infra/scripts/databricks/)" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          cd infra/scripts/databricks && python -m coverage report --omit="*test_*" >> $GITHUB_STEP_SUMMARY
+          cd infra/scripts/databricks && python -m coverage report >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           cd ../../..
           
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Utility Modules (src/fabric/)" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          cd src/fabric && python -m coverage report --omit="*test_*" >> $GITHUB_STEP_SUMMARY
+          cd src/fabric && python -m coverage report >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
