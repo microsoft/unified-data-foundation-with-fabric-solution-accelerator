@@ -1,51 +1,54 @@
 from fabric_api import create_fabric_client, FabricApiError
-import argparse
 import sys
 import os
+
+def get_required_env_var(var_name: str) -> str:
+    """Get a required environment variable or exit with error.
+    
+    Args:
+        var_name: Name of the environment variable to retrieve
+        
+    Returns:
+        Value of the environment variable
+        
+    Raises:
+        SystemExit: If the environment variable is not set
+    """
+    value = os.getenv(var_name)
+    if not value:
+        print(f"❌ Missing environment variable: {var_name}")
+        sys.exit(1)
+    return value
 
 ####################
 # Variables set up #
 ####################
 
-solution_name = "Unified Data Foundation with Fabric"
-workspace_default_name = f"{solution_name} workspace"
+SOLUTION_NAME = "Unified Data Foundation"
 script_dir = os.path.dirname(os.path.abspath(__file__))
 # Go up three levels from infra/scripts/fabric to repo root
 repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
 
-##########################
-# Command line arguments #
-##########################
+##############################
+# Environment Variable Setup #
+##############################
 
-# Parse command line arguments
-parser = argparse.ArgumentParser(
-    description=f'Remove {solution_name} workspace from Microsoft Fabric')
-parser.add_argument('--workspaceName', required=False,
-                    help='Workspace name to delete')
-parser.add_argument('--workspaceId', required=False,
-                    help='Workspace ID (GUID) to delete')
-args = parser.parse_args()
+# Load configuration from environment variables
+solution_suffix = get_required_env_var("SOLUTION_SUFFIX")
+workspace_name = os.getenv("FABRIC_WORKSPACE_NAME", f"{SOLUTION_NAME} - {solution_suffix}")
+workspace_id = os.getenv("FABRIC_WORKSPACE_ID")
+if workspace_name and workspace_id:
+    print("⚠️ WARNING: Both FABRIC_WORKSPACE_NAME and FABRIC_WORKSPACE_ID are set")
+    print("   Using workspace name and ignoring workspace ID...")
+    workspace_id = None
 
-# Validate arguments and set defaults
-if not args.workspaceName and not args.workspaceId:
-    # Use default workspace name if no parameters provided
-    args.workspaceName = workspace_default_name
-    print(f"ℹ️  No workspace specified, using default workspace name: '{args.workspaceName}'")
-
-if args.workspaceName and args.workspaceId:
-    print("⚠️ WARNING: Please specify either --workspaceName or --workspaceId, not both")
-    print("   Exiting gracefully...")
-    sys.exit(0)
-
-print(f"🗑️  Starting {solution_name} workspace removal from Microsoft Fabric")
-if args.workspaceName:
-    print(f"📋 Target workspace name: {args.workspaceName}")
+print(f"🗑️  Starting {SOLUTION_NAME} workspace removal from Microsoft Fabric")
+print(f"📋 Solution suffix: {solution_suffix}")
+if workspace_name:
+    print(f"📋 Target workspace name: {workspace_name}")
 else:
-    print(f"📋 Target workspace ID: {args.workspaceId}")
+    print(f"📋 Target workspace ID: {workspace_id}")
 print("-" * 60)
-
-workspace_name = args.workspaceName
-workspace_id = args.workspaceId
 
 ##########################
 # Clients authentication #
@@ -71,7 +74,7 @@ try:
     # If workspace name is provided, look it up to get the ID
     if workspace_name:
         print(f"🔍 Looking up workspace: '{workspace_name}'")
-        workspaces = fabric_client.get_workspaces()
+        workspaces = fabric_client.list_workspaces()
         workspace = next(
             (w for w in workspaces if w['displayName'].lower() == workspace_name.lower()), None)
         
@@ -89,7 +92,7 @@ try:
     else:
         # If workspace ID is provided, verify it exists
         print(f"🔍 Verifying workspace ID: '{workspace_id}'")
-        workspaces = fabric_client.get_workspaces()
+        workspaces = fabric_client.list_workspaces()
         workspace = next(
             (w for w in workspaces if w['id'].lower() == workspace_id.lower()), None)
         
@@ -180,7 +183,7 @@ except Exception as e:
 ##################
 
 print("-" * 60)
-print(f"🎉 {solution_name} workspace removal completed successfully!")
+print(f"🎉 {SOLUTION_NAME} workspace removal completed successfully!")
 print(f"✅ Deleted workspace: {workspace_display_name}")
 print(f"✅ Workspace ID: {workspace_id}")
 print("-" * 60)

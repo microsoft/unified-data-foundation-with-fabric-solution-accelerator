@@ -114,22 +114,71 @@ You will need the following values for deployment process later. Be sure to reco
 
     ![Catalog Location](./images/deployment/6-DatabricksCatalogLocation.png)  
 
+> **Note:** If you cannot find an external location, refer to the [Troubleshooting](#troubleshooting) section below.
+
 ---
 
 ## Step 5: Connect Databricks to Fabric
 
 1. In your Fabric workspace, click **+ New item**.
-2. Search for "Azure Databricks" and select **Mirrored Azure Databricks Catalog**.
-3. Choose **New connection**.
-4. Enter your Databricks workspace URL (copied earlier, e.g., `https://adb-<WorkspaceID>.azuredatabricks.net`).
-5. Name your connection, select **Microsoft Entra ID** for authentication, and sign in.
-6. Click **Connect**.
+2. Select **Folder** and name it `databricks`.
+3. Open the newly created `databricks` folder to navigate into it.
+4. Within the folder, click **+ New item** again.
+5. Search for "Azure Databricks" and select **Mirrored Azure Databricks Catalog**.
+6. Choose **New connection**.
+7. Enter your Databricks workspace URL (copied earlier, e.g., `https://adb-<WorkspaceID>.azuredatabricks.net`).
+8. Name your connection, select **Microsoft Entra ID** for authentication, and sign in.
+9. Click **Connect**.
 
 After setup, you can reuse this connection by choosing **Existing connection**.
 
 ---
 
-## Next Steps
+## Troubleshooting
 
+### 1. If a managed location is not created by default in your Azure Databricks workspace
+
+Follow these steps to manually create an external location:
+
+1. **Navigate to External Locations in Databricks:**
+     - In your Databricks workspace, click **Catalog** (left menu).
+     - Click the **gear** icon at the top and select **External Locations**.
+     - Click **Create Location**.
+
+2. **Find the storage path URL:**
+     - Go to the [Azure Portal](https://portal.azure.com/).
+     - Navigate to your Azure Databricks resource group.
+     - Locate and click on the **Managed Resource Group**.
+     - In the managed resource group, find the **Storage Account** (usually named `dbstorage<random-string>`).
+     - Click on the storage account and select **Containers** from the left menu.
+     - Note the **Container Name** (commonly `unity-catalog` or similar).
+     - Construct the storage path URL using this format:  
+       ```
+       abfss://<container-name>@<storage-account-name>.dfs.core.windows.net/<optional-path>
+       ```
+     - Example: `abfss://unity-catalog@dbstorage123abc.dfs.core.windows.net/managed-location`
+
+3. **Create or select a Storage Credential:**
+     - In the Databricks **Create Location** dialog, you'll need to select or create a **Storage Credential** that has access to the storage account.
+     - If you need to create a new storage credential, you'll need the **Access Connector ID**:
+       - In the [Azure Portal](https://portal.azure.com/), go to your Azure Databricks resource group.
+       - Open the **Managed Resource Group**.
+       - Look for the **Access Connector for Azure Databricks** resource (named something like `<workspace-name>-accessconnector`).
+       - Click on the Access Connector resource.
+       - Copy the **Resource ID** from the Overview page or Properties section.
+     - Use this Access Connector ID when creating the storage credential in Databricks.
+
+4. **Complete the external location setup:**
+     - Enter a **Location Name** for your external location.
+     - Paste the storage path URL you constructed in step 2.
+     - Select the storage credential from step 3.
+     - Click **Create** to finalize the external location.
+
+5. **Verify the managed location:**
+     - Once created, return to **Catalogs → Settings** to verify and copy the managed location URL.
+
+
+
+## Next Steps
 
 For deploying Databricks resources, follow instructions the [Deployment Guide for Databricks](./DeploymentGuideDatabricks.md).

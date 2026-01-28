@@ -2,9 +2,11 @@
 
 This solution accelerator provides a unified data foundation with integrated data architecture leveraging Microsoft Fabric, OneLake, Microsoft Purview, and Azure Databricks to deliver a unified, integrated, and governed analytics platform.
 
-Built with principles of [medallion lakehouse architecture](https://learn.microsoft.com/en-us/fabric/onelake/onelake-medallion-lakehouse-architecture), the solution accelerator supports data mesh concepts with a sample implementation. It provides domain schemas and sample data as a framework for shared domains (customer, product), finance, and sales across multiple channels. You can easily adopt the framework and update the domain models with your own. The solution seamlessly integrates sales channel data hosted in Azure Databricks, utilizing Fabric's data mirroring and shortcut to bring this data into the gold tier for unified analytics and reporting. Pre-built Power BI dashboards showcase advanced sales analytics. Advanced data governance is powered by Microsoft Purview, ensuring compliance and transparency.
+Built with principles of [medallion lakehouse architecture](https://learn.microsoft.com/en-us/fabric/onelake/onelake-medallion-lakehouse-architecture), the solution accelerator supports data mesh concepts with a sample implementation. It provides domain schemas and sample data as a framework for shared domains (customer, product), finance, and sales across multiple channels. You can easily adopt the framework and update the domain models with your own. The solution seamlessly integrates sales channel data hosted in Azure Databricks, utilizing Fabric's data mirroring and shortcuts to bring this data into the gold tier for unified analytics and reporting. Pre-built Power BI dashboards showcase advanced sales analytics. Advanced data governance is powered by Microsoft Purview, ensuring compliance and transparency.
 
-This solution accelerator demonstrates how organizations can unify, govern, and analyze data across multiple domains and platforms using modern lakehouse architecture and robust governance, enabling rapid development of analytics solutions for diverse business needs.
+The solution includes a customized Fabric Data Agent that can facilitate interactions from users' inquiries about the data in business terms. The built-in Copilot for Power BI is available for users to interactively query the Power BI reports using business terminology. 
+
+This solution accelerator demonstrates how organizations can unify, govern, and analyze data across multiple domains and platforms using modern lakehouse architecture and robust governance, enabling rapid development of analytics solutions for diverse business needs. The solution accelerator illustrates how to leverage advanced AI capabilities such as Fabric Data Agent and Copilot for Power BI.
 
 We have built flexibility and options so that you do not have to provision all three platforms (Microsoft Fabric, Microsoft Purview, and Azure Databricks) all at once. Please see details in the Solution Overview section below for more details.
 
@@ -15,6 +17,8 @@ We have built flexibility and options so that you do not have to provision all t
 - Sales analytics across data stored in Fabric and Azure Databricks
 - Finance data management and foundation for reporting
 - Power BI dashboards for sales data with actionable business insights
+- Fabric Data Agent answering users' questions with intelligence derived from the data.
+- The built-in Copilot for Power BI answering users' questions on the reports.
 
 <br/>
 
@@ -36,6 +40,8 @@ We have built a flexible and configurable architecture with plug-and-play option
 3. **Core Medallion Architecture in Microsoft Fabric + Azure Databricks**
 4. **Core Medallion Architecture in Microsoft Fabric + Microsoft Purview + Azure Databricks**
 
+Note: The Fabric Data Agent and Copilot for Power BI are available across all architecture options.
+
 For a detailed feature description of each architecture option, please refer to [Solution Architecture and Options](./docs/TechnicalArchitecture.md).
 
 ### Solution architecture
@@ -49,9 +55,11 @@ The architecture below illustrates the solution architecture built with option 4
 ### How to customize
 If you'd like to customize the solution accelerator, here are some common areas to start:
 
-You can modify the data models and notebooks in different folders under the `src` folder. Please note if any part is modified, you will need to modify the associated parts accordingly, as the data model (schemas and tables), notebooks, Power BI semantic models, Power BI dashboards, and sample data are a cohesive set of resources working together as designed. 
+You can modify the data models and notebooks in different folders under the `src` folder. Please note that if any part is modified, you will need to modify the associated parts accordingly, as the data model (schemas and tables), notebooks, Power BI semantic models, Power BI dashboards, and sample data are a cohesive set of resources working together as designed. 
 
 [Customize Schema](./src/fabric/notebooks/schema)
+
+[Customize Fabric Data Agent](./docs/fabric_data_agent)
 
 [Update Data Management Notebooks](./src/fabric/notebooks/data_management)
 
@@ -69,25 +77,24 @@ You can modify the data models and notebooks in different folders under the `src
 
 [Microsoft Fabric Blog](https://blog.fabric.microsoft.com/en-us/blog)
 
-[Microsoft Fabric Power BI Adoption roadmap](https://learn.microsoft.com/en-us/power-bi/guidance/fabric-adoption-roadmap) 
+[Microsoft Fabric Power BI Adoption roadmap](https://learn.microsoft.com/en-us/power-bi/guidance/fabric-adoption-roadmap)
+
+[Copilot for Power BI Guide](./docs/CopilotForPowerBIGuide.md) 
 
 <br/>
 
 ### Key features
-<details open>
+<details>
   <summary>Click to learn more about the key features this solution enables</summary>
 
   - **Core Medallion Architecture in Fabric** <br/>Core medallion architecture in unified Microsoft Fabric Platform, with cross-domain data models covering shared (customer, product), finance, and sales across multiple channels. The solution is packaged with 48 Fabric PySpark Notebooks and 2 SQL scripts. All of them are deployed to the Fabric workspace with an automated deployment process. 
-    
   - **Raw data in Bronze to Silver Lakehouse Tables with Automated Execution** <br/>Complete and automated process for raw data processing from bronze to validated data populated to silver tables. 
-    
   - **Silver Lakehouse Data Flows into Gold Lakehouse with Automated Execution** <br/>Completed and automated process for validated data in silver tables flowing into gold tables for enrichment and utilization. 
-    
   - **Power BI Semantic Models and Sales Analysis Dashboard** <br/>Power BI semantic models using gold tables, producing dashboards with comprehensive sales analysis. 
-    
+  - **Fabric Data Agent for Business Data Analysis** <br/>Fabric Data Agent can help you perform data analysis using natural business language. For detailed setup and usage, refer to [Fabric Data Agent Guide](./docs/FabricDataAgentGuide.md).
+  - **Copilot for Power BI** <br/>The built-in Copilot for Power BI can help you perform report analysis using natural business language. For detailed setup and usage, refer to [Copilot for Power BI Guide](./docs/CopilotForPowerBIGuide.md).
   - **Integration with Azure Databricks** <br/>
     Integration with Azure Databricks with Mirroring and Shortcut to eliminate the need for data movement. Additional sales data from Azure Databricks is made available to Fabric via data mirroring and shortcut. 
-
   - **Microsoft Purview for Data Governance** <br/>
     Microsoft Purview reviews and governs selected resources in the Microsoft Fabric workspace, providing capabilities such as scanning data, data discovery, and metadata for the data stored in the Fabric workspace gold tier.
 
@@ -101,12 +108,25 @@ You can modify the data models and notebooks in different folders under the `src
 Quick deploy
 </h2>
 
-### How to install or deploy
-If you choose option 1, "Core Medallion Architecture in Microsoft Fabric only", you can deploy using either:
-- [Automated deployment with Azure Developer CLI](./docs/DeploymentGuideFabric.md) (recommended for quick setup)
-- [Manual deployment scripts](./docs/DeploymentGuideFabricManual.md) for users who prefer more granular control over the deployment process
+### Deployment methods
 
-For other architecture options, please follow the instructions provided in [deployment guide for all options](./docs/DeploymentGuide.md).
+Deploy this solution accelerator to your Azure subscription using either automated or manual deployment methods.
+
+> ⚠️ **Important:** Before deploying, check [capacity requirements](./docs/DeploymentGuideFabric.md#software-requirements) to ensure sufficient Azure Fabric capacity is available in your subscription.
+
+#### Option 1: Automated Deployment (Recommended)
+
+📖 **[Click here to launch the automated deployment guide](./docs/DeploymentGuideFabric.md)** and choose your preferred environment for one-click automated deployment:
+
+| [![Open in Azure Cloud Shell](https://img.shields.io/static/v1?style=for-the-badge&label=Azure%20Cloud%20Shell&message=Open&color=0078D4&logo=microsoft-azure&logoColor=white)](https://shell.azure.com) | [![Open in GitHub Codespaces](https://img.shields.io/static/v1?style=for-the-badge&label=GitHub%20Codespaces&message=Open&color=181717&logo=github&logoColor=white)](https://codespaces.new/microsoft/unified-data-foundation-with-fabric-solution-accelerator?quickstart=1) | [![Open in Dev Container](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Container&message=Open&color=blue&logo=docker&logoColor=white)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator) | [![Open in Visual Studio Code Web](https://img.shields.io/static/v1?style=for-the-badge&label=Visual%20Studio%20Code%20(Web)&message=Open&color=blue&logo=visualstudiocode&logoColor=white)](https://vscode.dev/azure/?vscode-azure-exp=foundry&agentPayload=eyJiYXNlVXJsIjogImh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9taWNyb3NvZnQvdW5pZmllZC1kYXRhLWZvdW5kYXRpb24td2l0aC1mYWJyaWMtc29sdXRpb24tYWNjZWxlcmF0b3IvcmVmcy9oZWFkcy9tYWluL2luZnJhL3ZzY29kZV93ZWIiLCAiaW5kZXhVcmwiOiAiL2luZGV4Lmpzb24iLCAidmFyaWFibGVzIjogeyJhZ2VudElkIjogIiIsICJjb25uZWN0aW9uU3RyaW5nIjogIiIsICJ0aHJlYWRJZCI6ICIiLCAidXNlck1lc3NhZ2UiOiAiIiwgInBsYXlncm91bmROYW1lIjogIiIsICJsb2NhdGlvbiI6ICIiLCAic3Vic2NyaXB0aW9uSWQiOiAiIiwgInJlc291cmNlSWQiOiAiIiwgInByb2plY3RSZXNvdXJjZUlkIjogIiIsICJlbmRwb2ludCI6ICIifSwgImNvZGVSb3V0ZSI6IFsiYWktcHJvamVjdHMtc2RrIiwgInB5dGhvbiIsICJkZWZhdWx0LWF6dXJlLWF1dGgiLCAiZW5kcG9pbnQiXX0=) |
+|---|---|---|---|
+
+#### Option 2: Manual Deployment
+
+For granular control over each deployment step or to integrate with existing resources:
+
+- **Fabric-only architecture:** Follow the [manual deployment guide](./docs/DeploymentGuideFabricManual.md) for step-by-step instructions with options to use existing Fabric capacity
+- **Full architecture (Fabric + Purview + Databricks):** Use the [comprehensive deployment guide](./docs/DeploymentGuide.md) for all architecture options
 <br/>
 
 ### Prerequisites and costs
@@ -126,9 +146,9 @@ _Note: This is not meant to outline all costs as selected SKUs, scaled use, cust
 
 | Product | Description | Cost |
 |---|---|---|
-| [Microsoft Fabric](https://learn.microsoft.com/en-us/fabric) | Core Medallion Architecture in Microsoft Fabric, and Unified Data Platform for integration with other platforms such as Azure Databricks and Snowflakes. | [Pricing](https://learn.microsoft.com/en-us/fabric/enterprise/buy-subscription#prerequisites) |
+| [Microsoft Fabric](https://learn.microsoft.com/en-us/fabric) | Core Medallion Architecture in Microsoft Fabric, and Unified Data Platform for integration with other platforms such as Azure Databricks and Snowflake. | [Pricing](https://learn.microsoft.com/en-us/fabric/enterprise/buy-subscription#prerequisites) |
 | [Azure Databricks](https://azure.microsoft.com/en-us/products/databricks/) | Azure Databricks stores sales data for one channel and the data is used by Microsoft Fabric through data mirroring and shortcut. | [Pricing](https://azure.microsoft.com/en-us/pricing/details/databricks/) |
-| [Microsoft Purview](https://learn.microsoft.com/en-us/purview/) | Data Governance, data security, and risk management. | [Pricing](https://azure.microsoft.com/en-us/pricing/details/purview/) |
+| [Microsoft Purview](https://learn.microsoft.com/en-us/purview/) | Data governance, data security, and risk management. | [Pricing](https://azure.microsoft.com/en-us/pricing/details/purview/) |
 
 <br/>
 
@@ -140,20 +160,22 @@ either by deleting the resource group in the Portal or running `azd down`.
 <h2><img src="./docs/images/readme/business-scenario.png" width="48" />
 Business use case
 </h2>
-After successful deployment of the Core Medallion Architecture in Microsoft Fabric, the Fabric workspace will be your main UI where you can access the lakehouses, PySpark data processing and data management notebooks, and Power BI semantic models, and integration with Azure Databricks if you have chosen option 3. If you choose option 1, no Databricks folder will be created. Both data engineer and sales analyst roles will be using the same Fabric workspace to perform their tasks. The diagram below illustrates the data engineer UI. Sales analysts will be able to use the Power BI semantic models and dashboards within the folder named `reports`.  Use cases can be summarized as below:
+After successful deployment of the Core Medallion Architecture in Microsoft Fabric, the Fabric workspace will be your main UI where you can access the lakehouses, PySpark data processing and data management notebooks, Power BI semantic models, and integration with Azure Databricks if you have chosen option 3. If you choose option 1, no Databricks folder will be created. Both data engineer and sales analyst roles will be using the same Fabric workspace to perform their tasks. The diagram below illustrates the data engineer UI. Sales analysts will be able to use the Power BI semantic models and dashboards within the folder named `reports`.  Use cases can be summarized as below:
 
-- Data Engineer creates or updates PySpark notebooks to complete data processing and data management tasks
-- Data Engineer creates or updates T-SQL scripts to manage the data using Fabric SQL End Points
-- Data Engineer tests end-to-end data flow
-- Sales Analysts create or update Power BI Semantic models based off Gold tier lakehouse
+- Data Engineer creates or updates PySpark notebooks to complete data processing and data management tasks.
+- Data Engineer creates or updates T-SQL scripts to manage the data using Fabric SQL End Points.
+- Data Engineer tests end-to-end data flow.
+- Sales Analysts create or update Power BI semantic models based on the Gold tier lakehouse.
 - Sales Analysts create or update Power BI dashboards. 
+- Sales Analysts or other business users can interact with the Fabric Data Agent using natural language to get quick insights and perform data analysis without writing code. For details, please refer to [Fabric Data Agent Guide](./docs/FabricDataAgentGuide.md).
+- Business users can also use Copilot for Power BI to ask questions directly within Power BI reports using natural language. For details, please refer to [Copilot for Power BI Guide](./docs/CopilotForPowerBIGuide.md).
 
-|![image](./docs/images/readme/fabric-workspace-ui.png)|
-|---|
-
+An interactive Power BI report with Copilot is illustrated below. 
+![image](./docs/images/readme/pbi-report-ui.png)
 <br/>
 
-The data engineer can also upload additional source data to the bronze lakehouse and recreate the data processing flow from bronze to silver and then to gold. 
+An interactive Fabric Data Agent is illustrated below. 
+![image](./docs/images/readme/fabric-data-agent-ui.png)
 
 ⚠️ The sample data used in this repository is synthetic and generated using Python Programs. The data is intended for use as sample data only.
 
@@ -207,7 +229,8 @@ Check out similar solution accelerators
 
 | Solution Accelerator | Description |
 |---|---|
-| [Agentic applications for unified data foundation](https://github.com/microsoft/agentic-applications-for-unified-data-foundation-solution-accelerator) | Agentic AI application that provides nature language query of the data using unified data foundation.  Description of solution accelerator |
+| [Agentic applications for unified data foundation](https://github.com/microsoft/agentic-applications-for-unified-data-foundation-solution-accelerator) | Agentic AI application that provides natural language query of the data using unified data foundation, extending the Fabric Data Agent capabilities included in this solution. |
+| [Real-Time Intelligence for Operations Solution Accelerator](https://github.com/microsoft/real-time-intelligence-operations-solution-accelerator) | This solution accelerator provides a complete real-time intelligence platform for manufacturing operations. It analyzes live and historical telemetry data through interactive dashboards, automatically detects anomalies with email alerts, and includes an AI-powered data agent for conversational insights. |
 
 <br/>   
 

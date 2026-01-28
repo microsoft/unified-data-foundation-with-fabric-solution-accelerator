@@ -25,51 +25,13 @@ This guide describes how to deploy the **Unified Data Foundation with Fabric** s
 
 ### Optional Variables
 
-- `AZURE_FABRIC_WORKSPACE_NAME`: Custom workspace name (defaults to generated name if not specified)
+- `AZURE_FABRIC_WORKSPACE_NAME`: Custom workspace name if already exists (defaults to generated name, if not specified)
 
-## Quick Manual Deployment
 
-### 1. Set Environment Variables
-
-**Linux/macOS/Cloud Shell:**
-```bash
-export AZURE_FABRIC_CAPACITY_NAME="your-existing-capacity-name"
-export AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
-```
-
-**Windows PowerShell:**
-```powershell
-$env:AZURE_FABRIC_CAPACITY_NAME="your-existing-capacity-name"
-$env:AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
-```
-
-### 2. Clone Repository and Navigate
-
-```bash
-git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
-cd unified-data-foundation-with-fabric-solution-accelerator/infra/scripts/utils
-```
-
-### 3. Run Deployment Script
-
-**Linux/macOS/Cloud Shell:**
-```bash
-chmod +x run_python_script_fabric.ps1
-pwsh ./run_python_script_fabric.ps1
-```
-
-**Windows PowerShell:**
-```powershell
-.\run_python_script_fabric.ps1
-```
-
-> **Note**: Manual scripts do **not** create the Fabric capacity or Azure infrastructure. These must exist beforehand. For complete infrastructure deployment, use `azd up` instead.
-
----
-
-## Detailed Manual Deployment Steps
+## Deployment Steps
 
 ### Step 1: Verify Prerequisites
+Open a terminal and run the following commands to verify your environment:
 
 1. **Check Azure CLI authentication:**
    ```bash

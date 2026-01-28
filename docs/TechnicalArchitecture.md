@@ -1,6 +1,8 @@
 # Solution Architecture and Four Deployment Choices
 
-We have built a flexible and configurable architecture with plug-and-play options, providing you with four architecture choices. You can deploy any of the following four architectures based on your organizational needs:
+We have built a flexible and configurable architecture with plug-and-play options, providing you with four architecture choices. You can deploy any of the following four architectures based on your organizational needs. 
+
+**Note**: The Fabric Data Agent and Copilot for Power BI are available across all architecture options.
 
 1. **Core Medallion Architecture in Microsoft Fabric only**: This gives you medallion architecture with 48 data engineering PySpark notebooks and 4 utility scripts. For details, please refer to [Guide to Fabric Notebooks](./NotebooksGuideFabric.md). There are two runner notebooks that automate execution to move data from source files to Bronze, validate in Silver, and enrich in Gold. The data models in the medallion architecture support multiple domains: **shared** (**customer**, **product**), **sales**, and **finance**. You can easily add more domains to the data model or add more entities to your chosen domain. The architecture framework and code are designed to be easily updated, extended, and scaled up. Prebuilt PowerBI semantic models and dashboards provide quick business insights:
    - Total sales for a period

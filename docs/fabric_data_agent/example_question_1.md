@@ -1,0 +1,1 @@
+I need to understand our customer base better. Can you show me a breakdown of customers by relationship type and gender, including their average age and activity status? I want to see which customer segments we should focus on for our upcoming marketing campaign.
