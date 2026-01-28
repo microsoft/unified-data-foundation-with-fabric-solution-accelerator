@@ -100,23 +100,20 @@ jobs:
           
           echo "### Fabric APIs (infra/scripts/fabric/)" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          cd infra/scripts/fabric && python -m coverage report >> $GITHUB_STEP_SUMMARY
+          (cd infra/scripts/fabric && python -m coverage report) >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          cd ../../..
           
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Databricks Scripts (infra/scripts/databricks/)" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          cd infra/scripts/databricks && python -m coverage report >> $GITHUB_STEP_SUMMARY
+          (cd infra/scripts/databricks && python -m coverage report) >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          cd ../../..
           
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Utility Modules (src/fabric/)" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          cd src/fabric && python -m coverage report >> $GITHUB_STEP_SUMMARY
+          (cd src/fabric && python -m coverage report) >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          cd ../../..
           
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📈 Total Coverage Summary" >> $GITHUB_STEP_SUMMARY
