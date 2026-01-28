@@ -1,0 +1,116 @@
+name: Python Tests
+
+on:
+  push:
+    branches: [main, psl-unittest]
+    paths:
+      - 'infra/scripts/**/*.py'
+      - 'src/fabric/**/*.py'
+      - '.github/workflows/python-tests.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'infra/scripts/**/*.py'
+      - 'src/fabric/**/*.py'
+      - '.github/workflows/python-tests.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install coverage requests azure-identity
+
+      - name: Run Fabric API tests
+        working-directory: infra/scripts/fabric
+        run: |
+          python -m coverage run --source=. -m unittest discover -s . -p "test_*.py" -v
+          python -m coverage report --omit="*test_*" --fail-under=80
+
+      - name: Run Databricks tests
+        working-directory: infra/scripts/databricks
+        run: |
+          python -m coverage run --source=. -m unittest discover -s . -p "test_*.py" -v
+          python -m coverage report --omit="*test_*" --fail-under=75
+
+      - name: Run Fabric Utility tests
+        working-directory: src/fabric
+        run: |
+          python -m coverage run --source=. -m unittest discover -s . -p "test_*.py" -v
+          python -m coverage report --omit="*test_*" --fail-under=95
+
+  coverage-report:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install coverage requests azure-identity
+
+      - name: Run all tests with coverage
+        run: |
+          # Run Fabric API tests
+          cd infra/scripts/fabric
+          python -m coverage run --source=. -m unittest discover -s . -p "test_*.py"
+          cp .coverage ../../../.coverage.fabric
+          cd ../../..
+          
+          # Run Databricks tests
+          cd infra/scripts/databricks
+          python -m coverage run --source=. -m unittest discover -s . -p "test_*.py"
+          cp .coverage ../../../.coverage.databricks
+          cd ../../..
+          
+          # Run Utility tests
+          cd src/fabric
+          python -m coverage run --source=. -m unittest discover -s . -p "test_*.py"
+          cp .coverage ../../.coverage.utils
+          cd ../..
+
+      - name: Generate coverage summary
+        run: |
+          echo "## 📊 Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Fabric APIs (infra/scripts/fabric/)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cd infra/scripts/fabric && python -m coverage report --omit="*test_*" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cd ../../..
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Databricks Scripts (infra/scripts/databricks/)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cd infra/scripts/databricks && python -m coverage report --omit="*test_*" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cd ../../..
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Utility Modules (src/fabric/)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cd src/fabric && python -m coverage report --omit="*test_*" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
