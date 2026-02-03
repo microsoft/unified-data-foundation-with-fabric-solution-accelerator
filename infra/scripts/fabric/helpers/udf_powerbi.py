@@ -108,8 +108,27 @@ def deploy_powerbi_reports(workspace_client: FabricWorkspaceApiClient,
                         # Note: This assumes the PBIX has parameters named 'sqlEndpoint' and 'database'
                         # If your PBIX uses different parameter names, update them accordingly
                         try:
+                            dataset_id = dataset.get('id')
+                            
+                            # First, take over the dataset to become the owner
+                            # This is required to update parameters when not the original owner
+                            try:
+                                print(f"         🔄 Taking over dataset ownership...")
+                                powerbi_client.take_over_dataset(
+                                    dataset_id=dataset_id,
+                                    workspace_id=workspace_id
+                                )
+                                print(f"         ✅ Dataset takeover successful")
+                            except requests.HTTPError as takeover_error:
+                                # If takeover fails with 400, we might already be the owner
+                                if "HTTP 400" in str(takeover_error):
+                                    print(f"         ℹ️  Already the dataset owner, proceeding with parameter update")
+                                else:
+                                    raise takeover_error
+                            
+                            # Now update the parameters
                             powerbi_client.update_powerbi_dataset_parameters(
-                                dataset_id=dataset.get('id'),
+                                dataset_id=dataset_id,
                                 parameters=[
                                     {
                                         "name": "sqlEndpoint", 

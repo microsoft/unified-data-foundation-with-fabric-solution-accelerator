@@ -474,6 +474,43 @@ class PowerBIAPIClient:
         
         self.write_log("Dataset parameters updated successfully")
     
+    def take_over_dataset(self, dataset_id: str, workspace_id: Optional[str] = None) -> None:
+        """Take over ownership of a Power BI dataset.
+        
+        Transfers ownership of the specified dataset to the current authorized user.
+        This is required before updating dataset parameters when you are not the dataset owner.
+        
+        Args:
+            dataset_id: The dataset ID
+            workspace_id: Optional workspace ID. If provided, takes over dataset in the specified workspace.
+                         If None, takes over dataset in "My workspace"
+        
+        Raises:
+            requests.HTTPError: If the API request fails
+        
+        Required Scope:
+            Dataset.ReadWrite.All
+        
+        Note:
+            - After taking over, the current user becomes the dataset owner
+            - This is typically needed before updating parameters or data sources
+        """
+        # Build the URI
+        if workspace_id:
+            uri = f"groups/{workspace_id}/datasets/{dataset_id}/Default.TakeOver"
+        else:
+            uri = f"datasets/{dataset_id}/Default.TakeOver"
+        
+        self.write_log(f"Taking over dataset {dataset_id}")
+        
+        # Make the API request
+        self.invoke_powerbi_api_request(
+            uri=uri,
+            method="POST"
+        )
+        
+        self.write_log("Dataset takeover completed successfully")
+
     def delete_powerbi_report(self, report_id: str, workspace_id: Optional[str] = None):
         """Delete a Power BI report"""
         if workspace_id:
