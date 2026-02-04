@@ -24,7 +24,7 @@ def get_required_env_var(var_name: str) -> str:
 # Variables set up #
 ####################
 
-SOLUTION_NAME = "Unified Data Foundation"
+SOLUTION_NAME = "Unified_Data_Foundation"
 script_dir = os.path.dirname(os.path.abspath(__file__))
 # Go up three levels from infra/scripts/fabric to repo root
 repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))

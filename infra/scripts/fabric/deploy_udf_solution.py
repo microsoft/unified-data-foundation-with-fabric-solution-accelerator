@@ -57,7 +57,7 @@ def main():
     """Main function to deploy the Unified Data Foundation solution."""
     
     # Constants
-    SOLUTION_NAME = "Unified Data Foundation"
+    SOLUTION_NAME = "Unified_Data_Foundation"
     ENVIRONMENT_NAME = "Data Agent Environment"
     
     LAKEHOUSE_BRONZE = 'maag_bronze'
