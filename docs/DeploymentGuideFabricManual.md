@@ -25,7 +25,8 @@ This guide describes how to deploy the **Unified Data Foundation with Fabric** s
 
 ### Optional Variables
 
-- `AZURE_FABRIC_WORKSPACE_NAME`: Custom workspace name if already exists (defaults to generated name, if not specified)
+- `AZURE_FABRIC_WORKSPACE_NAME`: Custom workspace name (defaults to `United Data Foundation-{solution_suffix}` if not specified)
+- `SOLUTION_SUFFIX`: Solution suffix for naming resources (defaults to auto-generated value)
 
 
 ## Deployment Steps
@@ -63,13 +64,15 @@ Open a terminal and run the following commands to verify your environment:
    **Linux/macOS/Cloud Shell:**
    ```bash
    export AZURE_FABRIC_CAPACITY_NAME="your-capacity-name"
-   export AZURE_FABRIC_WORKSPACE_NAME="MAAG Data Foundation Workspace"  # Optional
+   export SOLUTION_SUFFIX="udf"  # Optional - auto-generated if not set
+   export AZURE_FABRIC_WORKSPACE_NAME="United Data Foundation Workspace"  # Optional
    ```
    
    **Windows PowerShell:**
    ```powershell
    $env:AZURE_FABRIC_CAPACITY_NAME="your-capacity-name"
-   $env:AZURE_FABRIC_WORKSPACE_NAME="MAAG Data Foundation Workspace"  # Optional
+   $env:SOLUTION_SUFFIX="udf"  # Optional - auto-generated if not set
+   $env:AZURE_FABRIC_WORKSPACE_NAME="United Data Foundation Workspace"  # Optional
    ```
 
 ### Step 3: Execute Deployment
@@ -79,15 +82,15 @@ Open a terminal and run the following commands to verify your environment:
 **For Linux/macOS/Cloud Shell:**
 ```bash
 cd infra/scripts/utils
-chmod +x run_python_script_fabric.ps1
-pwsh ./run_python_script_fabric.ps1
+chmod +x Run-PythonScript.ps1
+pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 **For Windows PowerShell:**
 ```powershell
 cd infra\scripts\utils
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\run_python_script_fabric.ps1
+.\Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 ### Step 4: Monitor Deployment Progress
@@ -123,7 +126,9 @@ Expected output:
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `AZURE_FABRIC_CAPACITY_NAME` | Yes | None | Name of existing Fabric capacity |
-| `AZURE_FABRIC_WORKSPACE_NAME` | No | Generated | Custom workspace name |
+| `SOLUTION_SUFFIX` | No | Auto-generated | Solution suffix for naming resources |
+| `AZURE_FABRIC_WORKSPACE_NAME` | No | `United Data Foundation-{suffix}` | Custom workspace name |
+| `AZURE_FABRIC_WORKSPACE_ADMINISTRATORS` | No | None | Comma-separated list of workspace admins |
 | `AZURE_SUBSCRIPTION_ID` | No | Default | Azure subscription to use |
 | `AZURE_RESOURCE_GROUP` | No | From capacity | Resource group containing capacity |
 
@@ -131,8 +136,9 @@ Expected output:
 
 #### Workspace Creation
 - If `AZURE_FABRIC_WORKSPACE_NAME` is set, creates/uses workspace with that name
-- If not set, generates workspace name based on capacity and timestamp
+- If not set, generates workspace name using format `United Data Foundation-{solution_suffix}`
 - Verifies workspace is associated with the specified capacity
+- Adds administrators from `AZURE_FABRIC_WORKSPACE_ADMINISTRATORS` if provided
 
 #### Data Deployment
 - Uploads sample CSV files to bronze lakehouse Files section
@@ -148,6 +154,19 @@ Expected output:
 - Scans `reports/` directory for .pbix files
 - Uploads reports to workspace reports folder
 - Configures conflict resolution (Create or Overwrite)
+- **Takes over semantic model ownership** automatically to enable parameter updates
+
+> **📝 Note: Semantic Model Takeover**  
+> During deployment, the script automatically performs a "takeover" of the Power BI semantic model. This transfers ownership to the deploying user/service principal, which is required to update dataset parameters (such as the connection to the Gold lakehouse SQL endpoint). After deployment, the deploying user becomes the semantic model owner.
+>
+> **To manually transfer ownership to another user:**
+>
+> 1. Navigate to your Fabric workspace
+> 2. Open the **reports** folder
+> 3. Locate the semantic model (database icon) associated with the report
+> 4. Click on the **three dots (...)** next to the semantic model
+> 5. Select **Settings**
+> 6. Click the **Take over** button
 
 ---
 
@@ -194,7 +213,7 @@ In your Fabric workspace, verify:
 | Issue | Possible Cause | Resolution |
 |-------|----------------|------------|
 | Script not found | Incorrect directory | Ensure you're in `infra/scripts/utils` directory |
-| Permission denied | Script not executable | Run `chmod +x run_python_script_fabric.ps1` |
+| Permission denied | Script not executable | Run `chmod +x Run-PythonScript.ps1` |
 | Authentication error | Not logged into Azure | Run `az login` and verify authentication |
 | Capacity not found | Wrong capacity name | Verify capacity name with `az fabric capacity list` |
 | Workspace creation failed | Insufficient permissions | Ensure Fabric admin permissions on capacity |
@@ -227,13 +246,13 @@ In your Fabric workspace, verify:
 
 **For Linux/macOS/Cloud Shell:**
 ```bash
-pwsh -c './run_python_script_fabric.ps1 -Verbose'
+pwsh -c './Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py" -Verbose'
 ```
 
 **For Windows PowerShell:**
 ```powershell
 $VerbosePreference = "Continue"
-.\run_python_script_fabric.ps1 -Verbose
+.\Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py" -Verbose
 ```
 
 #### Check Environment Variables
@@ -241,10 +260,12 @@ $VerbosePreference = "Continue"
 ```bash
 # Linux/macOS/Cloud Shell
 echo "Capacity: $AZURE_FABRIC_CAPACITY_NAME"
+echo "Solution Suffix: $SOLUTION_SUFFIX"
 echo "Workspace: $AZURE_FABRIC_WORKSPACE_NAME"
 
 # Windows PowerShell
 Write-Host "Capacity: $env:AZURE_FABRIC_CAPACITY_NAME"
+Write-Host "Solution Suffix: $env:SOLUTION_SUFFIX"
 Write-Host "Workspace: $env:AZURE_FABRIC_WORKSPACE_NAME"
 ```
 
@@ -311,9 +332,11 @@ Create a pipeline step for manual deployment:
     azureSubscription: '$(serviceConnectionName)'
     scriptType: 'powershell'
     scriptLocation: 'scriptPath'
-    scriptPath: 'infra/scripts/utils/run_python_script_fabric.ps1'
+    scriptPath: 'infra/scripts/utils/Run-PythonScript.ps1'
+    arguments: '-ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"'
   env:
     AZURE_FABRIC_CAPACITY_NAME: $(fabricCapacityName)
+    SOLUTION_SUFFIX: $(solutionSuffix)
     AZURE_FABRIC_WORKSPACE_NAME: $(fabricWorkspaceName)
 ```
 
@@ -325,11 +348,12 @@ Create a workflow step for manual deployment:
 - name: Deploy Fabric Components
   run: |
     cd infra/scripts/utils
-    chmod +x run_python_script_fabric.ps1
-    pwsh ./run_python_script_fabric.ps1
+    chmod +x Run-PythonScript.ps1
+    pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
   env:
     AZURE_FABRIC_CAPACITY_NAME: ${{ secrets.FABRIC_CAPACITY_NAME }}
-    AZURE_FABRIC_WORKSPACE_NAME: ${{ vars.FABRIC_WORKSPACE_NAME }}
+    SOLUTION_SUFFIX: ${{ vars.SOLUTION_SUFFIX }}
+    AZURE_FABRIC_WORKSPACE_NAME: ${{ vars.AZURE_FABRIC_WORKSPACE_NAME }}
 ```
 
 ---
