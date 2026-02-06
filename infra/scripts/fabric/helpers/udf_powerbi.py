@@ -108,6 +108,13 @@ def deploy_powerbi_reports(workspace_client: FabricWorkspaceApiClient,
                         # Note: This assumes the PBIX has parameters named 'sqlEndpoint' and 'database'
                         # If your PBIX uses different parameter names, update them accordingly
                         try:
+                            # Take over the dataset to ensure we have ownership before updating parameters
+                            powerbi_client.takeover_dataset(
+                                workspace_id=workspace_id,
+                                dataset_id=dataset.get('id')
+                            )
+                            print(f"         ✅ Dataset takeover completed")
+                            
                             powerbi_client.update_powerbi_dataset_parameters(
                                 dataset_id=dataset.get('id'),
                                 parameters=[
