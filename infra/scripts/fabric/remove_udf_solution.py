@@ -20,11 +20,12 @@ def get_required_env_var(var_name: str) -> str:
         sys.exit(1)
     return value
 
+
 ####################
 # Variables set up #
 ####################
 
-SOLUTION_NAME = "Unified Data Foundation"
+SOLUTION_NAME = "Unified_Data_Foundation"
 script_dir = os.path.dirname(os.path.abspath(__file__))
 # Go up three levels from infra/scripts/fabric to repo root
 repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
@@ -35,7 +36,7 @@ repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
 
 # Load configuration from environment variables
 solution_suffix = get_required_env_var("SOLUTION_SUFFIX")
-workspace_name = os.getenv("FABRIC_WORKSPACE_NAME", f"{SOLUTION_NAME} - {solution_suffix}")
+workspace_name = os.getenv("FABRIC_WORKSPACE_NAME", f"{SOLUTION_NAME}_{solution_suffix}")
 workspace_id = os.getenv("FABRIC_WORKSPACE_ID")
 if workspace_name and workspace_id:
     print("⚠️ WARNING: Both FABRIC_WORKSPACE_NAME and FABRIC_WORKSPACE_ID are set")
@@ -77,7 +78,7 @@ try:
         workspaces = fabric_client.list_workspaces()
         workspace = next(
             (w for w in workspaces if w['displayName'].lower() == workspace_name.lower()), None)
-        
+       
         if not workspace:
             print(f"⚠️ WARNING: Workspace '{workspace_name}' not found")
             print("   Available workspaces:")
