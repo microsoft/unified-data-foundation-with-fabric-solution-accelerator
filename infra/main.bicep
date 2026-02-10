@@ -37,6 +37,15 @@ param fabricAdminMembers array = []
 @description('Optional. SKU tier of the Fabric resource.')
 param skuName string = 'F2'
 
+@description('Optional. Name of an existing Fabric capacity to use. If empty, a new capacity will be created.')
+param existingFabricCapacityName string = ''
+
+@description('Optional. Name of an existing Fabric workspace to use. If empty, a new workspace will be created during post-deployment.')
+param existingFabricWorkspaceName string = ''
+
+var useExistingFabricCapacity = !empty(existingFabricCapacityName)
+var useExistingFabricWorkspace = !empty(existingFabricWorkspaceName)
+
 var solutionSuffix = toLower(trim(replace(
   replace(
     replace(replace(replace(replace('${solutionName}${solutionUniqueText}', '-', ''), '_', ''), '.', ''), '/', ''),
@@ -47,22 +56,16 @@ var solutionSuffix = toLower(trim(replace(
   ''
 )))
 
-// var userAssignedIdentityResourceName = 'id-${solutionSuffix}'
-// module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
-//   name: take('avm.res.managed-identity.user-assigned-identity.${userAssignedIdentityResourceName}', 64)
-//   params: {
-//     name: userAssignedIdentityResourceName
-//     location: location
-//     enableTelemetry: enableTelemetry
-//   }
-// }
+// ============================================================================
+// FABRIC CAPACITY - Create new or reference existing
+// ============================================================================
 
-var fabricCapacityResourceName = 'fc${solutionSuffix}'
-var fabricCapacityDefaultAdmins = deployer().?userPrincipalName == null
-  ? [deployer().objectId]
-  : [deployer().userPrincipalName]
+var fabricCapacityResourceName = useExistingFabricCapacity ? existingFabricCapacityName : 'fc${solutionSuffix}'
+var fabricCapacityDefaultAdmins = [deployer().objectId]
 var fabricTotalAdminMembers = union(fabricCapacityDefaultAdmins, fabricAdminMembers)
-module fabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = {
+
+// Create new Fabric capacity (if no existing specified)
+module newFabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = if (!useExistingFabricCapacity) {
   name: take('avm.res.fabric.capacity.${fabricCapacityResourceName}', 64)
   params: {
     name: fabricCapacityResourceName
@@ -73,7 +76,19 @@ module fabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = {
   }
 }
 
-// Outputs for AZD
+// Resolved capacity name (either existing or newly created)
+var resolvedFabricCapacityName = useExistingFabricCapacity ? existingFabricCapacityName : newFabricCapacity.outputs.name
+
+// ============================================================================
+// FABRIC WORKSPACE - Use existing or create new (handled in post-deployment)
+// ============================================================================
+
+var resolvedFabricWorkspaceName = useExistingFabricWorkspace ? existingFabricWorkspaceName : ''
+
+// ============================================================================
+// OUTPUTS
+// ============================================================================
+
 @description('The location the resources were deployed to')
 output AZURE_LOCATION string = location
 
@@ -81,10 +96,19 @@ output AZURE_LOCATION string = location
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
 
 @description('The name of the Fabric capacity resource')
-output AZURE_FABRIC_CAPACITY_NAME string = fabricCapacity.outputs.name
+output AZURE_FABRIC_CAPACITY_NAME string = resolvedFabricCapacityName
+
+@description('Whether an existing Fabric capacity was used')
+output AZURE_FABRIC_CAPACITY_IS_EXISTING bool = useExistingFabricCapacity
 
 @description('The identities added as Fabric Capacity Admin members')
 output AZURE_FABRIC_CAPACITY_ADMINISTRATORS array = fabricTotalAdminMembers
+
+@description('The name of the Fabric workspace (if existing was specified)')
+output AZURE_FABRIC_WORKSPACE_NAME string = resolvedFabricWorkspaceName
+
+@description('Whether an existing Fabric workspace was used')
+output AZURE_FABRIC_WORKSPACE_IS_EXISTING bool = useExistingFabricWorkspace
 
 @description('The unique solution suffix of the deployed resources')
 output SOLUTION_SUFFIX string = solutionSuffix

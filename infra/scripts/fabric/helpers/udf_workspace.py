@@ -66,18 +66,23 @@ def setup_workspace(fabric_client: FabricApiClient, capacity_name: str, workspac
         workspace_id = workspace['id']
         print(f"   ℹ️  Workspace already exists: {workspace_name} ({workspace_id})")
         
-        # Check if workspace is already assigned to the capacity
+        # Check if workspace is already assigned to the target capacity
         current_capacity_id = workspace.get('capacityId')
         if current_capacity_id == capacity_id:
             print(f"   ✅ Workspace already assigned to capacity: {capacity_name}")
         else:
+            # Workspace is on a different capacity or no capacity - reassign
             print(f"   🔄 Assigning workspace to capacity: {capacity_name}")
             try:
                 fabric_client.assign_workspace_to_capacity(workspace_id, capacity_id)
                 print(f"   ✅ Successfully assigned workspace to capacity")
             except FabricApiError as e:
-                print(f"❌ Error assigning workspace to capacity: {e}")
-                raise
+                # If assignment fails with 400, log and continue (may already be assigned)
+                if "400" in str(e):
+                    print(f"   ⚠️  Could not reassign workspace (may already be assigned). Continuing...")
+                else:
+                    print(f"❌ Error assigning workspace to capacity: {e}")
+                    raise
     else:
         # Create new workspace
         print(f"   Creating new workspace: {workspace_name}")
