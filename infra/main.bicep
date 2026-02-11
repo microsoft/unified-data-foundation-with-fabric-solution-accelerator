@@ -61,7 +61,7 @@ var solutionSuffix = toLower(trim(replace(
 // ============================================================================
 
 var fabricCapacityResourceName = useExistingFabricCapacity ? existingFabricCapacityName : 'fc${solutionSuffix}'
-var fabricCapacityDefaultAdmins = [deployer().objectId]
+var fabricCapacityDefaultAdmins = [deployer().userPrincipalName]
 var fabricTotalAdminMembers = union(fabricCapacityDefaultAdmins, fabricAdminMembers)
 
 // Create new Fabric capacity (if no existing specified)
