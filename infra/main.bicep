@@ -79,7 +79,7 @@ module newFabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = if (!useExi
 }
 
 // Resolved capacity name (either existing or newly created)
-var resolvedFabricCapacityName = useExistingFabricCapacity ? existingFabricCapacityName : newFabricCapacity.outputs.name
+var resolvedFabricCapacityName = fabricCapacityResourceName
 
 // ============================================================================
 // FABRIC WORKSPACE - Use existing or create new (handled in post-deployment)
