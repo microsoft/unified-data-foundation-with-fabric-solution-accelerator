@@ -18,7 +18,7 @@ param location string = resourceGroup().location
 @description('Optional. Enable/Disable usage telemetry for module.')
 param enableTelemetry bool = true
 
-@description('Optional. An array of user object IDs or service principal object IDs that will be assigned the Fabric Capacity Admin role. This can be used to add additional admins beyond the default admin which is the user assigned managed identity created as part of this deployment.')
+@description('Optional. An array of user object IDs or service principal object IDs that will be assigned the Fabric Capacity Admin role. This can be used to add additional admins beyond the default admin which is the deploying user or service principal.')
 param fabricAdminMembers array = []
 
 @allowed([
@@ -61,7 +61,9 @@ var solutionSuffix = toLower(trim(replace(
 // ============================================================================
 
 var fabricCapacityResourceName = useExistingFabricCapacity ? existingFabricCapacityName : 'fc${solutionSuffix}'
-var fabricCapacityDefaultAdmins = [deployer().userPrincipalName]
+var fabricCapacityDefaultAdmins = deployer().?userPrincipalName == null
+  ? [deployer().objectId]
+  : [deployer().userPrincipalName]
 var fabricTotalAdminMembers = union(fabricCapacityDefaultAdmins, fabricAdminMembers)
 
 // Create new Fabric capacity (if no existing specified)
