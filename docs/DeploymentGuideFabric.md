@@ -277,7 +277,7 @@ az login
 azd auth login
 
 # Optional: Customize workspace name
-azd env set AZURE_FABRIC_WORKSPACE_NAME "My Analytics Platform"
+azd env set FABRIC_WORKSPACE_NAME "My Analytics Platform"
 
 # Deploy everything
 azd up
@@ -484,7 +484,7 @@ Customize the Fabric workspace setup and naming conventions. These parameters ar
 | Parameter | AZD Environment Variable | GitHub Actions Variable | Description | Default | Example |
 |-----------|-------------------------|------------------------|-------------|---------|---------|
 | **Capacity Name** | `AZURE_FABRIC_CAPACITY_NAME` | Bicep output (auto-set) | Microsoft Fabric capacity name - **DO NOT SET MANUALLY** (automatically populated from Bicep deployment) | Generated from Bicep | `fc-udfwfsa-abc123` |
-| **Workspace Name** | `FABRIC_WORKSPACE_NAME` | `AZURE_FABRIC_WORKSPACE_NAME_DEV` | Custom name for the Fabric workspace | `Unified Data Foundation - {solution_suffix}` | `"MyCompany Data Foundation"`, `"Analytics Platform - DEV"` |
+| **Workspace Name** | `FABRIC_WORKSPACE_NAME` | `AZURE_FABRIC_WORKSPACE_NAME_DEV` | Custom name for the Fabric workspace | `Unified_Data_Foundation_{solution_suffix}` | `"MyCompany Data Foundation"`, `"Analytics Platform - DEV"` |
 
 **Configuration Examples:**
 

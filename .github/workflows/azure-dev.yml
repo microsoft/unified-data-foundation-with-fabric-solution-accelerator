@@ -74,7 +74,7 @@ jobs:
             --parameters solutionName=${{ env.AZURE_ENV_NAME_DEV }} \
             --parameters location=${{ env.AZURE_LOCATION }} \
             --parameters existingFabricCapacityName="${{ vars.AZURE_EXISTING_FABRIC_CAPACITY_NAME || '' }}" \
-            --parameters existingFabricWorkspaceName="${{ vars.AZURE_EXISTING_FABRIC_WORKSPACE_NAME || '' }}" || true
+            --parameters existingFabricWorkspaceName="${{ vars.FABRIC_WORKSPACE_NAME || '' }}" || true
           echo "✅ Bicep template validation completed"
 
   deploy-dev:
@@ -109,7 +109,7 @@ jobs:
                 {
                   "solutionName": "${{ env.AZURE_ENV_NAME_DEV }}",
                   "existingFabricCapacityName": "${{ vars.AZURE_EXISTING_FABRIC_CAPACITY_NAME || '' }}",
-                  "existingFabricWorkspaceName": "${{ vars.AZURE_EXISTING_FABRIC_WORKSPACE_NAME || '' }}"
+                  "existingFabricWorkspaceName": "${{ vars.FABRIC_WORKSPACE_NAME || '' }}"
                 }
 
       - name: Setup Python Environment

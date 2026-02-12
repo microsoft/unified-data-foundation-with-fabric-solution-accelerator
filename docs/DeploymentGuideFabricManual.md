@@ -23,10 +23,13 @@ This guide describes how to deploy the **Unified Data Foundation with Fabric** s
 
 - `AZURE_FABRIC_CAPACITY_NAME`: Name of existing Fabric capacity
 
+### Required Variables (Manual Deployment)
+
+- `SOLUTION_SUFFIX`: Solution suffix for naming resources (e.g., `udf`)
+
 ### Optional Variables
 
-- `AZURE_FABRIC_WORKSPACE_NAME`: Custom workspace name (defaults to `United Data Foundation-{solution_suffix}` if not specified)
-- `SOLUTION_SUFFIX`: Solution suffix for naming resources (defaults to auto-generated value)
+- `FABRIC_WORKSPACE_NAME`: Custom workspace name (defaults to `Unified_Data_Foundation_{solution_suffix}` if not specified)
 
 
 ## Deployment Steps
@@ -64,15 +67,15 @@ Open a terminal and run the following commands to verify your environment:
    **Linux/macOS/Cloud Shell:**
    ```bash
    export AZURE_FABRIC_CAPACITY_NAME="your-capacity-name"
-   export SOLUTION_SUFFIX="udf"  # Optional - auto-generated if not set
-   export AZURE_FABRIC_WORKSPACE_NAME="United Data Foundation Workspace"  # Optional
+   export SOLUTION_SUFFIX="udf"  # Required for manual deployment
+   export FABRIC_WORKSPACE_NAME="Unified_Data_Foundation_Workspace"  # Optional
    ```
    
    **Windows PowerShell:**
    ```powershell
    $env:AZURE_FABRIC_CAPACITY_NAME="your-capacity-name"
-   $env:SOLUTION_SUFFIX="udf"  # Optional - auto-generated if not set
-   $env:AZURE_FABRIC_WORKSPACE_NAME="United Data Foundation Workspace"  # Optional
+   $env:SOLUTION_SUFFIX="udf"  # Required for manual deployment
+   $env:FABRIC_WORKSPACE_NAME="Unified_Data_Foundation_Workspace"  # Optional
    ```
 
 ### Step 3: Execute Deployment
@@ -126,19 +129,19 @@ Expected output:
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `AZURE_FABRIC_CAPACITY_NAME` | Yes | None | Name of existing Fabric capacity |
-| `SOLUTION_SUFFIX` | No | Auto-generated | Solution suffix for naming resources |
-| `AZURE_FABRIC_WORKSPACE_NAME` | No | `United Data Foundation-{suffix}` | Custom workspace name |
-| `AZURE_FABRIC_WORKSPACE_ADMINISTRATORS` | No | None | Comma-separated list of workspace admins |
+| `SOLUTION_SUFFIX` | Yes (manual) | None | Solution suffix for naming resources |
+| `FABRIC_WORKSPACE_NAME` | No | `Unified_Data_Foundation_{suffix}` | Custom workspace name |
+| `FABRIC_WORKSPACE_ADMINISTRATORS` | No | None | Comma-separated list of workspace admins |
 | `AZURE_SUBSCRIPTION_ID` | No | Default | Azure subscription to use |
 | `AZURE_RESOURCE_GROUP` | No | From capacity | Resource group containing capacity |
 
 ### Script Behavior
 
 #### Workspace Creation
-- If `AZURE_FABRIC_WORKSPACE_NAME` is set, creates/uses workspace with that name
-- If not set, generates workspace name using format `United Data Foundation-{solution_suffix}`
+- If `FABRIC_WORKSPACE_NAME` is set, creates/uses workspace with that name
+- If not set, generates workspace name using format `Unified_Data_Foundation_{solution_suffix}`
 - Verifies workspace is associated with the specified capacity
-- Adds administrators from `AZURE_FABRIC_WORKSPACE_ADMINISTRATORS` if provided
+- Adds administrators from `FABRIC_WORKSPACE_ADMINISTRATORS` if provided
 
 #### Data Deployment
 - Uploads sample CSV files to bronze lakehouse Files section
@@ -261,12 +264,12 @@ $VerbosePreference = "Continue"
 # Linux/macOS/Cloud Shell
 echo "Capacity: $AZURE_FABRIC_CAPACITY_NAME"
 echo "Solution Suffix: $SOLUTION_SUFFIX"
-echo "Workspace: $AZURE_FABRIC_WORKSPACE_NAME"
+echo "Workspace: $FABRIC_WORKSPACE_NAME"
 
 # Windows PowerShell
 Write-Host "Capacity: $env:AZURE_FABRIC_CAPACITY_NAME"
 Write-Host "Solution Suffix: $env:SOLUTION_SUFFIX"
-Write-Host "Workspace: $env:AZURE_FABRIC_WORKSPACE_NAME"
+Write-Host "Workspace: $env:FABRIC_WORKSPACE_NAME"
 ```
 
 #### Validate Azure Context
@@ -337,7 +340,7 @@ Create a pipeline step for manual deployment:
   env:
     AZURE_FABRIC_CAPACITY_NAME: $(fabricCapacityName)
     SOLUTION_SUFFIX: $(solutionSuffix)
-    AZURE_FABRIC_WORKSPACE_NAME: $(fabricWorkspaceName)
+    FABRIC_WORKSPACE_NAME: $(fabricWorkspaceName)
 ```
 
 ### GitHub Actions Integration
@@ -353,7 +356,7 @@ Create a workflow step for manual deployment:
   env:
     AZURE_FABRIC_CAPACITY_NAME: ${{ secrets.FABRIC_CAPACITY_NAME }}
     SOLUTION_SUFFIX: ${{ vars.SOLUTION_SUFFIX }}
-    AZURE_FABRIC_WORKSPACE_NAME: ${{ vars.AZURE_FABRIC_WORKSPACE_NAME }}
+    FABRIC_WORKSPACE_NAME: ${{ vars.FABRIC_WORKSPACE_NAME }}
 ```
 
 ---

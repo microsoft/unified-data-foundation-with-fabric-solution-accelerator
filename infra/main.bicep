@@ -107,7 +107,7 @@ output AZURE_FABRIC_CAPACITY_NAME string = resolvedFabricCapacityName
 @description('Whether an existing Fabric capacity was used')
 output AZURE_FABRIC_CAPACITY_IS_EXISTING bool = useExistingFabricCapacity
 
-@description('The identities added as Fabric Capacity Admin members')
+@description('The identities assigned as Fabric Capacity Admin members when a new capacity is created. When an existing capacity is used, this value is not applied and is provided for informational purposes only.')
 output AZURE_FABRIC_CAPACITY_ADMINISTRATORS array = fabricTotalAdminMembers
 
 @description('The name of the Fabric workspace (if existing was specified)')
