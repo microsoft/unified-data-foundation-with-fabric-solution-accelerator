@@ -43,8 +43,12 @@ param existingFabricCapacityName string = ''
 @description('Optional. Name of an existing Fabric workspace to use. If empty, a new workspace will be created during post-deployment.')
 param existingFabricWorkspaceName string = ''
 
-var useExistingFabricCapacity = !empty(existingFabricCapacityName)
-var useExistingFabricWorkspace = !empty(existingFabricWorkspaceName)
+// Treat unresolved azd parameter syntax (e.g., '${VAR=}') as empty
+var resolvedExistingCapacityName = contains(existingFabricCapacityName, '\${') ? '' : existingFabricCapacityName
+var resolvedExistingWorkspaceName = contains(existingFabricWorkspaceName, '\${') ? '' : existingFabricWorkspaceName
+
+var useExistingFabricCapacity = !empty(resolvedExistingCapacityName)
+var useExistingFabricWorkspace = !empty(resolvedExistingWorkspaceName)
 
 var solutionSuffix = toLower(trim(replace(
   replace(
@@ -60,7 +64,7 @@ var solutionSuffix = toLower(trim(replace(
 // FABRIC CAPACITY - Create new or reference existing
 // ============================================================================
 
-var fabricCapacityResourceName = useExistingFabricCapacity ? existingFabricCapacityName : 'fc${solutionSuffix}'
+var fabricCapacityResourceName = useExistingFabricCapacity ? resolvedExistingCapacityName : 'fc${solutionSuffix}'
 var fabricCapacityDefaultAdmins = deployer().?userPrincipalName == null
   ? [deployer().objectId]
   : [deployer().userPrincipalName]
@@ -85,7 +89,7 @@ var resolvedFabricCapacityName = fabricCapacityResourceName
 // FABRIC WORKSPACE - Use existing or create new (handled in post-deployment)
 // ============================================================================
 
-var resolvedFabricWorkspaceName = useExistingFabricWorkspace ? existingFabricWorkspaceName : ''
+var resolvedFabricWorkspaceName = useExistingFabricWorkspace ? resolvedExistingWorkspaceName : ''
 
 // ============================================================================
 // OUTPUTS

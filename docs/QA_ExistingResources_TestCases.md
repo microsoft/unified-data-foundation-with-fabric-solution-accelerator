@@ -21,11 +21,11 @@ This document provides test cases for validating the `azd up` deployment with ex
 2. Run the following commands:
    ```powershell
    azd auth login
-   a
+   az login
    azd up
    ```
 3. Follow the prompts to select subscription and location
-4. Wait for deployment to complete
+4. Wait for deployment to complete. It takes 20-25 minutes to complete.
 
 ### Expected Result
 
@@ -52,6 +52,7 @@ This document provides test cases for validating the `azd up` deployment with ex
 ### Prerequisites
 
 - Values from Test Case 1
+- To ensure deployment is running, delete reports folder from workspace.
 
 ### Steps
 
@@ -89,8 +90,9 @@ This document provides test cases for validating the `azd up` deployment with ex
 
 1. Initialize a new environment or clear workspace setting:
    ```powershell
-   azd env new test-capacity-only
+   
    azd env set AZURE_EXISTING_FABRIC_CAPACITY_NAME "<capacity-name-from-test-1>"
+   <make sure to clean workspace variable if set>
    # Do NOT set FABRIC_WORKSPACE_NAME
    ```
 
@@ -121,7 +123,7 @@ This document provides test cases for validating the `azd up` deployment with ex
 
 1. Initialize a new environment or clear capacity setting:
    ```powershell
-   azd env new test-workspace-only
+      
    azd env set FABRIC_WORKSPACE_NAME "<workspace-name-from-test-1>"
    # Do NOT set AZURE_EXISTING_FABRIC_CAPACITY_NAME
    ```
