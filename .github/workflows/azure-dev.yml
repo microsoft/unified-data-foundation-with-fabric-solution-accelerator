@@ -67,15 +67,26 @@ jobs:
       - name: Validate Bicep Template
         run: |
           echo "Validating Bicep template..."
-          az deployment group validate \
+          set +e
+          OUTPUT=$(az deployment group validate \
             --resource-group rg-${{ env.AZURE_ENV_NAME_DEV }} \
             --template-file infra/main.json \
             --parameters infra/main.parameters.json \
             --parameters solutionName=${{ env.AZURE_ENV_NAME_DEV }} \
             --parameters location=${{ env.AZURE_LOCATION }} \
             --parameters existingFabricCapacityName="${{ vars.AZURE_EXISTING_FABRIC_CAPACITY_NAME || '' }}" \
-            --parameters existingFabricWorkspaceName="${{ vars.FABRIC_WORKSPACE_NAME || '' }}" || true
-          echo "✅ Bicep template validation completed"
+            --parameters existingFabricWorkspaceName="${{ vars.FABRIC_WORKSPACE_NAME || '' }}" 2>&1)
+          EXIT_CODE=$?
+          set -e
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✅ Bicep template validation completed"
+          elif echo "$OUTPUT" | grep -qi "ResourceGroupNotFound"; then
+            echo "⚠️ Bicep template validation skipped (resource group does not exist yet)"
+          else
+            echo "❌ Bicep template validation failed:"
+            echo "$OUTPUT"
+            exit $EXIT_CODE
+          fi
 
   deploy-dev:
     runs-on: ubuntu-latest

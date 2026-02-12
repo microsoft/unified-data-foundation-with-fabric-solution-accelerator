@@ -78,7 +78,12 @@ def setup_workspace(fabric_client: FabricApiClient, capacity_name: str, workspac
                 print(f"   ✅ Successfully assigned workspace to capacity")
             except FabricApiError as e:
                 # On failure, re-fetch the workspace to verify actual capacity assignment
-                refreshed = fabric_client.get_workspace(workspace_name)
+                try:
+                    refreshed = fabric_client.get_workspace(workspace_name)
+                except Exception as refresh_err:
+                    print(f"❌ Error assigning workspace to capacity: {e}")
+                    print(f"   Additionally, failed to verify workspace state: {refresh_err}")
+                    raise e from refresh_err
                 if refreshed and refreshed.get('capacityId') == capacity_id:
                     print(f"   ⚠️  Assignment call failed but workspace is already on the correct capacity. Continuing...")
                 else:

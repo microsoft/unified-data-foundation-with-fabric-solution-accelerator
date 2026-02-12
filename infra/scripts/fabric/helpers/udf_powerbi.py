@@ -114,39 +114,55 @@ def deploy_powerbi_reports(workspace_client: FabricWorkspaceApiClient,
                                 dataset_id=dataset.get('id')
                             )
                             print(f"         ✅ Dataset takeover completed")
-                            
-                            powerbi_client.update_powerbi_dataset_parameters(
-                                dataset_id=dataset.get('id'),
-                                parameters=[
-                                    {
-                                        "name": "sqlEndpoint", 
-                                        "newValue": connection_string
-                                    },
-                                    {
-                                        "name": "database", 
-                                        "newValue": gold_lakehouse_name
-                                    }
-                                ],
-                                workspace_id=workspace_id
-                            )
-                            print(f"         ✅ Dataset parameters configured successfully")
                         except requests.HTTPError as e:
                             error_msg = str(e)
-                            # Handle specific HTTP errors
-                            if "HTTP 404" in error_msg or "ItemNotFound" in error_msg:
-                                print(f"         ℹ️  Info: Dataset parameters not found in report")
-                                print(f"            The report does not use 'sqlEndpoint' and 'database' parameters")
-                                print(f"            This is normal for reports with direct connections or different parameter names")
-                            elif "HTTP 403" in error_msg:
-                                print(f"         ⚠️  Warning: API access restricted for parameter updates")
-                                print(f"            Service Principals cannot update Power BI dataset parameters")
-                                print(f"            Manual configuration required in Power BI service")
+                            if "HTTP 403" in error_msg:
+                                print(f"         ⚠️  Warning: Dataset takeover failed (403 Forbidden)")
+                                print(f"            The deployer may lack sufficient workspace role for dataset takeover")
+                                print(f"            Manual dataset configuration required in Power BI service")
                             else:
-                                print(f"         ⚠️  Warning: Could not update dataset parameters: {error_msg}")
+                                print(f"         ⚠️  Warning: Dataset takeover failed: {error_msg}")
                                 print(f"            You may need to configure the dataset connection manually")
+                            # Skip parameter update since takeover failed
+                            connection_string = None
                         except Exception as e:
-                            print(f"         ⚠️  Warning: Could not update dataset parameters: {str(e)}")
+                            print(f"         ⚠️  Warning: Dataset takeover failed: {str(e)}")
                             print(f"            You may need to configure the dataset connection manually")
+                            connection_string = None
+
+                        if connection_string:
+                            try:
+                                powerbi_client.update_powerbi_dataset_parameters(
+                                    dataset_id=dataset.get('id'),
+                                    parameters=[
+                                        {
+                                            "name": "sqlEndpoint", 
+                                            "newValue": connection_string
+                                        },
+                                        {
+                                            "name": "database", 
+                                            "newValue": gold_lakehouse_name
+                                        }
+                                    ],
+                                    workspace_id=workspace_id
+                                )
+                                print(f"         ✅ Dataset parameters configured successfully")
+                            except requests.HTTPError as e:
+                                error_msg = str(e)
+                                if "HTTP 404" in error_msg or "ItemNotFound" in error_msg:
+                                    print(f"         ℹ️  Info: Dataset parameters not found in report")
+                                    print(f"            The report does not use 'sqlEndpoint' and 'database' parameters")
+                                    print(f"            This is normal for reports with direct connections or different parameter names")
+                                elif "HTTP 403" in error_msg:
+                                    print(f"         ⚠️  Warning: API access restricted for parameter updates")
+                                    print(f"            Service Principals cannot update Power BI dataset parameters")
+                                    print(f"            Manual configuration required in Power BI service")
+                                else:
+                                    print(f"         ⚠️  Warning: Could not update dataset parameters: {error_msg}")
+                                    print(f"            You may need to configure the dataset connection manually")
+                            except Exception as e:
+                                print(f"         ⚠️  Warning: Could not update dataset parameters: {str(e)}")
+                                print(f"            You may need to configure the dataset connection manually")
                     else:
                         print(f"         ⚠️  Warning: Connection string not available")
                         print(f"            Dataset will need manual configuration")
