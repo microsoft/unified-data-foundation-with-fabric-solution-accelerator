@@ -9,7 +9,7 @@ azure-core==1.30.0
 azure-storage-file-datalake==12.14.0
 
 # HTTP requests
-requests==2.31.0
+requests==2.32.4
 
 # Date/time utilities (required by powerbi_api.py and fabric_api.py)
 python-dateutil==2.8.2
