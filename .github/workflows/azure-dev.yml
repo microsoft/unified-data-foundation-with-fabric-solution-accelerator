@@ -288,3 +288,80 @@ jobs:
           echo "- 📋 [View FAQs](https://github.com/${{ github.repository }}/blob/main/docs/FAQs.md)" >> $GITHUB_STEP_SUMMARY
           echo "- 🐛 [Report Issues](https://github.com/${{ github.repository }}/issues)" >> $GITHUB_STEP_SUMMARY
           echo "- 📖 [Technical Architecture](https://github.com/${{ github.repository }}/blob/main/docs/TechnicalArchitecture.md)" >> $GITHUB_STEP_SUMMARY
+
+  cleanup:
+    runs-on: ubuntu-latest
+    name: Cleanup Resources
+    environment: 'udfwf-dev'
+    needs: [build, deploy-dev]
+    if: always() && needs.build.outputs.RESOURCE_GROUP_NAME != '' && needs.build.outputs.ENV_NAME != ''
+    env:
+      RESOURCE_GROUP_NAME: ${{ needs.build.outputs.RESOURCE_GROUP_NAME }}
+      ENV_NAME: ${{ needs.build.outputs.ENV_NAME }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure CLI login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install azd
+        uses: Azure/setup-azd@v2
+
+      - name: Azure Developer CLI login
+        shell: bash
+        run: |
+          azd auth login \
+            --client-id "${{ env.AZURE_CLIENT_ID }}" \
+            --federated-credential-provider "github" \
+            --tenant-id "${{ env.AZURE_TENANT_ID }}"
+
+      - name: Restore azd Environment
+        shell: bash
+        run: |
+          set -e
+          echo "Restoring azd environment: ${{ env.ENV_NAME }}"
+          azd env new ${{ env.ENV_NAME }} --no-prompt || true
+          azd env select ${{ env.ENV_NAME }}
+          azd config set defaults.subscription ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          azd env set AZURE_SUBSCRIPTION_ID="${{ vars.AZURE_SUBSCRIPTION_ID }}"
+          azd env set AZURE_LOCATION="${{ env.AZURE_LOCATION }}"
+          azd env set AZURE_RESOURCE_GROUP="${{ env.RESOURCE_GROUP_NAME }}"
+          echo "✅ azd environment restored"
+
+      - name: Tear Down Fabric Workspace and Azure Resources
+        shell: bash
+        run: |
+          set -e
+          echo "🗑️  Running azd down to remove Fabric workspace and Azure resources..."
+          azd down --force --purge --no-prompt
+          echo "✅ azd down completed"
+
+      - name: Delete Resource Group
+        shell: bash
+        run: |
+          echo "🗑️  Deleting resource group '${{ env.RESOURCE_GROUP_NAME }}'..."
+          rg_exists=$(az group exists --name ${{ env.RESOURCE_GROUP_NAME }})
+          if [ "$rg_exists" = "true" ]; then
+            az group delete --name ${{ env.RESOURCE_GROUP_NAME }} --yes --no-wait
+            echo "✅ Resource group deletion initiated (async)"
+          else
+            echo "ℹ️  Resource group '${{ env.RESOURCE_GROUP_NAME }}' does not exist, skipping"
+          fi
+
+      - name: Output Cleanup Summary
+        run: |
+          CLEANUP_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          echo "# 🧹 Cleanup Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Cleanup completed at:** ${CLEANUP_TIME}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Resource | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | \`${{ env.ENV_NAME }}\` — torn down |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Resource Group** | \`${{ env.RESOURCE_GROUP_NAME }}\` — deletion initiated |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Fabric Workspace** | Removed via azd down (predown hook) |" >> $GITHUB_STEP_SUMMARY
