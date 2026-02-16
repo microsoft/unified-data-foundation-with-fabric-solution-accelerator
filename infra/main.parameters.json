@@ -7,9 +7,6 @@
     },
     "existingFabricCapacityName": {
       "value": "${AZURE_EXISTING_FABRIC_CAPACITY_NAME=}"
-    },
-    "existingFabricWorkspaceName": {
-      "value": "${FABRIC_WORKSPACE_NAME=}"
     }
   }
 }

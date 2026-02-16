@@ -142,8 +142,10 @@ def main():
     # Load configuration from environment variables
     capacity_name = get_required_env_var("AZURE_FABRIC_CAPACITY_NAME")
     solution_suffix = get_required_env_var("SOLUTION_SUFFIX")
-    workspace_name = os.getenv("FABRIC_WORKSPACE_NAME", f"{SOLUTION_NAME}_{solution_suffix}")
-    
+    # Use custom workspace name if provided; fall back to auto-generated name.
+    # 'or' handles both None (unset) and '' (set to empty by CI/CD when var is not configured).
+    workspace_name = os.getenv("FABRIC_WORKSPACE_NAME") or f"{SOLUTION_NAME}_{solution_suffix}"
+
     # Parse capacity administrators from JSON array format
     capacity_administrators_json = os.getenv("AZURE_FABRIC_CAPACITY_ADMINISTRATORS")
     capacity_administrators_list = []

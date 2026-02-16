@@ -40,15 +40,7 @@ param skuName string = 'F2'
 @description('Optional. Name of an existing Fabric capacity to use. If empty, a new capacity will be created.')
 param existingFabricCapacityName string = ''
 
-@description('Optional. Name of an existing Fabric workspace to use. If empty, a new workspace will be created during post-deployment.')
-param existingFabricWorkspaceName string = ''
-
-// Treat unresolved azd parameter syntax (e.g., '${VAR=}') as empty
-var resolvedExistingCapacityName = contains(existingFabricCapacityName, '\${') ? '' : existingFabricCapacityName
-var resolvedExistingWorkspaceName = contains(existingFabricWorkspaceName, '\${') ? '' : existingFabricWorkspaceName
-
-var useExistingFabricCapacity = !empty(resolvedExistingCapacityName)
-var useExistingFabricWorkspace = !empty(resolvedExistingWorkspaceName)
+var useExistingFabricCapacity = !empty(existingFabricCapacityName)
 
 var solutionSuffix = toLower(trim(replace(
   replace(
@@ -64,7 +56,7 @@ var solutionSuffix = toLower(trim(replace(
 // FABRIC CAPACITY - Create new or reference existing
 // ============================================================================
 
-var fabricCapacityResourceName = useExistingFabricCapacity ? resolvedExistingCapacityName : 'fc${solutionSuffix}'
+var fabricCapacityResourceName = useExistingFabricCapacity ? existingFabricCapacityName : 'fc${solutionSuffix}'
 var fabricCapacityDefaultAdmins = deployer().?userPrincipalName == null
   ? [deployer().objectId]
   : [deployer().userPrincipalName]
@@ -82,15 +74,6 @@ module newFabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = if (!useExi
   }
 }
 
-// Resolved capacity name (either existing or newly created)
-var resolvedFabricCapacityName = fabricCapacityResourceName
-
-// ============================================================================
-// FABRIC WORKSPACE - Use existing or create new (handled in post-deployment)
-// ============================================================================
-
-var resolvedFabricWorkspaceName = useExistingFabricWorkspace ? resolvedExistingWorkspaceName : ''
-
 // ============================================================================
 // OUTPUTS
 // ============================================================================
@@ -102,19 +85,10 @@ output AZURE_LOCATION string = location
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
 
 @description('The name of the Fabric capacity resource')
-output AZURE_FABRIC_CAPACITY_NAME string = resolvedFabricCapacityName
-
-@description('Whether an existing Fabric capacity was used')
-output AZURE_FABRIC_CAPACITY_IS_EXISTING bool = useExistingFabricCapacity
+output AZURE_FABRIC_CAPACITY_NAME string = fabricCapacityResourceName
 
 @description('The identities assigned as Fabric Capacity Admin members when a new capacity is created. When an existing capacity is used, this value is not applied and is provided for informational purposes only.')
 output AZURE_FABRIC_CAPACITY_ADMINISTRATORS array = fabricTotalAdminMembers
-
-@description('The name of the Fabric workspace (if existing was specified)')
-output AZURE_FABRIC_WORKSPACE_NAME string = resolvedFabricWorkspaceName
-
-@description('Whether an existing Fabric workspace was used')
-output AZURE_FABRIC_WORKSPACE_IS_EXISTING bool = useExistingFabricWorkspace
 
 @description('The unique solution suffix of the deployed resources')
 output SOLUTION_SUFFIX string = solutionSuffix

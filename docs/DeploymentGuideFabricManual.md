@@ -380,7 +380,7 @@ For more advanced deployment scenarios or to migrate to the automated azd approa
 - [Fabric Workspace Management](https://learn.microsoft.com/fabric/admin/workspaces)
 - [Azure CLI Fabric Extension](https://learn.microsoft.com/cli/azure/fabric)
 - [Main Deployment Guide (azd)](./DeploymentGuideFabric.md)
-- [Solution Architecture Overview](../architecture/README.md)
+- [Solution Architecture Overview](./TechnicalArchitecture.md)
 
 ---
 

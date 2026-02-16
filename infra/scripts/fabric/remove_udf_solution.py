@@ -36,7 +36,9 @@ repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
 
 # Load configuration from environment variables
 solution_suffix = get_required_env_var("SOLUTION_SUFFIX")
-workspace_name = os.getenv("FABRIC_WORKSPACE_NAME", f"{SOLUTION_NAME}_{solution_suffix}")
+# Use custom workspace name if provided; fall back to auto-generated name.
+# 'or' handles both None (unset) and '' (set to empty by CI/CD when var is not configured).
+workspace_name = os.getenv("FABRIC_WORKSPACE_NAME") or f"{SOLUTION_NAME}_{solution_suffix}"
 workspace_id = os.getenv("FABRIC_WORKSPACE_ID")
 if workspace_name and workspace_id:
     print("⚠️ WARNING: Both FABRIC_WORKSPACE_NAME and FABRIC_WORKSPACE_ID are set")
