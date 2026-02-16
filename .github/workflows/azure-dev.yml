@@ -21,7 +21,10 @@ on:
         options:
           - codespace
           - local
-          - devcontainer
+      workspace_administrators:
+        description: 'Workspace administrators (comma-separated UPNs or Object IDs)'
+        required: false
+        type: string
   push:
     branches:
       - main
@@ -176,7 +179,6 @@ jobs:
 
       - name: Deploy using azd up and extract values
         id: get_output_linux
-        if: inputs.execution_environment != 'devcontainer'
         shell: bash
         env:
           ENV_NAME: ${{ env.ENV_NAME }}
@@ -197,12 +199,18 @@ jobs:
           azd env set AZURE_LOCATION="$AZURE_LOCATION"
           azd env set AZURE_RESOURCE_GROUP="$RESOURCE_GROUP_NAME"
 
+          # Set optional workspace administrators if provided via input or repository variable
+          FABRIC_WS_ADMINS="${{ inputs.workspace_administrators || vars.FABRIC_WORKSPACE_ADMINISTRATORS }}"
+          if [ -n "$FABRIC_WS_ADMINS" ]; then
+            azd env set FABRIC_WORKSPACE_ADMINISTRATORS "$FABRIC_WS_ADMINS"
+            echo "Workspace administrators set: $FABRIC_WS_ADMINS"
+          fi
+
           # Deploy using azd up
           azd up --no-prompt
 
       - name: Get azd Environment Parameters
         id: azd_params
-        if: inputs.execution_environment != 'devcontainer'
         shell: bash
         run: |
           echo "Extracting azd environment parameters..."
@@ -224,96 +232,6 @@ jobs:
           echo "AZURE_FABRIC_CAPACITY_ADMINISTRATORS=${AZURE_FABRIC_CAPACITY_ADMINISTRATORS}" >> $GITHUB_ENV
 
           echo "✅ azd parameters extracted successfully"
-
-      - name: Deploy with azd up in DevContainer
-        if: inputs.execution_environment == 'devcontainer'
-        uses: devcontainers/ci@v0.3
-        env:
-          AZURE_CLIENT_ID: ${{ env.AZURE_CLIENT_ID }}
-          AZURE_TENANT_ID: ${{ env.AZURE_TENANT_ID }}
-          AZURE_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-          AZURE_ENV_NAME: ${{ env.ENV_NAME }}
-          AZURE_LOCATION: ${{ env.AZURE_LOCATION }}
-          AZURE_RESOURCE_GROUP: ${{ env.RESOURCE_GROUP_NAME }}
-          FABRIC_WORKSPACE_ADMINISTRATORS: ${{ vars.FABRIC_WORKSPACE_ADMINISTRATORS }}
-        with:
-          env: |
-            AZURE_CLIENT_ID
-            AZURE_TENANT_ID
-            AZURE_SUBSCRIPTION_ID
-            AZURE_CLIENT_SECRET
-            AZURE_ENV_NAME
-            AZURE_LOCATION
-            AZURE_RESOURCE_GROUP
-            FABRIC_WORKSPACE_ADMINISTRATORS
-          runCmd: |
-            echo "🐳 Running inside devcontainer — same environment as Codespaces"
-            echo "Python:     $(python3 --version)"
-            echo "Azure CLI:  $(az version --query '"azure-cli"' -o tsv)"
-            echo "azd:        $(azd version)"
-            echo "PowerShell: $(pwsh --version)"
-            echo ""
-
-            # 1. Authenticate Azure CLI and azd using client secret
-            echo "🔐 Logging in with Azure CLI (client secret)..."
-            az login --service-principal -u "$AZURE_CLIENT_ID" -p "$AZURE_CLIENT_SECRET" --tenant "$AZURE_TENANT_ID"
-            az account set --subscription "$AZURE_SUBSCRIPTION_ID"
-
-            echo "🔐 Logging in with azd (client secret)..."
-            azd auth login \
-              --client-id "$AZURE_CLIENT_ID" \
-              --client-secret "$AZURE_CLIENT_SECRET" \
-              --tenant-id "$AZURE_TENANT_ID"
-
-            # 2. Initialize azd environment
-            echo "⚙️ Configuring azd environment..."
-            echo "  Environment Name: $AZURE_ENV_NAME"
-            echo "  Resource Group:   $AZURE_RESOURCE_GROUP"
-            echo "  Location:         $AZURE_LOCATION"
-            echo ""
-            azd env new "$AZURE_ENV_NAME" --no-prompt || true
-            azd env select "$AZURE_ENV_NAME"
-            azd env set AZURE_SUBSCRIPTION_ID "$AZURE_SUBSCRIPTION_ID"
-            azd env set AZURE_LOCATION "$AZURE_LOCATION"
-            azd env set AZURE_RESOURCE_GROUP "$AZURE_RESOURCE_GROUP"
-
-            # Set optional Fabric configuration if provided
-            if [ -n "$FABRIC_WORKSPACE_ADMINISTRATORS" ]; then
-              azd env set FABRIC_WORKSPACE_ADMINISTRATORS "$FABRIC_WORKSPACE_ADMINISTRATORS"
-            fi
-
-            # 3. Run azd up — provisions infra (Bicep) + runs postprovision hook (Fabric)
-            echo "🚀 Running azd up..."
-            azd up --no-prompt
-
-            # 4. Export azd env values to a file so the host summary step can read them
-            echo "📝 Exporting azd environment values..."
-            azd env get-values > /tmp/azd-env-values.txt 2>/dev/null || true
-            cp /tmp/azd-env-values.txt "$PWD/.azd-env-output" || true
-
-            echo ""
-            echo "✅ Deployment complete!"
-
-      - name: Load azd Environment Outputs
-        id: azd_devcontainer_params
-        if: inputs.execution_environment == 'devcontainer'
-        shell: bash
-        run: |
-          # Read the azd env values exported from the devcontainer
-          if [ -f .azd-env-output ]; then
-            echo "📝 Loading azd environment values..."
-            while IFS= read -r line; do
-              key=$(echo "$line" | cut -d'=' -f1)
-              value=$(echo "$line" | cut -d'=' -f2- | sed 's/^"//; s/"$//')
-              if [ -n "$key" ] && [ -n "$value" ]; then
-                echo "${key}=${value}" >> $GITHUB_ENV
-              fi
-            done < .azd-env-output
-            echo "✅ Loaded azd environment values"
-          else
-            echo "⚠️ No azd env output file found (.azd-env-output)"
-          fi
 
       - name: Output Deployment Summary
         run: |
