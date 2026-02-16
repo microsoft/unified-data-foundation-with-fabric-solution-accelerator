@@ -152,6 +152,9 @@ jobs:
     name: Deploy to Development
     environment: 'udfwf-dev'
     needs: build
+    outputs:
+      SOLUTION_SUFFIX: ${{ steps.azd_params.outputs.SOLUTION_SUFFIX }}
+      AZURE_FABRIC_CAPACITY_NAME: ${{ steps.azd_params.outputs.AZURE_FABRIC_CAPACITY_NAME }}
     env:
       RESOURCE_GROUP_NAME: ${{ needs.build.outputs.RESOURCE_GROUP_NAME }}
       ENV_NAME: ${{ needs.build.outputs.ENV_NAME }}
@@ -298,6 +301,7 @@ jobs:
     env:
       RESOURCE_GROUP_NAME: ${{ needs.build.outputs.RESOURCE_GROUP_NAME }}
       ENV_NAME: ${{ needs.build.outputs.ENV_NAME }}
+      SOLUTION_SUFFIX: ${{ needs.deploy-dev.outputs.SOLUTION_SUFFIX }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -331,6 +335,7 @@ jobs:
           azd env set AZURE_SUBSCRIPTION_ID="${{ vars.AZURE_SUBSCRIPTION_ID }}"
           azd env set AZURE_LOCATION="${{ env.AZURE_LOCATION }}"
           azd env set AZURE_RESOURCE_GROUP="${{ env.RESOURCE_GROUP_NAME }}"
+          azd env set SOLUTION_SUFFIX="${{ env.SOLUTION_SUFFIX }}"
           echo "✅ azd environment restored"
 
       - name: Tear Down Fabric Workspace and Azure Resources
