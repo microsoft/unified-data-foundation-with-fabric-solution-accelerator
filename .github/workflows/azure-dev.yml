@@ -3,6 +3,25 @@ name: CI/CD Azure
 # Trigger the workflow on push to main/master or manual dispatch
 on:
   workflow_dispatch:
+    inputs:
+      AZURE_LOCATION:
+        description: 'Azure region (e.g., westus3)'
+        required: false
+        type: string
+        default: 'westus3'
+      resource_group_name:
+        description: 'Resource group name (leave empty to auto-generate)'
+        required: false
+        type: string
+      execution_environment:
+        description: 'Execution environment'
+        required: true
+        type: choice
+        default: 'codespace'
+        options:
+          - codespace
+          - local
+          - devcontainer
   push:
     branches:
       - main
@@ -28,15 +47,17 @@ env:
   AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
   AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
   AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-  AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
-  AZURE_ENV_NAME_DEV: '${{ vars.AZURE_ENV_NAME }}d'
-  AZURE_RESOURCE_GROUP_NAME_DEV: 'rg-${{ vars.AZURE_ENV_NAME }}d'
-
+  AZURE_LOCATION: ${{ inputs.AZURE_LOCATION }}
+  PYTHONIOENCODING: utf-8
+  
 jobs:
   build:
     runs-on: ubuntu-latest
     name: Build and Static Analysis
     environment: 'udfwf-build'
+    outputs:
+      RESOURCE_GROUP_NAME: ${{ steps.check_create_rg.outputs.RESOURCE_GROUP_NAME }}
+      ENV_NAME: ${{ steps.generate_env_name.outputs.ENV_NAME }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,6 +74,54 @@ jobs:
           curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
           chmod +x ./bicep
           sudo mv ./bicep /usr/local/bin/bicep
+      - name: Generate Resource Group Name
+        id: generate_rg_name
+        shell: bash
+        env:
+          INPUT_RESOURCE_GROUP_NAME: ${{ inputs.resource_group_name }}
+        run: |
+          # Check if a resource group name was provided as input
+          if [[ -n "$INPUT_RESOURCE_GROUP_NAME" ]]; then
+            echo "Using provided Resource Group name: $INPUT_RESOURCE_GROUP_NAME"
+            echo "RESOURCE_GROUP_NAME=$INPUT_RESOURCE_GROUP_NAME" >> $GITHUB_ENV
+          else
+            echo "Generating a unique resource group name..."
+            ACCL_NAME="cp"
+            SHORT_UUID=$(uuidgen | cut -d'-' -f1)
+            UNIQUE_RG_NAME="arg-${ACCL_NAME}-${SHORT_UUID}"
+            echo "RESOURCE_GROUP_NAME=${UNIQUE_RG_NAME}" >> $GITHUB_ENV
+            echo "Generated RESOURCE_GROUP_NAME: ${UNIQUE_RG_NAME}"
+          fi
+
+      - name: Check and Create Resource Group
+        id: check_create_rg
+        shell: bash
+        run: |
+          set -e
+          echo "🔍 Checking if resource group '$RESOURCE_GROUP_NAME' exists..."
+          rg_exists=$(az group exists --name $RESOURCE_GROUP_NAME)
+          if [ "$rg_exists" = "false" ]; then
+            echo "📦 Resource group does not exist. Creating new resource group '$RESOURCE_GROUP_NAME' in location '$AZURE_LOCATION'..."
+            az group create --name $RESOURCE_GROUP_NAME --location $AZURE_LOCATION || { echo "❌ Error creating resource group"; exit 1; }
+            echo "✅ Resource group '$RESOURCE_GROUP_NAME' created successfully."
+          else
+            echo "✅ Resource group '$RESOURCE_GROUP_NAME' already exists. Deploying to existing resource group."
+          fi
+          echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
+          echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
+
+      - name: Generate Unique Environment Name
+        id: generate_env_name
+        shell: bash
+        run: |
+          COMMON_PART="pslc"
+          TIMESTAMP=$(date +%s)
+          UPDATED_TIMESTAMP=$(echo $TIMESTAMP | tail -c 6)
+          UNIQUE_ENV_NAME="${COMMON_PART}${UPDATED_TIMESTAMP}"
+          echo "ENV_NAME=${UNIQUE_ENV_NAME}" >> $GITHUB_ENV
+          echo "Generated Environment Name: ${UNIQUE_ENV_NAME}"
+          
+          echo "ENV_NAME=${UNIQUE_ENV_NAME}" >> $GITHUB_OUTPUT
 
       - name: Bicep Static Code Analysis
         run: |
@@ -68,19 +137,21 @@ jobs:
         run: |
           echo "Validating Bicep template..."
           az deployment group validate \
-            --resource-group rg-${{ env.AZURE_ENV_NAME_DEV }} \
+            --resource-group ${{ env.RESOURCE_GROUP_NAME }} \
             --template-file infra/main.json \
             --parameters infra/main.parameters.json \
-            --parameters solutionName=${{ env.AZURE_ENV_NAME_DEV }} \
+            --parameters solutionName=${{ env.ENV_NAME }} \
             --parameters location=${{ env.AZURE_LOCATION }} || true
           echo "✅ Bicep template validation completed"
 
   deploy-dev:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.execution_environment == 'local' && 'windows-latest' || 'ubuntu-latest' }}
     name: Deploy to Development
     environment: 'udfwf-dev'
     needs: build
-    # if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/pre-deploy-alguadam' || github.event_name == 'workflow_dispatch'
+    env:
+      RESOURCE_GROUP_NAME: ${{ needs.build.outputs.RESOURCE_GROUP_NAME }}
+      ENV_NAME: ${{ needs.build.outputs.ENV_NAME }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -92,60 +163,154 @@ jobs:
           tenant-id: ${{ env.AZURE_TENANT_ID }}
           subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy Infrastructure
-        id: bicep-deploy
-        uses: azure/bicep-deploy@v2
-        with:
-            type: deployment
-            operation: create
-            scope: resourceGroup
-            subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
-            resource-group-name:  ${{ env.AZURE_RESOURCE_GROUP_NAME_DEV }}
-            template-file: ./infra/main.bicep
-            parameters-file: ./infra/main.parameters.json
-            parameters: |
-                {
-                  "solutionName": "${{ env.AZURE_ENV_NAME_DEV }}"
-                }
-
-      - name: Setup Python Environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install Python Dependencies
+      - name: Azure Developer CLI login
+        shell: bash
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          azd auth login \
+            --client-id "${{ env.AZURE_CLIENT_ID }}" \
+            --federated-credential-provider "github" \
+            --tenant-id "${{ env.AZURE_TENANT_ID }}"
 
-      - name: Run Fabric Provisioning Script
-        working-directory: infra/scripts/utils
+      - name: Deploy using azd up and extract values
+        id: get_output_linux
+        if: inputs.execution_environment != 'devcontainer'
+        shell: bash
         env:
-          # Required environment variables from Bicep outputs
-          AZURE_FABRIC_CAPACITY_NAME: ${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }}
-          SOLUTION_SUFFIX: ${{ steps.bicep-deploy.outputs.SOLUTION_SUFFIX }}
-          AZURE_FABRIC_CAPACITY_ADMINISTRATORS: ${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_ADMINISTRATORS }}
-          # Optional environment variables from GitHub variables
-          #FABRIC_WORKSPACE_NAME: ${{ vars.FABRIC_WORKSPACE_NAME }}
-          FABRIC_WORKSPACE_ADMINISTRATORS: ${{ vars.FABRIC_WORKSPACE_ADMINISTRATORS }}
+          ENV_NAME: ${{ env.ENV_NAME }}
+          AZURE_LOCATION: ${{ env.AZURE_LOCATION }}
+          RESOURCE_GROUP_NAME: ${{ env.RESOURCE_GROUP_NAME }}
         run: |
-          echo "Running UDF fabric provisioning script..."
-          echo "Environment configuration:"
-          echo "  Capacity: $AZURE_FABRIC_CAPACITY_NAME"
-          echo "  Solution Suffix: $SOLUTION_SUFFIX"
-          echo "  Workspace: ${FABRIC_WORKSPACE_NAME:-'(auto-generated)'}"
-          echo "  Capacity Admins: ${AZURE_FABRIC_CAPACITY_ADMINISTRATORS:-'(none specified)'}"
-          echo "  Workspace Admins: ${FABRIC_WORKSPACE_ADMINISTRATORS:-'(none specified)'}"
-          echo ""
+          set -e
 
-          # Run the Python deployment script directly with environment variables
-          pwsh ./Run-PythonScript.ps1 \
-            -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py" \
-            -SkipPythonVirtualEnvironment \
-            -SkipPythonDependencies \
-            -SkipPipUpgrade
+          echo "Creating environment..."
+          azd env new $ENV_NAME --no-prompt
+          echo "Environment created: $ENV_NAME"
 
-          echo "✅ UDF fabric items provisioning completed"
+          echo "Setting default subscription..."
+          azd config set defaults.subscription ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          
+          # Set additional parameters
+          azd env set AZURE_SUBSCRIPTION_ID="${{ vars.AZURE_SUBSCRIPTION_ID }}"
+          azd env set AZURE_LOCATION="$AZURE_LOCATION"
+          azd env set AZURE_RESOURCE_GROUP="$RESOURCE_GROUP_NAME"
+
+          # Deploy using azd up
+          azd up --no-prompt
+
+      - name: Get azd Environment Parameters
+        id: azd_params
+        if: inputs.execution_environment != 'devcontainer'
+        shell: bash
+        run: |
+          echo "Extracting azd environment parameters..."
+
+          AZURE_FABRIC_CAPACITY_NAME=$(azd env get-value AZURE_FABRIC_CAPACITY_NAME 2>/dev/null || echo "")
+          echo "AZURE_FABRIC_CAPACITY_NAME=${AZURE_FABRIC_CAPACITY_NAME}" >> $GITHUB_OUTPUT
+          echo "AZURE_FABRIC_CAPACITY_NAME=${AZURE_FABRIC_CAPACITY_NAME}" >> $GITHUB_ENV
+
+          SOLUTION_SUFFIX=$(azd env get-value SOLUTION_SUFFIX 2>/dev/null || echo "")
+          echo "SOLUTION_SUFFIX=${SOLUTION_SUFFIX}" >> $GITHUB_OUTPUT
+          echo "SOLUTION_SUFFIX=${SOLUTION_SUFFIX}" >> $GITHUB_ENV
+
+          AZURE_RESOURCE_GROUP=$(azd env get-value AZURE_RESOURCE_GROUP 2>/dev/null || echo "")
+          echo "AZURE_RESOURCE_GROUP=${AZURE_RESOURCE_GROUP}" >> $GITHUB_OUTPUT
+          echo "AZURE_RESOURCE_GROUP=${AZURE_RESOURCE_GROUP}" >> $GITHUB_ENV
+
+          AZURE_FABRIC_CAPACITY_ADMINISTRATORS=$(azd env get-value AZURE_FABRIC_CAPACITY_ADMINISTRATORS 2>/dev/null || echo "")
+          echo "AZURE_FABRIC_CAPACITY_ADMINISTRATORS=${AZURE_FABRIC_CAPACITY_ADMINISTRATORS}" >> $GITHUB_OUTPUT
+          echo "AZURE_FABRIC_CAPACITY_ADMINISTRATORS=${AZURE_FABRIC_CAPACITY_ADMINISTRATORS}" >> $GITHUB_ENV
+
+          echo "✅ azd parameters extracted successfully"
+
+      - name: Deploy with azd up in DevContainer
+        if: inputs.execution_environment == 'devcontainer'
+        uses: devcontainers/ci@v0.3
+        env:
+          AZURE_CLIENT_ID: ${{ env.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ env.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_ENV_NAME: ${{ env.ENV_NAME }}
+          AZURE_LOCATION: ${{ env.AZURE_LOCATION }}
+          AZURE_RESOURCE_GROUP: ${{ env.RESOURCE_GROUP_NAME }}
+          FABRIC_WORKSPACE_ADMINISTRATORS: ${{ vars.FABRIC_WORKSPACE_ADMINISTRATORS }}
+        with:
+          env: |
+            AZURE_CLIENT_ID
+            AZURE_TENANT_ID
+            AZURE_SUBSCRIPTION_ID
+            AZURE_CLIENT_SECRET
+            AZURE_ENV_NAME
+            AZURE_LOCATION
+            AZURE_RESOURCE_GROUP
+            FABRIC_WORKSPACE_ADMINISTRATORS
+          runCmd: |
+            echo "🐳 Running inside devcontainer — same environment as Codespaces"
+            echo "Python:     $(python3 --version)"
+            echo "Azure CLI:  $(az version --query '"azure-cli"' -o tsv)"
+            echo "azd:        $(azd version)"
+            echo "PowerShell: $(pwsh --version)"
+            echo ""
+
+            # 1. Authenticate Azure CLI and azd using client secret
+            echo "🔐 Logging in with Azure CLI (client secret)..."
+            az login --service-principal -u "$AZURE_CLIENT_ID" -p "$AZURE_CLIENT_SECRET" --tenant "$AZURE_TENANT_ID"
+            az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+
+            echo "🔐 Logging in with azd (client secret)..."
+            azd auth login \
+              --client-id "$AZURE_CLIENT_ID" \
+              --client-secret "$AZURE_CLIENT_SECRET" \
+              --tenant-id "$AZURE_TENANT_ID"
+
+            # 2. Initialize azd environment
+            echo "⚙️ Configuring azd environment..."
+            echo "  Environment Name: $AZURE_ENV_NAME"
+            echo "  Resource Group:   $AZURE_RESOURCE_GROUP"
+            echo "  Location:         $AZURE_LOCATION"
+            echo ""
+            azd env new "$AZURE_ENV_NAME" --no-prompt || true
+            azd env select "$AZURE_ENV_NAME"
+            azd env set AZURE_SUBSCRIPTION_ID "$AZURE_SUBSCRIPTION_ID"
+            azd env set AZURE_LOCATION "$AZURE_LOCATION"
+            azd env set AZURE_RESOURCE_GROUP "$AZURE_RESOURCE_GROUP"
+
+            # Set optional Fabric configuration if provided
+            if [ -n "$FABRIC_WORKSPACE_ADMINISTRATORS" ]; then
+              azd env set FABRIC_WORKSPACE_ADMINISTRATORS "$FABRIC_WORKSPACE_ADMINISTRATORS"
+            fi
+
+            # 3. Run azd up — provisions infra (Bicep) + runs postprovision hook (Fabric)
+            echo "🚀 Running azd up..."
+            azd up --no-prompt
+
+            # 4. Export azd env values to a file so the host summary step can read them
+            echo "📝 Exporting azd environment values..."
+            azd env get-values > /tmp/azd-env-values.txt 2>/dev/null || true
+            cp /tmp/azd-env-values.txt "$PWD/.azd-env-output" || true
+
+            echo ""
+            echo "✅ Deployment complete!"
+
+      - name: Load azd Environment Outputs
+        id: azd_devcontainer_params
+        if: inputs.execution_environment == 'devcontainer'
+        shell: bash
+        run: |
+          # Read the azd env values exported from the devcontainer
+          if [ -f .azd-env-output ]; then
+            echo "📝 Loading azd environment values..."
+            while IFS= read -r line; do
+              key=$(echo "$line" | cut -d'=' -f1)
+              value=$(echo "$line" | cut -d'=' -f2- | sed 's/^"//; s/"$//')
+              if [ -n "$key" ] && [ -n "$value" ]; then
+                echo "${key}=${value}" >> $GITHUB_ENV
+              fi
+            done < .azd-env-output
+            echo "✅ Loaded azd environment values"
+          else
+            echo "⚠️ No azd env output file found (.azd-env-output)"
+          fi
 
       - name: Output Deployment Summary
         run: |
@@ -153,9 +318,9 @@ jobs:
           DEPLOYMENT_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
           
           # Construct URLs
-          AZURE_RG_URL="https://portal.azure.com/#@${{ env.AZURE_TENANT_ID }}/resource/subscriptions/${{ env.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ env.AZURE_RESOURCE_GROUP_NAME_DEV }}/overview"
-          AZURE_FABRIC_CAPACITY_URL="https://portal.azure.com/#@${{ env.AZURE_TENANT_ID }}/resource/subscriptions/${{ env.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ env.AZURE_RESOURCE_GROUP_NAME_DEV }}/providers/Microsoft.Fabric/capacities/${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }}/overview"
-          FABRIC_WORKSPACE_NAME="UDF-${{ steps.bicep-deploy.outputs.AZURE_SOLUTION_SUFFIX }}"
+          AZURE_RG_URL="https://portal.azure.com/#@${{ env.AZURE_TENANT_ID }}/resource/subscriptions/${{ env.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ env.RESOURCE_GROUP_NAME }}/overview"
+          AZURE_FABRIC_CAPACITY_URL="https://portal.azure.com/#@${{ env.AZURE_TENANT_ID }}/resource/subscriptions/${{ env.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ env.RESOURCE_GROUP_NAME }}/providers/Microsoft.Fabric/capacities/${{ env.AZURE_FABRIC_CAPACITY_NAME }}/overview"
+          FABRIC_WORKSPACE_NAME="UDF-${{ env.SOLUTION_SUFFIX }}"
           FABRIC_WORKSPACE_URL="https://app.fabric.microsoft.com"
           
           echo "# 🚀 Unified Data Foundation Deployment Summary" >> $GITHUB_STEP_SUMMARY
@@ -168,11 +333,11 @@ jobs:
           echo "## 📊 Deployment Details" >> $GITHUB_STEP_SUMMARY
           echo "| Resource | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Environment** | \`${{ env.AZURE_ENV_NAME_DEV }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | \`${{ env.ENV_NAME }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Azure Region** | \`${{ env.AZURE_LOCATION }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Solution Suffix** | \`${{ steps.bicep-deploy.outputs.AZURE_SOLUTION_SUFFIX }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Resource Group** | [\`${{ env.AZURE_RESOURCE_GROUP_NAME_DEV }}\`](${AZURE_RG_URL}) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Fabric Capacity** | [\`${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }}\`](${AZURE_FABRIC_CAPACITY_URL}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Solution Suffix** | \`${{ env.SOLUTION_SUFFIX }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Resource Group** | [\`${{ env.RESOURCE_GROUP_NAME }}\`](${AZURE_RG_URL}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Fabric Capacity** | [\`${{ env.AZURE_FABRIC_CAPACITY_NAME }}\`](${AZURE_FABRIC_CAPACITY_URL}) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Fabric Workspace** | \`${FABRIC_WORKSPACE_NAME}\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
