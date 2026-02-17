@@ -5,12 +5,23 @@ on:
   workflow_dispatch:
     inputs:
       AZURE_LOCATION:
-        description: 'Azure region (e.g., westus3)'
+        description: 'Azure region'
         required: false
-        type: string
+        type: choice
         default: 'westus3'
+        options:
+          - australiaeast
+          - eastus
+          - eastus2
+          - japaneast
+          - northcentralus
+          - southcentralus
+          - swedencentral
+          - uksouth
+          - westus
+          - westus3
       resource_group_name:
-        description: 'Resource group name (leave empty to auto-generate)'
+        description: 'Resource group name'
         required: false
         type: string
       execution_environment:
@@ -22,7 +33,7 @@ on:
           - codespace
           - local
       workspace_administrators:
-        description: 'Workspace administrators (comma-separated UPNs or Object IDs)'
+        description: 'Workspace administrators (Object ID)'
         required: false
         type: string
   push:
@@ -338,25 +349,13 @@ jobs:
           azd env set SOLUTION_SUFFIX="${{ env.SOLUTION_SUFFIX }}"
           echo "✅ azd environment restored"
 
-      - name: Tear Down Fabric Workspace and Azure Resources
+      - name: Delete Fabric Workspace and Azure Resources
         shell: bash
         run: |
           set -e
           echo "🗑️  Running azd down to remove Fabric workspace and Azure resources..."
           azd down --force --purge --no-prompt
           echo "✅ azd down completed"
-
-      - name: Delete Resource Group
-        shell: bash
-        run: |
-          echo "🗑️  Deleting resource group '${{ env.RESOURCE_GROUP_NAME }}'..."
-          rg_exists=$(az group exists --name ${{ env.RESOURCE_GROUP_NAME }})
-          if [ "$rg_exists" = "true" ]; then
-            az group delete --name ${{ env.RESOURCE_GROUP_NAME }} --yes --no-wait
-            echo "✅ Resource group deletion initiated (async)"
-          else
-            echo "ℹ️  Resource group '${{ env.RESOURCE_GROUP_NAME }}' does not exist, skipping"
-          fi
 
       - name: Output Cleanup Summary
         run: |
@@ -367,6 +366,5 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Resource | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Environment** | \`${{ env.ENV_NAME }}\` — torn down |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Resource Group** | \`${{ env.RESOURCE_GROUP_NAME }}\` — deletion initiated |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Fabric Workspace** | Removed via azd down (predown hook) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Resource Group** | \`${{ env.RESOURCE_GROUP_NAME }}\` — deleted |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Fabric Workspace** | Deleted |" >> $GITHUB_STEP_SUMMARY
