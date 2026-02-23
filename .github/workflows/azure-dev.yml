@@ -67,13 +67,25 @@ jobs:
       - name: Validate Bicep Template
         run: |
           echo "Validating Bicep template..."
-          az deployment group validate \
+          set +e
+          OUTPUT=$(az deployment group validate \
             --resource-group rg-${{ env.AZURE_ENV_NAME_DEV }} \
             --template-file infra/main.json \
             --parameters infra/main.parameters.json \
             --parameters solutionName=${{ env.AZURE_ENV_NAME_DEV }} \
-            --parameters location=${{ env.AZURE_LOCATION }} || true
-          echo "✅ Bicep template validation completed"
+            --parameters location=${{ env.AZURE_LOCATION }} \
+            --parameters existingFabricCapacityName="${{ vars.AZURE_EXISTING_FABRIC_CAPACITY_NAME || '' }}" 2>&1)
+          EXIT_CODE=$?
+          set -e
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✅ Bicep template validation completed"
+          elif echo "$OUTPUT" | grep -qi "ResourceGroupNotFound"; then
+            echo "⚠️ Bicep template validation skipped (resource group does not exist yet)"
+          else
+            echo "❌ Bicep template validation failed:"
+            echo "$OUTPUT"
+            exit $EXIT_CODE
+          fi
 
   deploy-dev:
     runs-on: ubuntu-latest
@@ -105,7 +117,8 @@ jobs:
             parameters-file: ./infra/main.parameters.json
             parameters: |
                 {
-                  "solutionName": "${{ env.AZURE_ENV_NAME_DEV }}"
+                  "solutionName": "${{ env.AZURE_ENV_NAME_DEV }}",
+                  "existingFabricCapacityName": "${{ vars.AZURE_EXISTING_FABRIC_CAPACITY_NAME || '' }}"
                 }
 
       - name: Setup Python Environment
@@ -126,7 +139,7 @@ jobs:
           SOLUTION_SUFFIX: ${{ steps.bicep-deploy.outputs.SOLUTION_SUFFIX }}
           AZURE_FABRIC_CAPACITY_ADMINISTRATORS: ${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_ADMINISTRATORS }}
           # Optional environment variables from GitHub variables
-          #FABRIC_WORKSPACE_NAME: ${{ vars.FABRIC_WORKSPACE_NAME }}
+          FABRIC_WORKSPACE_NAME: ${{ vars.FABRIC_WORKSPACE_NAME || '' }}
           FABRIC_WORKSPACE_ADMINISTRATORS: ${{ vars.FABRIC_WORKSPACE_ADMINISTRATORS }}
         run: |
           echo "Running UDF fabric provisioning script..."
@@ -155,7 +168,7 @@ jobs:
           # Construct URLs
           AZURE_RG_URL="https://portal.azure.com/#@${{ env.AZURE_TENANT_ID }}/resource/subscriptions/${{ env.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ env.AZURE_RESOURCE_GROUP_NAME_DEV }}/overview"
           AZURE_FABRIC_CAPACITY_URL="https://portal.azure.com/#@${{ env.AZURE_TENANT_ID }}/resource/subscriptions/${{ env.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ env.AZURE_RESOURCE_GROUP_NAME_DEV }}/providers/Microsoft.Fabric/capacities/${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }}/overview"
-          FABRIC_WORKSPACE_NAME="UDF-${{ steps.bicep-deploy.outputs.AZURE_SOLUTION_SUFFIX }}"
+          FABRIC_WORKSPACE_NAME="${FABRIC_WORKSPACE_NAME:-Unified_Data_Foundation_${{ steps.bicep-deploy.outputs.SOLUTION_SUFFIX }}}"
           FABRIC_WORKSPACE_URL="https://app.fabric.microsoft.com"
           
           echo "# 🚀 Unified Data Foundation Deployment Summary" >> $GITHUB_STEP_SUMMARY
@@ -170,7 +183,7 @@ jobs:
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| **Environment** | \`${{ env.AZURE_ENV_NAME_DEV }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Azure Region** | \`${{ env.AZURE_LOCATION }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Solution Suffix** | \`${{ steps.bicep-deploy.outputs.AZURE_SOLUTION_SUFFIX }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Solution Suffix** | \`${{ steps.bicep-deploy.outputs.SOLUTION_SUFFIX }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Resource Group** | [\`${{ env.AZURE_RESOURCE_GROUP_NAME_DEV }}\`](${AZURE_RG_URL}) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Fabric Capacity** | [\`${{ steps.bicep-deploy.outputs.AZURE_FABRIC_CAPACITY_NAME }}\`](${AZURE_FABRIC_CAPACITY_URL}) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Fabric Workspace** | \`${FABRIC_WORKSPACE_NAME}\` |" >> $GITHUB_STEP_SUMMARY

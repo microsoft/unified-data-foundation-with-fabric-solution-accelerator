@@ -1,125 +1,157 @@
 # Deployment Guide
 
-## Overview
-
-This solution offers a flexible and configurable architecture with modular components. You can deploy any of the **four architecture options** based on your organizational needs.
-
-| Option | Components | Use Case |
-|--------|-----------|----------|
-| **Option 1** | Fabric + Power BI | Core data foundation |
-| **Option 2** | Option 1 + Purview | Add data governance |
-| **Option 3** | Option 1 + Databricks | Add advanced analytics |
-| **Option 4** | Option 1 + 2 + 3 | Complete enterprise solution |
-
-For a detailed feature description of each architecture option, please refer to [Solution Architecture and Options](./TechnicalArchitecture.md).
+This guide walks you through deploying the Unified Data Foundation with Fabric solution accelerator to your Azure subscription.
 
 ---
 
-## Technology Stack
+## Architecture Options
 
-The solution accelerator utilizes the following Microsoft technologies:
+Choose the architecture that best fits your organizational needs:
 
-| Technology | Purpose | Included in |
-|-----------|---------|------------|
-| [Microsoft Fabric](https://learn.microsoft.com/en-us/fabric/) | Unified Data Foundation core components | Options 1, 2, 3, 4 |
-| [Microsoft Purview](https://learn.microsoft.com/en-us/purview/) | Data governance and metadata management | Options 2, 4 |
-| [Azure Databricks](https://learn.microsoft.com/en-us/azure/databricks/) | Advanced analytics and Fabric integration | Options 3, 4 |
+| Option | Architecture | Description |
+|:------:|--------------|-------------|
+| **1** | Microsoft Fabric | Core medallion lakehouse with Power BI dashboards |
+| **2** | Fabric + Purview | Adds data governance and compliance capabilities |
+| **3** | Fabric + Databricks | Adds cross-platform analytics integration |
+| **4** | Fabric + Purview + Databricks | Complete enterprise solution with all components |
 
----
+> **Note:** Option 1 is required as the foundation. Options 2–4 build upon it.
 
-## Prerequisites and Preparation
-
-### Quota Check (Recommended)
-
-💡 Before deployment, check your Azure quota availability for optimal planning.
-
-📖 Follow: [Quota Check Instructions](./QuotaCheck.md) to ensure sufficient capacity.
+For detailed architecture diagrams and feature descriptions, see [Technical Architecture](./TechnicalArchitecture.md).
 
 ---
 
-## Deployment Options
+## Prerequisites
 
-### Option 1: Medallion Architecture with Power BI in Fabric
+Before you begin, ensure you have the following:
 
-**Deploy the foundational architecture** - 3 Lakehouses (Bronze, Silver, Gold), 48 Notebooks, 2 SQL scripts, and Power BI Dashboard.
+| Requirement | Description |
+|-------------|-------------|
+| **Azure subscription** | An active Azure subscription. [Create a free account](https://azure.microsoft.com/free/) if needed. |
+| **Permissions** | Contributor role and RBAC permissions at the subscription level. |
+| **Fabric capacity** | Microsoft Fabric capacity of F64 or higher. |
 
-**Choose your deployment method:**
+For detailed setup instructions, see [Azure Account Setup](./AzureAccountSetUp.md).
 
-| Method | Guide | Best For |
-|--------|-------|----------|
-| **Automated** (Recommended) | [Automated Deployment Guide](./DeploymentGuideFabric.md) | Production, one-command setup |
-| **Manual** | [Manual Deployment Guide](./DeploymentGuideFabricManual.md) | Granular control, restricted environments |
-| **Local Development** | [Local Development Setup Guide](./LocalDevelopmentSetup.md) | Development, testing, customization |
-
-**After Deployment:**
-- Configure Power BI dashboard: [Power BI Dashboard Configuration](./DeploymentGuidePowerBI.md)
-- Learn about notebooks: [Guide to Medallion Architecture Fabric Notebooks](./NotebooksGuideFabric.md)
+> 💡 **Recommended:** Run the [Quota Check](./QuotaCheck.md) before deployment to verify resource availability.
 
 ---
 
-### Option 2: Add Data Governance with Purview
+## Deploy Option 1: Microsoft Fabric (Required)
 
-**Enhance Option 1 with governance and compliance** - Adds metadata management, lineage tracking, and data governance policies.
+Deploys 3 lakehouses (Bronze, Silver, Gold), 48 notebooks, 2 SQL scripts, and Power BI dashboards.
 
-**Prerequisites:** You have completed Option 1 deployment.
+| [![Azure Cloud Shell](https://img.shields.io/static/v1?style=for-the-badge&label=Azure%20Cloud%20Shell&message=Open&color=0078D4&logo=microsoft-azure&logoColor=white)](https://shell.azure.com) | [![GitHub Codespaces](https://img.shields.io/static/v1?style=for-the-badge&label=GitHub%20Codespaces&message=Open&color=181717&logo=github&logoColor=white)](https://codespaces.new/microsoft/unified-data-foundation-with-fabric-solution-accelerator?quickstart=1) | [![Dev Container](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Container&message=Open&color=blue&logo=docker&logoColor=white)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator) |
+|---|---|---|
 
-**Setup Steps:**
+```bash
+git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
+cd unified-data-foundation-with-fabric-solution-accelerator
+azd auth login
+azd up
+```
 
-1. **Provision Purview** (if needed):  
-   📖 [Provisioning Microsoft Purview](./SetupPurview.md)
+⏱️ **Deployment time:** 15–20 minutes
 
-2. **Configure Purview for Fabric:**  
-   📖 [Guide to set up Purview to Govern Fabric Workspace Resources](./DeploymentGuidePurview.md)
+### Alternative Methods
 
----
+| Method | Guide |
+|--------|-------|
+| Manual | [Manual Deployment](./DeploymentGuideFabricManual.md) |
+| Detailed | [Fabric Deployment Guide](./DeploymentGuideFabric.md) |
+| Local Dev | [Local Development Setup](./LocalDevelopmentSetup.md) |
 
-### Option 3: Add Azure Databricks Integration
+### After Deployment
 
-**Extend Option 1 with Databricks** - Integrates Databricks with Fabric for hybrid analytics and advanced data processing.
-
-**Prerequisites:** You have completed Option 1 deployment.
-
-**Setup Steps:**
-
-1. **Provision Azure Databricks:**  
-   📖 [Provisioning Azure Databricks](./SetupDatabricks.md)
-
-2. **Deploy Databricks Resources:**  
-   📖 [Azure Databricks Lakehouse Deployment Guide](./DeploymentGuideDatabricks.md)
-
-**Deployed Resources:**
-- 1 Silver lakehouse in Databricks
-- 7 Notebooks for data processing
-- 2 SQL scripts
-- Sample data for Databricks
-
-**Learn more:** [Guide to Databricks Lakehouse Notebooks](./NotebooksGuideDatabricks.md)
+- [Configure Power BI Dashboard](./DeploymentGuidePowerBI.md)
+- [Fabric Notebooks Guide](./NotebooksGuideFabric.md)
 
 ---
 
-### Option 4: Complete Solution
+## Deploy Option 2: Add Purview (Optional)
 
-**Deploy all components** - Combines Options 1, 2, and 3 for a complete enterprise data platform.
+Adds data governance, metadata management, and compliance capabilities.
 
-**Requirements:**
-- Complete Option 1 (Fabric)
-- Complete Option 2 (Purview)
-- Complete Option 3 (Databricks)
+> **Prerequisite:** Complete Option 1 first.
+
+| Step | Guide |
+|:----:|-------|
+| 1 | [Setup Purview](./SetupPurview.md) |
+| 2 | [Configure Governance](./DeploymentGuidePurview.md) |
+
+---
+
+## Deploy Option 3: Add Databricks (Optional)
+
+Add Azure Databricks for cross-platform analytics and advanced data processing capabilities.
+
+**Prerequisite:** Complete Option 1 deployment first.
+
+| Step | Description | Guide |
+|:----:|-------------|-------|
+| 1 | Provision Azure Databricks | [Setup Databricks](./SetupDatabricks.md) |
+| 2 | Deploy Databricks resources | [Databricks Deployment Guide](./DeploymentGuideDatabricks.md) |
+
+This deploys 1 Silver lakehouse, 7 notebooks, 2 SQL scripts, and sample data to Databricks.
+
+For details on the notebooks, see [Databricks Notebooks Guide](./NotebooksGuideDatabricks.md).
+
+---
+
+## Deploy Option 4: Complete Solution
+
+Deploy all components for a full enterprise data platform.
+
+**Steps:**
+1. Complete Option 1 (Fabric)
+2. Complete Option 2 (Purview)
+3. Complete Option 3 (Databricks)
+
+---
+
+## Verify Your Deployment
+
+After deployment, verify everything is working:
+
+| Step | Action |
+|:----:|--------|
+| 1 | Open **Microsoft Fabric** and navigate to your workspace |
+| 2 | Confirm **Bronze**, **Silver**, and **Gold** lakehouses exist |
+| 3 | Execute the **runner notebooks** to process sample data |
+| 4 | Open **Power BI reports** and verify dashboards display data |
+
+---
+
+## Clean Up Resources
+
+To avoid ongoing costs, remove all deployed resources when no longer needed:
+
+```bash
+azd down
+```
+
+Alternatively, delete the resource group directly in the [Azure Portal](https://portal.azure.com).
+
+---
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Deployment fails | Verify [capacity requirements](./DeploymentGuideFabric.md#software-requirements) are met |
+| Permission errors | Confirm Contributor and RBAC roles are assigned |
+| Timeout errors | Re-run `azd up` to resume deployment |
+
+For additional help, see [FAQs](./FAQs.md) or [submit an issue](https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator/issues).
 
 ---
 
 ## Next Steps
 
-After successful deployment, you can begin using the solution:
-
-📖 **Try Sample Workflows:** Follow the guided examples in [Sample Questions](./SampleWorkflow.md)
-
-**For Development & Customization:**
-- [Local Development Setup Guide](./LocalDevelopmentSetup.md) - Set up a local development environment for customizations and testing
-
-**Additional Resources:**
-- [Solution Architecture Overview](./TechnicalArchitecture.md)
-- [FAQ & Troubleshooting](./FAQs.md)
-- [Microsoft Fabric Documentation](https://learn.microsoft.com/en-us/fabric/)
-- [Microsoft Purview Documentation](https://learn.microsoft.com/en-us/purview/)
-- [Azure Databricks Documentation](https://learn.microsoft.com/en-us/azure/databricks/)
+| Resource | Description |
+|----------|-------------|
+| [Sample Workflows](./SampleWorkflow.md) | Try guided examples with the deployed solution |
+| [Power BI Configuration](./DeploymentGuidePowerBI.md) | Configure dashboards and semantic models |
+| [Fabric Notebooks Guide](./NotebooksGuideFabric.md) | Understand the medallion architecture notebooks |
+| [Fabric Data Agent Guide](./FabricDataAgentGuide.md) | Set up natural language querying |
+| [Copilot for Power BI Guide](./CopilotForPowerBIGuide.md) | Enable AI-powered report exploration |

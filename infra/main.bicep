@@ -18,7 +18,7 @@ param location string = resourceGroup().location
 @description('Optional. Enable/Disable usage telemetry for module.')
 param enableTelemetry bool = true
 
-@description('Optional. An array of user object IDs or service principal object IDs that will be assigned the Fabric Capacity Admin role. This can be used to add additional admins beyond the default admin which is the user assigned managed identity created as part of this deployment.')
+@description('Optional. An array of user object IDs or service principal object IDs that will be assigned the Fabric Capacity Admin role. This can be used to add additional admins beyond the default admin which is the deploying user or service principal.')
 param fabricAdminMembers array = []
 
 @allowed([
@@ -37,6 +37,11 @@ param fabricAdminMembers array = []
 @description('Optional. SKU tier of the Fabric resource.')
 param skuName string = 'F2'
 
+@description('Optional. Name of an existing Fabric capacity to use. If empty, a new capacity will be created.')
+param existingFabricCapacityName string = ''
+
+var useExistingFabricCapacity = !empty(existingFabricCapacityName)
+
 var solutionSuffix = toLower(trim(replace(
   replace(
     replace(replace(replace(replace('${solutionName}${solutionUniqueText}', '-', ''), '_', ''), '.', ''), '/', ''),
@@ -47,22 +52,18 @@ var solutionSuffix = toLower(trim(replace(
   ''
 )))
 
-// var userAssignedIdentityResourceName = 'id-${solutionSuffix}'
-// module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
-//   name: take('avm.res.managed-identity.user-assigned-identity.${userAssignedIdentityResourceName}', 64)
-//   params: {
-//     name: userAssignedIdentityResourceName
-//     location: location
-//     enableTelemetry: enableTelemetry
-//   }
-// }
+// ============================================================================
+// FABRIC CAPACITY - Create new or reference existing
+// ============================================================================
 
-var fabricCapacityResourceName = 'fc${solutionSuffix}'
+var fabricCapacityResourceName = useExistingFabricCapacity ? existingFabricCapacityName : 'fc${solutionSuffix}'
 var fabricCapacityDefaultAdmins = deployer().?userPrincipalName == null
   ? [deployer().objectId]
   : [deployer().userPrincipalName]
 var fabricTotalAdminMembers = union(fabricCapacityDefaultAdmins, fabricAdminMembers)
-module fabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = {
+
+// Create new Fabric capacity (if no existing specified)
+module newFabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = if (!useExistingFabricCapacity) {
   name: take('avm.res.fabric.capacity.${fabricCapacityResourceName}', 64)
   params: {
     name: fabricCapacityResourceName
@@ -73,7 +74,10 @@ module fabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = {
   }
 }
 
-// Outputs for AZD
+// ============================================================================
+// OUTPUTS
+// ============================================================================
+
 @description('The location the resources were deployed to')
 output AZURE_LOCATION string = location
 
@@ -81,9 +85,9 @@ output AZURE_LOCATION string = location
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
 
 @description('The name of the Fabric capacity resource')
-output AZURE_FABRIC_CAPACITY_NAME string = fabricCapacity.outputs.name
+output AZURE_FABRIC_CAPACITY_NAME string = fabricCapacityResourceName
 
-@description('The identities added as Fabric Capacity Admin members')
+@description('The identities assigned as Fabric Capacity Admin members when a new capacity is created. When an existing capacity is used, this value is not applied and is provided for informational purposes only.')
 output AZURE_FABRIC_CAPACITY_ADMINISTRATORS array = fabricTotalAdminMembers
 
 @description('The unique solution suffix of the deployed resources')
