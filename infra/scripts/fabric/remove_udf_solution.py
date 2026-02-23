@@ -80,7 +80,7 @@ try:
         workspaces = fabric_client.list_workspaces()
         workspace = next(
             (w for w in workspaces if w['displayName'].lower() == workspace_name.lower()), None)
-       
+
         if not workspace:
             print(f"⚠️ WARNING: Workspace '{workspace_name}' not found")
             print("   Available workspaces:")
