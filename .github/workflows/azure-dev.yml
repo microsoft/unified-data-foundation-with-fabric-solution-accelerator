@@ -60,7 +60,7 @@ jobs:
         shell: bash
         run: |
           echo "Generating a unique resource group name..."
-          ACCL_NAME="udfv2"
+          ACCL_NAME="udf"
           SHORT_UUID=$(uuidgen | cut -d'-' -f1)
           UNIQUE_RG_NAME="arg-${ACCL_NAME}-${SHORT_UUID}"
           echo "RESOURCE_GROUP_NAME=${UNIQUE_RG_NAME}" >> $GITHUB_ENV
