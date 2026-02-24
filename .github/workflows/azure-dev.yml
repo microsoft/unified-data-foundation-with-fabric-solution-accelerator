@@ -35,7 +35,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Build and Static Analysis
-    environment: 'production'
+    environment: 'udfwf-build'
     outputs:
       RESOURCE_GROUP_NAME: ${{ steps.check_create_rg.outputs.RESOURCE_GROUP_NAME }}
       ENV_NAME: ${{ steps.generate_env_name.outputs.ENV_NAME }}
@@ -120,7 +120,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy
-    environment: 'production'
+    environment: 'udfwf-dev'
     needs: build
     outputs:
       SOLUTION_SUFFIX: ${{ steps.azd_params.outputs.SOLUTION_SUFFIX }}
@@ -265,7 +265,7 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     name: Cleanup Resources
-    environment: 'production'
+    environment: 'udfwf-dev'
     needs: [build, deploy]
     if: always() && needs.build.outputs.RESOURCE_GROUP_NAME != '' && needs.build.outputs.ENV_NAME != ''
     env:
