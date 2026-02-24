@@ -150,7 +150,7 @@ jobs:
             --federated-credential-provider "github" \
             --tenant-id "${{ env.AZURE_TENANT_ID }}"
 
-      - name: Deploy using azd up and extract values
+      - name: Deploy using azd up and Run Fabric provisioning script
         id: get_output_linux
         shell: bash
         env:
@@ -172,12 +172,12 @@ jobs:
           azd env set AZURE_LOCATION="$AZURE_LOCATION"
           azd env set AZURE_RESOURCE_GROUP="$RESOURCE_GROUP_NAME"
 
-          # Set optional workspace administrators if provided via repository variable
-          FABRIC_WS_ADMINS="${{ vars.FABRIC_WORKSPACE_ADMINISTRATORS }}"
-          if [ -n "$FABRIC_WS_ADMINS" ]; then
-            azd env set FABRIC_WORKSPACE_ADMINISTRATORS "$FABRIC_WS_ADMINS"
-            echo "Workspace administrators set: $FABRIC_WS_ADMINS"
-          fi
+          # # Set optional workspace administrators if provided via repository variable
+          # FABRIC_WS_ADMINS="${{ vars.FABRIC_WORKSPACE_ADMINISTRATORS }}"
+          # if [ -n "$FABRIC_WS_ADMINS" ]; then
+          #   azd env set FABRIC_WORKSPACE_ADMINISTRATORS "$FABRIC_WS_ADMINS"
+          #   echo "Workspace administrators set: $FABRIC_WS_ADMINS"
+          # fi
 
           # Deploy using azd up
           azd up --no-prompt
@@ -294,10 +294,10 @@ jobs:
             --federated-credential-provider "github" \
             --tenant-id "${{ env.AZURE_TENANT_ID }}"
 
-      - name: Restore azd Environment
+      - name: Restore azd Environment and Run azd down
+        if: env.SOLUTION_SUFFIX != ''
         shell: bash
         run: |
-          set -e
           echo "Restoring azd environment: ${{ env.ENV_NAME }}"
           azd env new ${{ env.ENV_NAME }} --no-prompt || true
           azd env select ${{ env.ENV_NAME }}
@@ -308,13 +308,23 @@ jobs:
           azd env set SOLUTION_SUFFIX="${{ env.SOLUTION_SUFFIX }}"
           echo "✅ azd environment restored"
 
-      - name: Delete Fabric Workspace and Azure Resources
+          echo "🗑️  Running azd down to remove Fabric workspace and Azure resources..."
+          azd down --force --purge --no-prompt || echo "⚠️ azd down failed, will fall back to direct RG deletion"
+          echo "✅ azd down step completed"
+
+      - name: Delete Resource Group (fallback)
+        if: always() && env.RESOURCE_GROUP_NAME != ''
         shell: bash
         run: |
-          set -e
-          echo "🗑️  Running azd down to remove Fabric workspace and Azure resources..."
-          azd down --force --purge --no-prompt
-          echo "✅ azd down completed"
+          echo "🗑️  Ensuring resource group '${{ env.RESOURCE_GROUP_NAME }}' is deleted..."
+          rg_exists=$(az group exists --name "${{ env.RESOURCE_GROUP_NAME }}")
+          if [ "$rg_exists" = "true" ]; then
+            echo "Resource group still exists. Deleting directly..."
+            az group delete --name "${{ env.RESOURCE_GROUP_NAME }}" --yes --no-wait
+            echo "✅ Resource group deletion initiated."
+          else
+            echo "✅ Resource group '${{ env.RESOURCE_GROUP_NAME }}' already deleted."
+          fi
 
       - name: Output Cleanup Summary
         run: |
@@ -326,4 +336,6 @@ jobs:
           echo "| Resource | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| **Resource Group** | \`${{ env.RESOURCE_GROUP_NAME }}\` — deleted |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Fabric Workspace** | Deleted |" >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ env.SOLUTION_SUFFIX }}" ]; then
+            echo "| **Fabric Workspace** | Deleted via azd down |" >> $GITHUB_STEP_SUMMARY
+          fi
