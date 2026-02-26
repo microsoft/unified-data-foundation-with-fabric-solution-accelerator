@@ -85,16 +85,14 @@ def deploy_notebooks(workspace_client: FabricWorkspaceApiClient,
                     source_lh = lakehouses.get(source_lakehouse_name)
                     if source_lh and isinstance(source_lh, dict) and 'id' in source_lh:
                         lakehouse_refs.append({
-                            "id": source_lh['id'],
-                            "workspaceId": workspace_client.workspace_id
+                            "id": source_lh['id']
                         })
                 
                 if target_lakehouse_name and target_lakehouse_name != source_lakehouse_name and lakehouses:
                     target_lh = lakehouses.get(target_lakehouse_name)
                     if target_lh and isinstance(target_lh, dict) and 'id' in target_lh:
                         lakehouse_refs.append({
-                            "id": target_lh['id'],
-                            "workspaceId": workspace_client.workspace_id
+                            "id": target_lh['id']
                         })
                 
                 if lakehouse_refs:
