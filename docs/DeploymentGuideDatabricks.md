@@ -105,9 +105,13 @@ The Databricks deployment script automates the following:
 
 - **Workspace Folder Structure**: Creates organized folders in the Databricks workspace for all solution notebooks (under `/Shared/<solution>`).
 - **Notebook Upload & Normalization**: Uploads all notebooks from the repo to required folder
-- **Sample Data Upload**: Uploads all CSV sample data files to a DBFS folder for the solution (e.g., `dbfs:/FileStore/tables/<solution>`).
+- **Sample Data Upload**: Uploads all CSV sample data files. The script automatically detects whether DBFS is available or if Unity Catalog volumes should be used:
+  - **DBFS enabled**: Files are uploaded to `dbfs:/FileStore/tables/<solution>`
+  - **DBFS disabled** (Unity Catalog legacy features disabled): Files are uploaded to a managed Unity Catalog volume at `/Volumes/<catalog>/<schema>/sample_data`
 - **Unity Catalog & Schema Creation**: Creates the specified Unity Catalog and schema if they do not exist, using explicit arguments for catalog name and managed location.
 - **Automated Orchestration**: runs the orchestrator notebook (`run_bronze_to_adb.ipynb`) on the specified cluster to kick off initial data pipeline execution.
+
+> **Note**: As of 2026, Unity Catalog includes a GA feature that allows workspace administrators to disable legacy features like DBFS and the Hive Metastore. This deployment script automatically adapts to your workspace configuration and uses Unity Catalog volumes when DBFS is disabled.
 
 
 ---
@@ -198,8 +202,12 @@ Check the terminal for success or error messages. See Troubleshooting if issues 
 ## What Gets Created
 
 - **Workspace folders**: `/Shared/<solution>/`
-- **DBFS data**: `/FileStore/tables/<solution>/` (sample CSVs)
+- **Sample data storage**: 
+  - If DBFS is enabled: `dbfs:/FileStore/tables/<solution>/` (CSV files)
+  - If DBFS is disabled: `/Volumes/<catalog>/<schema>/sample_data/` (CSV files in Unity Catalog volume)
 - **Notebooks**: Orchestration, transformation, data management, and schema definition
+
+> *Note: The script automatically detects if DBFS is disabled (Unity Catalog: Disable Legacy Features) and uses Unity Catalog volumes instead. When using volumes, a catalog and schema must be specified.*
 
 > *Note: Some logical folders (e.g., `bronze_to_silver/`) are not physically created by the script.*
 
@@ -288,11 +296,13 @@ After creating shortcuts, verify data access in Fabric:
 
 | Issue | Likely Cause | Action |
 |-------|--------------|--------|
+| DBFS permission denied | Unity Catalog legacy features disabled | Script automatically uses volumes; ensure catalog/schema are specified |
 | Shortcut creation fails | External Data Access disabled | Enable in ADB workspace settings, retry. |
-| Zero rows after load | Wrong CSV DBFS path | Re-check path |
+| Zero rows after load | Wrong CSV path | Re-check volume or DBFS path based on workspace config |
 | Table not found in SHOW TABLES | Schema mismatch | Ensure schema/catalog name in model notebook matches validation SQL. |
 | Duplicate table errors | Existing stale Delta tables | Run drop_all_tables or adjust create logic. |
 | Mirror sync error | Permissions/region limitations | Verify user privileges & region support for mirroring. |
+| Volume creation fails | Missing permissions | Ensure Unity Catalog permissions to create volumes |
 
 ---
 
