@@ -60,9 +60,8 @@ Your deployment identity (User or Service Principal) requires the following perm
 - **Fabric REST API - Content Upload**: Access to upload files and manage workspace content for sample data and notebook deployment using [Fabric REST API scopes](https://learn.microsoft.com/rest/api/fabric/articles/scopes)
 - **Power BI API - `Tenant.Read.All`**: Delegated permission to read organization's Power BI tenant information using [Power BI REST API permissions](https://learn.microsoft.com/rest/api/power-bi/#scopes)
 
-#### ✅ Quick Check
-
-Run this command to verify your tools are ready:
+<details>
+<summary><strong>✅ Quick Check</strong> — Verify your tools are ready</summary>
 
 ```bash
 # Check Azure CLI
@@ -76,6 +75,8 @@ azd version
 python --version
 ```
 
+</details>
+
 ## 2. Deployment Overview
 
 This solution accelerator uses a **two-phase deployment approach** to provision a complete data platform. The process is fully automated, idempotent, and safe to re-run.
@@ -87,7 +88,6 @@ This phase creates the physical resources in your Azure subscription.
 
 - **Resource Group**: A container for your resources.
 - **Fabric Capacity**: The compute engine (F SKU) that powers your data workloads.
-- **Managed Identity**: The identity used for secure automation.
 
 ### 2️⃣ Phase 2: Data Platform (Fabric)
 
@@ -156,7 +156,8 @@ Choose your deployment environment based on your workflow and requirements. All 
 | **[Dev Container](#5-vs-code-dev-container)** | Standardized tooling | Docker Desktop + VS Code | Containerized consistency |
 | **[GitHub Actions](#6-github-actions-cicd)** | Automated CI/CD | Service principal setup | Production deployments |
 
-### 1. Local Machine
+<details>
+<summary><strong>1. Local Machine</strong></summary>
 
 Deploy with full control over your development environment.
 
@@ -164,7 +165,10 @@ Deploy with full control over your development environment.
 
 **Deployment**: Use the standard [Deployment commands](#4-deployment-commands)
 
-### 2. Azure Cloud Shell
+</details>
+
+<details>
+<summary><strong>2. Azure Cloud Shell</strong></summary>
 
 Deploy from Azure's browser-based terminal with zero local installation.
 
@@ -177,7 +181,10 @@ curl -fsSL https://aka.ms/install-azd.sh | bash && exec bash
 
 **Deployment**: Run the [Deployment commands](#4-deployment-commands) (Azure CLI pre-authenticated)
 
-### 3. GitHub Codespaces  
+</details>
+
+<details>
+<summary><strong>3. GitHub Codespaces</strong></summary>
 
 Deploy from a cloud development environment with pre-configured tools.
 
@@ -201,7 +208,10 @@ azd auth login --use-device-code
 # Continue with deployment commands
 ```
 
-### 4. Visual Studio Code (WEB)
+</details>
+
+<details>
+<summary><strong>4. Visual Studio Code (WEB)</strong></summary>
 
 Deploy from VS Code in the browser with zero local installation.
 
@@ -241,7 +251,10 @@ azd auth login --use-device-code
 # Continue with deployment commands
 ```
 
-### 5. VS Code Dev Container
+</details>
+
+<details>
+<summary><strong>5. VS Code Dev Container</strong></summary>
 
 Deploy from a containerized environment for team consistency.
 
@@ -253,13 +266,18 @@ Deploy from a containerized environment for team consistency.
 
 **Deployment**: All tools pre-installed - run [Deployment commands](#4-deployment-commands) directly
 
-### 6. GitHub Actions (CI/CD)
+</details>
+
+<details>
+<summary><strong>6. GitHub Actions (CI/CD)</strong></summary>
 
 Automated deployment using the included [workflow](../.github/workflows/azure-dev.yml).
 
 **Setup**: Configure [repository variables](https://docs.github.com/en/actions/learn-github-actions/variables) and set up [service principal with federated credentials](https://learn.microsoft.com/azure/developer/github/connect-from-azure)
 
 **Triggers**: Push to main branch or manual workflow dispatch
+
+</details>
 
 ---
 
@@ -277,7 +295,7 @@ az login
 azd auth login
 
 # Optional: Customize workspace name
-azd env set AZURE_FABRIC_WORKSPACE_NAME "My Analytics Platform"
+azd env set FABRIC_WORKSPACE_NAME "My Analytics Platform"
 
 # Deploy everything
 azd up
@@ -315,7 +333,6 @@ After successful deployment, you'll have a complete data platform implementing m
 | Resource | Purpose |
 |----------|---------|
 | **[Fabric Capacity](https://learn.microsoft.com/fabric/admin/capacity-settings?tabs=power-bi-premium)** | Dedicated compute for Fabric workloads |
-| **[Managed Identity](https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview)** | Secure authentication for automated operations |
 
 ![Screenshot of deployed Azure resources](./images/deployment/fabric/azure_resources.png)
 
@@ -484,7 +501,7 @@ Customize the Fabric workspace setup and naming conventions. These parameters ar
 | Parameter | AZD Environment Variable | GitHub Actions Variable | Description | Default | Example |
 |-----------|-------------------------|------------------------|-------------|---------|---------|
 | **Capacity Name** | `AZURE_FABRIC_CAPACITY_NAME` | Bicep output (auto-set) | Microsoft Fabric capacity name - **DO NOT SET MANUALLY** (automatically populated from Bicep deployment) | Generated from Bicep | `fc-udfwfsa-abc123` |
-| **Workspace Name** | `FABRIC_WORKSPACE_NAME` | `AZURE_FABRIC_WORKSPACE_NAME_DEV` | Custom name for the Fabric workspace | `Unified Data Foundation - {solution_suffix}` | `"MyCompany Data Foundation"`, `"Analytics Platform - DEV"` |
+| **Workspace Name** | `FABRIC_WORKSPACE_NAME` | `FABRIC_WORKSPACE_NAME` | Custom name for the Fabric workspace | `Unified_Data_Foundation_{solution_suffix}` | `"MyCompany Data Foundation"`, `"Analytics Platform - DEV"` |
 
 **Configuration Examples:**
 
@@ -505,7 +522,7 @@ Modify [`azure-dev.yml`](../.github/workflows/azure-dev.yml) environment variabl
 
 ```yaml
 env:
-  AZURE_FABRIC_WORKSPACE_NAME_DEV: "Analytics Platform (dev)"
+  FABRIC_WORKSPACE_NAME: "Analytics Platform (dev)"
 ```
 
 </details>
@@ -862,7 +879,6 @@ The core removal logic is handled by [`remove_udf_solution.py`](../infra/scripts
 After successful Fabric workspace removal, `azd down` proceeds to deprovision all Azure resources that were created through the [`main.bicep`](../infra/main.bicep) template, including:
 
 - **Microsoft Fabric Capacity**: Dedicated compute resources
-- **User-Assigned Managed Identity**: Secure authentication identity
 - **Resource Group**: Complete resource group removal (if specified)
 
 ### Safety Features
