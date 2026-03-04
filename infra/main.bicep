@@ -54,12 +54,14 @@ var solutionSuffix = toLower(trim(replace(
 resource resourceGroupTags 'Microsoft.Resources/tags@2021-04-01' = {
   name: 'default'
   properties: {
-    tags: {
-      ...resourceGroup().tags
-      TemplateName: 'Unified Data Foundation with Fabric'
-      CreatedBy: createdBy
-      Type: 'Non-WAF'
-    }
+    tags: union(
+      resourceGroup().tags,
+      {
+        TemplateName: 'Unified Data Foundation with Fabric'
+        CreatedBy: createdBy
+        Type: 'Non-WAF'
+      }
+    )
   }
 }
 
