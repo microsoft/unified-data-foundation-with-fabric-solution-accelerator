@@ -37,6 +37,9 @@ param fabricAdminMembers array = []
 @description('Optional. SKU tier of the Fabric resource.')
 param skuName string = 'F2'
 
+@description('Optional. Created by user name.')
+param createdBy string = contains(deployer(), 'userPrincipalName') ? split(deployer().userPrincipalName, '@')[0] : deployer().objectId
+
 var solutionSuffix = toLower(trim(replace(
   replace(
     replace(replace(replace(replace('${solutionName}${solutionUniqueText}', '-', ''), '_', ''), '.', ''), '/', ''),
@@ -46,6 +49,21 @@ var solutionSuffix = toLower(trim(replace(
   '*',
   ''
 )))
+
+// ========== Resource Group Tag ========== //
+resource resourceGroupTags 'Microsoft.Resources/tags@2021-04-01' = {
+  name: 'default'
+  properties: {
+    tags: union(
+      resourceGroup().tags,
+      {
+        TemplateName: 'Unified Data Foundation with Fabric'
+        CreatedBy: createdBy
+        Type: 'Non-WAF'
+      }
+    )
+  }
+}
 
 // var userAssignedIdentityResourceName = 'id-${solutionSuffix}'
 // module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
