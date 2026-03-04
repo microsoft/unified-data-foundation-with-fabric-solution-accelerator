@@ -5,6 +5,7 @@ Common Utility Functions
 This module provides common utility functions used across the Unified Data Foundation deployment scripts.
 """
 
+import base64
 import os
 import sys
 import json
@@ -162,6 +163,60 @@ def build_notebook_spec(relative_path: str, source_lakehouse: Optional[str],
         'target_lakehouse_name': target_lakehouse,
         'fabric_folder_id': fabric_folders.get(folder_path)
     }
+
+
+def encode_notebook(notebook_path: str) -> str:
+    """
+    Read a ``.ipynb`` file and return its content as a Base64 string.
+
+    Args:
+        notebook_path: Absolute path to the notebook file.
+
+    Returns:
+        Base64-encoded notebook content (UTF-8).
+
+    Raises:
+        FileNotFoundError: If the notebook file does not exist.
+        ValueError: If the file is not valid JSON.
+    """
+    content = read_file_content(notebook_path)  # raises FileNotFoundError if missing
+    notebook_json = json.loads(content)         # validate JSON before encoding
+    raw_bytes = json.dumps(notebook_json).encode("utf-8")
+    return base64.b64encode(raw_bytes).decode("utf-8")
+
+
+def parse_workspace_administrators(
+    capacity_administrators_json: Optional[str],
+    fabric_workspace_admins: Optional[str],
+) -> Optional[list]:
+    """
+    Combine administrator identities from environment variable values.
+
+    Args:
+        capacity_administrators_json: JSON-array string from
+            ``AZURE_FABRIC_CAPACITY_ADMINISTRATORS``.
+        fabric_workspace_admins: Comma-separated string from
+            ``FABRIC_WORKSPACE_ADMINISTRATORS``.
+
+    Returns:
+        List of administrator identity strings, or ``None`` if the list is empty.
+    """
+    administrators: list = []
+
+    if capacity_administrators_json:
+        try:
+            administrators.extend(json.loads(capacity_administrators_json))
+        except json.JSONDecodeError:
+            print("⚠️  Warning: AZURE_FABRIC_CAPACITY_ADMINISTRATORS is not valid JSON – ignoring")
+
+    if fabric_workspace_admins:
+        administrators.extend(
+            admin.strip()
+            for admin in fabric_workspace_admins.split(",")
+            if admin.strip()
+        )
+
+    return administrators if administrators else None
 
 
 def print_step(step_number: int, total_steps: int, step_name: str, **kwargs):
