@@ -1,0 +1,52 @@
+relationship 7631fe8c-f3e1-0b02-7ccb-d1740ffa4bb6
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: 'shared customer'.CustomerId
+	toColumn: 'shared location'.CustomerId
+
+relationship 1a04f721-25dc-7f1f-7e14-6525fd6153f8
+	fromColumn: 'shared customer'.CustomerRelationshipTypeId
+	toColumn: 'shared customerrelationshiptype'.CustomerRelationshipTypeId
+
+relationship f6080065-0afb-1931-5fe8-23517a405d5b
+	fromColumn: 'shared customeraccount'.CustomerId
+	toColumn: 'shared location'.CustomerId
+
+relationship 2f07d97f-7139-fb5e-b3bf-0bf62815d4e7
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: 'shared customertradename'.CustomerId
+	toColumn: 'shared location'.CustomerId
+
+relationship 39809975-9bc7-cb79-acc0-1b1d5735f7c5
+	fromColumn: 'Sales order (adb +Fabric)'.CustomerId
+	toColumn: 'shared location'.CustomerId
+
+relationship 29fe8762-a8bf-9bb8-485f-485f742669d3
+	fromColumn: 'Sales Orderline (adb+Fabric)'.OrderId
+	toColumn: 'Sales Orderpayment (adb + Fabric)'.OrderId
+
+relationship bd1cbe9e-872e-9144-110b-e47a4d0a0294
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: 'Sales order (adb +Fabric)'.OrderId
+	toColumn: 'Sales Orderpayment (adb + Fabric)'.OrderId
+
+relationship 3196bf01-26e7-1f57-8359-73b762ff1890
+	fromColumn: 'shared product'.ProductCategoryID
+	toColumn: 'shared productcategory'.CategoryID
+
+relationship bce2ed95-b227-a057-2477-946da88bf8af
+	isActive: false
+	fromColumn: 'Sales order (adb +Fabric)'.CustomerId
+	toColumn: 'shared customer'.CustomerId
+
+relationship 0dc214bc-2d4e-047b-adb4-8e90fab34308
+	isActive: false
+	fromColumn: 'Sales Orderline (adb+Fabric)'.OrderId
+	toColumn: 'Sales order (adb +Fabric)'.OrderId
+
+relationship 0d777f5a-b944-6576-154a-e82a6ed514f4
+	fromColumn: 'Sales Orderline (adb+Fabric)'.ProductId
+	toColumn: 'shared product'.ProductID
+

@@ -1,0 +1,146 @@
+cultureInfo en-US
+
+	linguisticMetadata =
+			{
+			  "Version": "2.0.0",
+			  "Language": "en-US",
+			  "Entities": {
+			    "shared_customer.customertypeid": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "shared customer",
+			          "ConceptualProperty": "CustomerTypeId"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Customer Segment": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "sales_orderline_adbfabric.productname": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Sales Orderline (adb+Fabric)",
+			          "ConceptualProperty": "ProductName"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Product Name": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "shared_customer.customerrelationshiptypeid": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "shared customer",
+			          "ConceptualProperty": "CustomerRelationshipTypeId"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "sales_orderline_adbfabric.net_salesadb__fabric": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Sales Orderline (adb+Fabric)",
+			          "ConceptualProperty": "Net Sales(adb + Fabric)"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Net Sales": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "sales_orderline_adbfabric.revenueadb__fabric": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Sales Orderline (adb+Fabric)",
+			          "ConceptualProperty": "Revenue(adb + Fabric)"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Revenue": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "sales_orderline_adbfabric.net_sales_till_last_year": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Sales Orderline (adb+Fabric)",
+			          "ConceptualProperty": "Net Sales Till Last Year"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Net Sales": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "sales_orderline_adbfabric.netsalesdisplay": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Sales Orderline (adb+Fabric)",
+			          "ConceptualProperty": "NetSales(Display)"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Net Sales": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    }
+			  }
+			}
+		contentType: json
+

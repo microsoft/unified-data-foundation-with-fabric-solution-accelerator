@@ -1,0 +1,168 @@
+table 'shared customer'
+	lineageTag: 344b0821-b9de-446b-b658-cb7663ec70dc
+
+	column CustomerId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: c0f52988-3c2e-48f5-9a3f-fc01fa987ba3
+		summarizeBy: none
+		sourceColumn: CustomerId
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerTypeId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: d40541aa-1723-4b3e-a528-0c5c3c7be92d
+		summarizeBy: none
+		sourceColumn: CustomerTypeId
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerRelationshipTypeId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: e2e0490b-e990-49d2-9460-38df362c68db
+		summarizeBy: none
+		sourceColumn: CustomerRelationshipTypeId
+
+		annotation SummarizationSetBy = Automatic
+
+	column DateOfBirth
+		dataType: dateTime
+		formatString: Long Date
+		sourceProviderType: date
+		lineageTag: 622753df-52c1-4700-8c48-10f69ba28d58
+		summarizeBy: none
+		sourceColumn: DateOfBirth
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column CustomerEstablishedDate
+		dataType: dateTime
+		formatString: Long Date
+		sourceProviderType: date
+		lineageTag: b5e12226-c3c0-41c6-9241-0c0bdce49cc7
+		summarizeBy: none
+		sourceColumn: CustomerEstablishedDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column IsActive
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		sourceProviderType: bit
+		lineageTag: a9cfe13f-3656-4d6f-a884-a74fe8a33d14
+		summarizeBy: none
+		sourceColumn: IsActive
+
+		annotation SummarizationSetBy = Automatic
+
+	column FirstName
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 1b18775a-58a6-4eb4-a9f8-66d84c0eda14
+		summarizeBy: none
+		sourceColumn: FirstName
+
+		annotation SummarizationSetBy = Automatic
+
+	column LastName
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: d6185445-b40e-497d-8fde-33e303125996
+		summarizeBy: none
+		sourceColumn: LastName
+
+		annotation SummarizationSetBy = Automatic
+
+	column Gender
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 43b7fbc3-f255-4a30-9c3c-46c7c2182080
+		summarizeBy: none
+		sourceColumn: Gender
+
+		annotation SummarizationSetBy = Automatic
+
+	column PrimaryPhone
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 4cb6755a-bd3e-4d52-9866-b838b52e310f
+		summarizeBy: none
+		sourceColumn: PrimaryPhone
+
+		annotation SummarizationSetBy = Automatic
+
+	column SecondaryPhone
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 46ba0444-7850-49ec-aba0-1af77cedc0ed
+		summarizeBy: none
+		sourceColumn: SecondaryPhone
+
+		annotation SummarizationSetBy = Automatic
+
+	column PrimaryEmail
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: b94c6bd7-d74f-4706-8ace-ad52cad01180
+		summarizeBy: none
+		sourceColumn: PrimaryEmail
+
+		annotation SummarizationSetBy = Automatic
+
+	column SecondaryEmail
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 98e2c412-ae71-48a4-b946-c9ffd064ecf6
+		summarizeBy: none
+		sourceColumn: SecondaryEmail
+
+		annotation SummarizationSetBy = Automatic
+
+	column CreatedBy
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 40587147-28c7-40cb-8e77-d294087fb95e
+		summarizeBy: none
+		sourceColumn: CreatedBy
+
+		annotation SummarizationSetBy = Automatic
+
+	column GoldLoadTimestamp
+		dataType: dateTime
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: 4ef1e925-d123-47e3-90a7-d2d5572142f8
+		summarizeBy: none
+		sourceColumn: GoldLoadTimestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	column UpdatedBy
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 2e09770b-779c-454b-9af0-bb675fb069c3
+		summarizeBy: none
+		sourceColumn: UpdatedBy
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'shared customer' = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database(sqlEndpoint, database),
+				    shared_customer = Source{[Schema="shared",Item="customer"]}[Data]
+				in
+				    shared_customer
+
+	annotation PBI_ResultType = Exception
+
+	annotation PBI_NavigationStepName = Navigation
+
