@@ -1,0 +1,162 @@
+table 'Sales order (adb +Fabric)'
+	lineageTag: af943c93-c1aa-4f01-815f-ea7e28eb9253
+
+	column OrderId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: ad0e47a8-ef99-4069-8cbd-4a6fab96d6b5
+		summarizeBy: none
+		sourceColumn: OrderId
+
+		annotation SummarizationSetBy = Automatic
+
+	column SalesChannelId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 73b69fe2-079a-40c0-9170-28edd03f0b0d
+		summarizeBy: none
+		sourceColumn: SalesChannelId
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderNumber
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 30395525-c8e5-411f-bffa-cd6ee01eac2c
+		summarizeBy: none
+		sourceColumn: OrderNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 72638afb-e7d6-49e3-b369-9d00768a4cd5
+		summarizeBy: none
+		sourceColumn: CustomerId
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerAccountId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 22b578df-e576-4259-bdbb-72b4e753ba9a
+		summarizeBy: none
+		sourceColumn: CustomerAccountId
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderDate
+		dataType: dateTime
+		formatString: Long Date
+		sourceProviderType: date
+		lineageTag: 6081194f-3105-441d-8ddd-e4e7b4eaef43
+		summarizeBy: none
+		sourceColumn: OrderDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column OrderStatus
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 9089ecff-dff4-4033-9a71-993d18f84645
+		summarizeBy: none
+		sourceColumn: OrderStatus
+
+		annotation SummarizationSetBy = Automatic
+
+	column SubTotal
+		dataType: double
+		sourceProviderType: float
+		lineageTag: 0bb68401-82d6-4bff-b827-26c235b45794
+		summarizeBy: sum
+		sourceColumn: SubTotal
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column TaxAmount
+		dataType: double
+		sourceProviderType: float
+		lineageTag: 080ef105-0c24-4da8-a199-0a0652acc1d6
+		summarizeBy: sum
+		sourceColumn: TaxAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column OrderTotal
+		dataType: double
+		sourceProviderType: float
+		lineageTag: 19bdebbc-a8a1-469c-9c41-f6e5425ffd49
+		summarizeBy: sum
+		sourceColumn: OrderTotal
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column PaymentMethod
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 9a467606-e154-4ce3-9684-5b4d6e9dadd9
+		summarizeBy: none
+		sourceColumn: PaymentMethod
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsoCurrencyCode
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 8fa8beb4-f8dc-4984-8a92-228f14878744
+		summarizeBy: none
+		sourceColumn: IsoCurrencyCode
+
+		annotation SummarizationSetBy = Automatic
+
+	column CreatedBy
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 2d477dea-e961-4f8d-8641-91860aca619e
+		summarizeBy: none
+		sourceColumn: CreatedBy
+
+		annotation SummarizationSetBy = Automatic
+
+	column GoldLoadTimestamp
+		dataType: dateTime
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: f11f149c-cbf8-4b06-bb68-dc2e38632c90
+		summarizeBy: none
+		sourceColumn: GoldLoadTimestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year = YEAR('Sales order (adb +Fabric)'[OrderDate])
+		formatString: 0
+		lineageTag: 9c9cc23b-5af0-43e4-91f4-f9abe4ea4bda
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Sales order (adb +Fabric)' = m
+		mode: directQuery
+		source =
+				let
+				    Source1 = Sql.Database(sqlEndpoint, database),
+				    salesadb_order = Source1{[Schema="salesadb",Item="order"]}[Data],
+				    Source = Sql.Database(sqlEndpoint, database),
+				    salesfabric_order = Source{[Schema="salesfabric",Item="order"]}[Data],
+				    AppendedTables = Table.Combine({salesadb_order,salesfabric_order})
+				in
+				    AppendedTables
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Exception
+

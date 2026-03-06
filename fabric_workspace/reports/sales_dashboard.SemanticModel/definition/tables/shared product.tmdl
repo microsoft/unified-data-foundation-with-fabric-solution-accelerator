@@ -1,0 +1,292 @@
+table 'shared product'
+	isHidden
+	lineageTag: 07b9856a-ef9b-43e7-8a78-bc53804134d1
+
+	column ProductID
+		dataType: int64
+		isHidden
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: c96e5625-3dc8-43da-84c2-90892f84a2f9
+		summarizeBy: none
+		sourceColumn: ProductID
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Color
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: a53400b2-53e2-4dc0-a423-ae481f002d06
+		summarizeBy: none
+		sourceColumn: Color
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column StandardCost
+		dataType: double
+		isHidden
+		sourceProviderType: float
+		lineageTag: 327b9469-42fd-4c78-a541-74cffbb00d50
+		summarizeBy: sum
+		sourceColumn: StandardCost
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column ListPrice
+		dataType: double
+		isHidden
+		sourceProviderType: float
+		lineageTag: 0c930bf4-eb8a-42b3-b131-a1dfe1daf99e
+		summarizeBy: sum
+		sourceColumn: ListPrice
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Weight
+		dataType: double
+		isHidden
+		sourceProviderType: float
+		lineageTag: aa7aee7e-6bda-41d1-9cfe-de096309fe30
+		summarizeBy: sum
+		sourceColumn: Weight
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column CategoryName
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 3cf259f9-9716-40be-a0d2-746a7dc758b4
+		summarizeBy: none
+		sourceColumn: CategoryName
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column UpdatedBy
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: d8c93524-59e0-447a-923c-f2e2cb25e920
+		summarizeBy: none
+		sourceColumn: UpdatedBy
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductName
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: d8566e9c-689e-4b66-a1cd-528aab2c8403
+		summarizeBy: none
+		sourceColumn: ProductName
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductDescription
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 3c9dd7c3-7c69-47c3-bbdb-601fd74cae4e
+		summarizeBy: none
+		sourceColumn: ProductDescription
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column BrandName
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 7f09d0a5-7d99-4205-bcbb-3a86e796db6f
+		summarizeBy: none
+		sourceColumn: BrandName
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductNumber
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 7a00b4fa-8397-40e2-85e7-ef404e99f2f1
+		summarizeBy: none
+		sourceColumn: ProductNumber
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductModel
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 9b3e7060-031b-4e3d-a9e0-d02d225ffab6
+		summarizeBy: none
+		sourceColumn: ProductModel
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductCategoryID
+		dataType: int64
+		isHidden
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: df3c5529-9c72-4bc7-bd80-84b85c3ac00b
+		summarizeBy: none
+		sourceColumn: ProductCategoryID
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column WeightUom
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 0317c5e8-4333-47c2-8f25-f03484e0d01b
+		summarizeBy: none
+		sourceColumn: WeightUom
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductStatus
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: fb1cf3a5-535a-4285-95f0-b80fbf7194c4
+		summarizeBy: none
+		sourceColumn: ProductStatus
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column CreatedDate
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: b932a229-5161-4c49-9611-3916a2ffc8dd
+		summarizeBy: none
+		sourceColumn: CreatedDate
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column SellStartDate
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: a7ad48ef-994a-4a0b-a491-4ee88ada1284
+		summarizeBy: none
+		sourceColumn: SellStartDate
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column SellEndDate
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 8c3e964c-b760-4b50-bf90-6b9d5ed97aeb
+		summarizeBy: none
+		sourceColumn: SellEndDate
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsoCurrencyCode
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 47259e8e-e663-4857-bcd3-e8af25b686c1
+		summarizeBy: none
+		sourceColumn: IsoCurrencyCode
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column UpdatedDate
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 8ef85c2a-703f-44b9-8dc0-885690896d5c
+		summarizeBy: none
+		sourceColumn: UpdatedDate
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column CreatedBy
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: aec2a80f-1833-417a-bff9-d40b0dac9145
+		summarizeBy: none
+		sourceColumn: CreatedBy
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column GoldLoadTimestamp
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: abe6d336-f787-4664-b618-a64908d235fe
+		summarizeBy: none
+		sourceColumn: GoldLoadTimestamp
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'shared product' = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database(sqlEndpoint, database),
+				    shared_product = Source{[Schema="shared",Item="product"]}[Data]
+				in
+				    shared_product
+
+	changedProperty = IsHidden
+
+	annotation PBI_ResultType = Exception
+
+	annotation PBI_NavigationStepName = Navigation
+

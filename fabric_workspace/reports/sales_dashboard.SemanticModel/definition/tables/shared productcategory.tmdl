@@ -1,0 +1,118 @@
+table 'shared productcategory'
+	isHidden
+	lineageTag: 152677a6-1e9d-4cb1-89fd-7447d8b93e00
+
+	column CategoryID
+		dataType: int64
+		isHidden
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: fbed80d5-c7bf-48df-9c22-179cce63b3f4
+		summarizeBy: none
+		sourceColumn: CategoryID
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ParentCategoryId
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 0206f756-2161-4fcb-b7e1-daa4705d1361
+		summarizeBy: none
+		sourceColumn: ParentCategoryId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column CategoryName
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: bdd8daf8-a791-448e-bd60-cc480adb8927
+		summarizeBy: none
+		sourceColumn: CategoryName
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column CategoryDescription
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: fe2e2dca-b159-4bd4-b8ad-ae144133fb4b
+		summarizeBy: none
+		sourceColumn: CategoryDescription
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column BrandName
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: c0aeeea7-a2dc-49b8-a34a-0a6c729d3874
+		summarizeBy: none
+		sourceColumn: BrandName
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column BrandLogoUrl
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 7b6501af-ce7c-48a9-b5eb-d88c3287673d
+		summarizeBy: none
+		sourceColumn: BrandLogoUrl
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsActive
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		sourceProviderType: bit
+		lineageTag: 47f1fc2d-0bee-4368-b3f1-d681fb2c283f
+		summarizeBy: none
+		sourceColumn: IsActive
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column GoldLoadTimestamp
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: 90496a6e-f299-4b81-982a-dad21f461e40
+		summarizeBy: none
+		sourceColumn: GoldLoadTimestamp
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'shared productcategory' = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database(sqlEndpoint, database),
+				    shared_productcategory = Source{[Schema="shared",Item="productcategory"]}[Data]
+				in
+				    shared_productcategory
+
+	changedProperty = IsHidden
+
+	annotation PBI_ResultType = Exception
+
+	annotation PBI_NavigationStepName = Navigation
+

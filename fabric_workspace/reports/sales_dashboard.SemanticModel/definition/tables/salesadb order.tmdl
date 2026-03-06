@@ -1,0 +1,197 @@
+table 'salesadb order'
+	isHidden
+	lineageTag: c406cd3f-a0ae-46cc-ab30-340aa0e6a454
+
+	column OrderId
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 6bc00b0e-77a9-4018-8370-e58f00ef437f
+		summarizeBy: none
+		sourceColumn: OrderId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column SalesChannelId
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: f7a64f19-070d-4be3-b633-fd4104e3aa2f
+		summarizeBy: none
+		sourceColumn: SalesChannelId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderNumber
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: e60e197a-30a0-4c1b-919f-2c069a35fe1b
+		summarizeBy: none
+		sourceColumn: OrderNumber
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerId
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 0bb89bfe-8bcb-4ffd-9df0-ae305fddb869
+		summarizeBy: none
+		sourceColumn: CustomerId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerAccountId
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: f7133809-496d-4cd7-a3c6-c980459d720d
+		summarizeBy: none
+		sourceColumn: CustomerAccountId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderDate
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		sourceProviderType: date
+		lineageTag: 2ac76982-a466-4101-b5cc-bd0dcc983aff
+		summarizeBy: none
+		sourceColumn: OrderDate
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column OrderStatus
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: af7520a1-b4f3-4dda-bcb5-afb05bdb9440
+		summarizeBy: none
+		sourceColumn: OrderStatus
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column SubTotal
+		dataType: double
+		isHidden
+		sourceProviderType: float
+		lineageTag: 0bd2353a-5456-4986-8ad7-ed900aa2fc45
+		summarizeBy: sum
+		sourceColumn: SubTotal
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column TaxAmount
+		dataType: double
+		isHidden
+		sourceProviderType: float
+		lineageTag: 370891f1-468b-4eb0-8573-adc842c512c5
+		summarizeBy: sum
+		sourceColumn: TaxAmount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column OrderTotal
+		dataType: double
+		isHidden
+		sourceProviderType: float
+		lineageTag: d47d8eb0-955b-41e9-ad7a-7a9605ad12d8
+		summarizeBy: sum
+		sourceColumn: OrderTotal
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column PaymentMethod
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 5e250e17-c24a-4bfa-85b4-fca534efcdb4
+		summarizeBy: none
+		sourceColumn: PaymentMethod
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsoCurrencyCode
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 9c07f615-4e49-4b3f-be13-64576a2fd77d
+		summarizeBy: none
+		sourceColumn: IsoCurrencyCode
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column CreatedBy
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 2918405b-93ea-4031-9701-5381712c1164
+		summarizeBy: none
+		sourceColumn: CreatedBy
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column GoldLoadTimestamp
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: 6f5d7ab3-444f-43a1-b570-d9a5b01222bd
+		summarizeBy: none
+		sourceColumn: GoldLoadTimestamp
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'salesadb order' = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database(sqlEndpoint, database),
+				    salesadb_order = Source{[Schema="salesadb",Item="order"]}[Data]
+				in
+				    salesadb_order
+
+	changedProperty = IsHidden
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Exception
+
