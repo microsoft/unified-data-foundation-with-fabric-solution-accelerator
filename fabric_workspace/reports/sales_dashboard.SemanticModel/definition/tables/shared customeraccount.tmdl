@@ -1,0 +1,80 @@
+table 'shared customeraccount'
+	lineageTag: 7d726bff-3b0f-4b33-ad37-4c7f336c0d31
+
+	column CustomerAccountId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 4f5ace0a-9db9-4297-b862-cd9091d31d3c
+		summarizeBy: none
+		sourceColumn: CustomerAccountId
+
+		annotation SummarizationSetBy = Automatic
+
+	column ParentAccountId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: b7491e59-e016-4e75-8c06-e9ef6c3d1f6a
+		summarizeBy: none
+		sourceColumn: ParentAccountId
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerAccountName
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 51605842-af45-45d0-8739-9b279b685784
+		summarizeBy: none
+		sourceColumn: CustomerAccountName
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 6721db7e-59d2-4655-bdf8-541c24d17140
+		summarizeBy: none
+		sourceColumn: CustomerId
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsoCurrencyCode
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 77f44786-88fc-414a-b83d-f53afff522e2
+		summarizeBy: none
+		sourceColumn: IsoCurrencyCode
+
+		annotation SummarizationSetBy = Automatic
+
+	column UpdatedBy
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 9ca7807c-0c4f-4bc5-ac06-a24210770f15
+		summarizeBy: none
+		sourceColumn: UpdatedBy
+
+		annotation SummarizationSetBy = Automatic
+
+	column GoldLoadTimestamp
+		dataType: dateTime
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: 83729f8c-d592-4e58-a2f2-eaf10f559cf7
+		summarizeBy: none
+		sourceColumn: GoldLoadTimestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'shared customeraccount' = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database(sqlEndpoint, database),
+				    shared_customeraccount = Source{[Schema="shared",Item="customeraccount"]}[Data]
+				in
+				    shared_customeraccount
+
+	annotation PBI_ResultType = Exception
+
+	annotation PBI_NavigationStepName = Navigation
+

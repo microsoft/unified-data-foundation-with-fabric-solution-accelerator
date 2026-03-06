@@ -1,0 +1,176 @@
+table 'shared location'
+	lineageTag: b8062fe2-2d38-4fb1-9302-55ca295ce9a3
+
+	column LocationId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 1089c85f-4b46-458a-972a-ccb743aa7ca1
+		summarizeBy: none
+		sourceColumn: LocationId
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 3f35feb3-9873-42bc-af5e-a65ea4094ea2
+		summarizeBy: none
+		sourceColumn: CustomerId
+
+		annotation SummarizationSetBy = Automatic
+
+	column LocationName
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 75c0143e-2ce4-4189-96f9-d282a70ce0f2
+		summarizeBy: none
+		sourceColumn: LocationName
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsActive
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		sourceProviderType: bit
+		lineageTag: b49673f0-869e-4719-b03d-2c88add3b484
+		summarizeBy: none
+		sourceColumn: IsActive
+
+		annotation SummarizationSetBy = Automatic
+
+	column AddressLine1
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: cfe6cd9d-3b96-4ad4-b060-d8f8d05777a2
+		summarizeBy: none
+		sourceColumn: AddressLine1
+
+		annotation SummarizationSetBy = Automatic
+
+	column AddressLine2
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 8484fb94-07a8-4dce-8fcb-605a3b94067d
+		summarizeBy: none
+		sourceColumn: AddressLine2
+
+		annotation SummarizationSetBy = Automatic
+
+	column City
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 7118dbd2-c6ba-4f22-a982-862a9219b4a0
+		summarizeBy: none
+		sourceColumn: City
+
+		annotation SummarizationSetBy = Automatic
+
+	column StateId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 6560a9a5-732d-4b6e-b411-5084015853fe
+		summarizeBy: none
+		sourceColumn: StateId
+
+		annotation SummarizationSetBy = Automatic
+
+	column ZipCode
+		dataType: int64
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 09d81703-387d-4c68-bff5-ffc285a27be9
+		summarizeBy: count
+		sourceColumn: ZipCode
+
+		annotation SummarizationSetBy = Automatic
+
+	column CountryId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 3242373b-5f1d-4254-9273-3a5887447d7e
+		summarizeBy: none
+		sourceColumn: CountryId
+
+		annotation SummarizationSetBy = Automatic
+
+	column SubdivisionName
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: fdfd4fc8-9a11-40d8-8be2-cb62a62634ed
+		summarizeBy: none
+		sourceColumn: SubdivisionName
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: fd9952e2-62cb-4711-982e-eca620747b2f
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column Latitude
+		dataType: double
+		sourceProviderType: float
+		lineageTag: d1fc3ef6-a516-48d4-b67c-5370c9172657
+		summarizeBy: sum
+		sourceColumn: Latitude
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Longitude
+		dataType: double
+		sourceProviderType: float
+		lineageTag: bfc1721e-13c3-41ae-8b70-9318f90a62f4
+		summarizeBy: sum
+		sourceColumn: Longitude
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Note
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 6d97cd98-8173-4fde-a813-9752d8a191c4
+		summarizeBy: none
+		sourceColumn: Note
+
+		annotation SummarizationSetBy = Automatic
+
+	column UpdatedBy
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 13caaefd-1069-4664-9489-387679586bd6
+		summarizeBy: none
+		sourceColumn: UpdatedBy
+
+		annotation SummarizationSetBy = Automatic
+
+	column GoldLoadTimestamp
+		dataType: dateTime
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: 4e02ba1c-1184-4324-a4d2-b59c69f4c0f6
+		summarizeBy: none
+		sourceColumn: GoldLoadTimestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'shared location' = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database(sqlEndpoint, database),
+				    shared_location = Source{[Schema="shared",Item="location"]}[Data]
+				in
+				    shared_location
+
+	annotation PBI_ResultType = Exception
+
+	annotation PBI_NavigationStepName = Navigation
+

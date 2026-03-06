@@ -1,0 +1,56 @@
+table 'Sales Orderpayment (adb + Fabric)'
+	lineageTag: a58863f5-baaa-437b-b1ee-b7db9c0e4e02
+
+	column OrderId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 3a3396ef-79df-4da7-aa6a-48e15924a1e0
+		summarizeBy: none
+		sourceColumn: OrderId
+
+		annotation SummarizationSetBy = Automatic
+
+	column PaymentMethod
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: ae29a9e7-7581-423a-bbf3-b52c337e7b6d
+		summarizeBy: none
+		sourceColumn: PaymentMethod
+
+		annotation SummarizationSetBy = Automatic
+
+	column TransactionId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 0ec5f8f4-058c-4918-ba7d-96207ed1c54c
+		summarizeBy: none
+		sourceColumn: TransactionId
+
+		annotation SummarizationSetBy = Automatic
+
+	column GoldLoadTimestamp
+		dataType: dateTime
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: 4c1c73a3-945d-4f91-89b0-fa7cb5181a53
+		summarizeBy: none
+		sourceColumn: GoldLoadTimestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Sales Orderpayment (adb + Fabric)' = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database(sqlEndpoint, database),
+				    salesadb_orderpayment = Source{[Schema="salesadb",Item="orderpayment"]}[Data],
+				    Source1 = Sql.Database(sqlEndpoint, database),
+				    salesfabric_orderpayment = Source{[Schema="salesfabric",Item="orderpayment"]}[Data],
+				    AppendedTables = Table.Combine({salesadb_orderpayment,salesfabric_orderpayment})
+				in
+				    AppendedTables
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Exception
+
