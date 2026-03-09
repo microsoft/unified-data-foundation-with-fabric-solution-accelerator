@@ -23,31 +23,25 @@ find_replace:
   # NOTEBOOK — Lakehouse ID Replacements
   # ==========================================================================
 
-  # --- GUID 63081e19: → maag_gold (silver_to_gold notebooks ONLY) -----------
-  # ORDER: MUST come BEFORE the catch-all rule for this GUID.
-  # In silver_to_gold notebooks this GUID is the default_lakehouse (write target
-  # for the gold layer) and appears in known_lakehouses[0].
+  # --- GUID f6efaae4-adf6-463c-84d7-9a959877a8a5: → maag_bronze -------------------------------------------
+  # Used as default lakehouse in bronze_to_silver notebooks and labeled "maag_bronze".
   - find_value: "f6efaae4-adf6-463c-84d7-9a959877a8a5"
     replace_value:
-      _ALL_: "$items.Lakehouse.maag_gold.$id"
+      _ALL_: "$items.Lakehouse.maag_bronze.$id"
     item_type: "Notebook"
 
-  # --- GUID 63081e19: → maag_silver (all other notebooks) -------------------
-  # Catch-all for remaining notebooks (schema/silver, run_bronze_to_silver,
-  # data_mgmt/silver, and bronze_to_silver known_lakehouses entries).
-  # After the rule above runs, this GUID is already replaced in silver_to_gold
-  # files, so this rule only affects the remaining notebooks.
+  # --- GUID be663c06-2418-4eb2-b853-0fa5e76955b7: → maag_silver (silver_to_gold notebooks ONLY) -----------
+  # Used as default lakehouse in bronze_to_silver and silver_to_gold notebooks and labeled "maag_silver".
   - find_value: "be663c06-2418-4eb2-b853-0fa5e76955b7"
     replace_value:
       _ALL_: "$items.Lakehouse.maag_silver.$id"
     item_type: "Notebook"
 
-  # --- GUID 400ee61d: → maag_gold -------------------------------------------
-  # Used as default_lakehouse in schema/gold, run_silver_to_gold, and
-  # data_mgmt/gold notebooks, and as known_lakehouses entry in silver_to_gold.
-  - find_value: "f6efaae4-adf6-463c-84d7-9a959877a8a5"
+  # --- GUID 86c1a3bb-fee7-4ce5-9f89-8466a3e8aa1e: → maag_gold (all notebooks) -------------------
+  # Used as default lakehouse in silver_to_gold related notebooks and labeled "maag_gold".
+  - find_value: "86c1a3bb-fee7-4ce5-9f89-8466a3e8aa1e"
     replace_value:
-      _ALL_: "$items.Lakehouse.maag_bronze.$id"
+      _ALL_: "$items.Lakehouse.maag_gold.$id"
     item_type: "Notebook"
 
   # ==========================================================================
