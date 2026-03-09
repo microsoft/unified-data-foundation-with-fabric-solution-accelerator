@@ -18,7 +18,7 @@ param location string = resourceGroup().location
 @description('Optional. Enable/Disable usage telemetry for module.')
 param enableTelemetry bool = true
 
-@description('Optional. An array of user object IDs or service principal object IDs that will be assigned the Fabric Capacity Admin role. This can be used to add additional admins beyond the default admin which is the deploying user or service principal.')
+@description('Optional. An array of user object IDs or service principal object IDs that will be assigned the Fabric Capacity Admin role. This can be used to add additional admins beyond the default admin which is the user assigned managed identity created as part of this deployment.')
 param fabricAdminMembers array = []
 
 @allowed([
@@ -40,6 +40,9 @@ param skuName string = 'F2'
 @description('Optional. Name of an existing Fabric capacity to use. If empty, a new capacity will be created.')
 param existingFabricCapacityName string = ''
 
+@description('Optional. Created by user name.')
+param createdBy string = contains(deployer(), 'userPrincipalName') ? split(deployer().userPrincipalName, '@')[0] : deployer().objectId
+
 var useExistingFabricCapacity = !empty(existingFabricCapacityName)
 
 var solutionSuffix = toLower(trim(replace(
@@ -52,17 +55,36 @@ var solutionSuffix = toLower(trim(replace(
   ''
 )))
 
-// ============================================================================
-// FABRIC CAPACITY - Create new or reference existing
-// ============================================================================
+// ========== Resource Group Tag ========== //
+resource resourceGroupTags 'Microsoft.Resources/tags@2021-04-01' = {
+  name: 'default'
+  properties: {
+    tags: union(
+      resourceGroup().tags,
+      {
+        TemplateName: 'Unified Data Foundation with Fabric'
+        CreatedBy: createdBy
+        Type: 'Non-WAF'
+      }
+    )
+  }
+}
+
+// var userAssignedIdentityResourceName = 'id-${solutionSuffix}'
+// module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
+//   name: take('avm.res.managed-identity.user-assigned-identity.${userAssignedIdentityResourceName}', 64)
+//   params: {
+//     name: userAssignedIdentityResourceName
+//     location: location
+//     enableTelemetry: enableTelemetry
+//   }
+// }
 
 var fabricCapacityResourceName = useExistingFabricCapacity ? existingFabricCapacityName : 'fc${solutionSuffix}'
 var fabricCapacityDefaultAdmins = deployer().?userPrincipalName == null
   ? [deployer().objectId]
   : [deployer().userPrincipalName]
 var fabricTotalAdminMembers = union(fabricCapacityDefaultAdmins, fabricAdminMembers)
-
-// Create new Fabric capacity (if no existing specified)
 module newFabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = if (!useExistingFabricCapacity) {
   name: take('avm.res.fabric.capacity.${fabricCapacityResourceName}', 64)
   params: {
@@ -74,10 +96,7 @@ module newFabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = if (!useExi
   }
 }
 
-// ============================================================================
-// OUTPUTS
-// ============================================================================
-
+// Outputs for AZD
 @description('The location the resources were deployed to')
 output AZURE_LOCATION string = location
 

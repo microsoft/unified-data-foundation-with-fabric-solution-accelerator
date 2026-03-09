@@ -1,0 +1,104 @@
+table 'shared customertradename'
+	lineageTag: 8b4cab3e-fbf5-482e-943b-24a76793218f
+
+	column CustomerId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: b8fcbbaf-52cf-449f-90c9-d382421a1d05
+		summarizeBy: none
+		sourceColumn: CustomerId
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerTypeId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 5dc56696-68f9-4da9-830e-26aa8fcc37d1
+		summarizeBy: none
+		sourceColumn: CustomerTypeId
+
+		annotation SummarizationSetBy = Automatic
+
+	column TradeNameId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: ece8d63c-bfbc-4429-844f-7d543c5d48bf
+		summarizeBy: none
+		sourceColumn: TradeNameId
+
+		annotation SummarizationSetBy = Automatic
+
+	column TradeName
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 3a07d1c8-b6f6-43eb-b360-356d7627e5db
+		summarizeBy: none
+		sourceColumn: TradeName
+
+		annotation SummarizationSetBy = Automatic
+
+	column PeriodStartDate
+		dataType: dateTime
+		formatString: Long Date
+		sourceProviderType: date
+		lineageTag: f1a7c1c7-fa5a-478d-820f-2ad13d79f162
+		summarizeBy: none
+		sourceColumn: PeriodStartDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column PeriodEndDate
+		dataType: dateTime
+		formatString: Long Date
+		sourceProviderType: date
+		lineageTag: e0de89e8-2e8d-43e6-beae-961646afc77d
+		summarizeBy: none
+		sourceColumn: PeriodEndDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column CustomerTradeNameNote
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: e6ecd6c5-ed80-49ce-ab03-b528a33a3926
+		summarizeBy: none
+		sourceColumn: CustomerTradeNameNote
+
+		annotation SummarizationSetBy = Automatic
+
+	column UpdatedBy
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 93c32028-b5ff-4fe3-a974-ba04da840f14
+		summarizeBy: none
+		sourceColumn: UpdatedBy
+
+		annotation SummarizationSetBy = Automatic
+
+	column GoldLoadTimestamp
+		dataType: dateTime
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: d1198079-3a7b-4e04-88c1-5864acf33054
+		summarizeBy: none
+		sourceColumn: GoldLoadTimestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'shared customertradename' = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database(sqlEndpoint, database),
+				    shared_customertradename = Source{[Schema="shared",Item="customertradename"]}[Data]
+				in
+				    shared_customertradename
+
+	annotation PBI_ResultType = Exception
+
+	annotation PBI_NavigationStepName = Navigation
+

@@ -1,0 +1,68 @@
+table 'salesadb orderpayment'
+	isHidden
+	lineageTag: b36173d7-9533-421a-8a7d-a8f5ec1d5ed9
+
+	column OrderId
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: fdc507db-26fb-4619-9aec-c699d2a6534e
+		summarizeBy: none
+		sourceColumn: OrderId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column PaymentMethod
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: d81d14dc-93c5-43c5-af89-757938e1adcf
+		summarizeBy: none
+		sourceColumn: PaymentMethod
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column TransactionId
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 3c33ac3b-e296-4c26-a11f-d27a9774b050
+		summarizeBy: none
+		sourceColumn: TransactionId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column GoldLoadTimestamp
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: d0852e57-2e1d-4e1e-92f4-514b058a06dd
+		summarizeBy: none
+		sourceColumn: GoldLoadTimestamp
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'salesadb orderpayment' = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database(sqlEndpoint, database),
+				    salesadb_orderpayment = Source{[Schema="salesadb",Item="orderpayment"]}[Data]
+				in
+				    salesadb_orderpayment
+
+	changedProperty = IsHidden
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Exception
+

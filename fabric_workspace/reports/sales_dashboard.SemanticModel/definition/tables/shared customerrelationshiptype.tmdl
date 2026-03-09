@@ -1,0 +1,53 @@
+table 'shared customerrelationshiptype'
+	lineageTag: d2b18c3f-3063-4826-a483-328a1184c30b
+
+	column CustomerRelationshipTypeId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 6dd6e1ea-66ca-4d67-93bb-f2f190204f06
+		summarizeBy: none
+		sourceColumn: CustomerRelationshipTypeId
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerRelationshipTypeName
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: e6433b4f-1d90-4f40-819e-37fcde46b22d
+		summarizeBy: none
+		sourceColumn: CustomerRelationshipTypeName
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerRelationshipTypeDescription
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: ab94d766-8219-4e75-8065-89c2b3ffd2c0
+		summarizeBy: none
+		sourceColumn: CustomerRelationshipTypeDescription
+
+		annotation SummarizationSetBy = Automatic
+
+	column GoldLoadTimestamp
+		dataType: dateTime
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: b1e2ac88-1d57-4737-be96-3eb8aba84a11
+		summarizeBy: none
+		sourceColumn: GoldLoadTimestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'shared customerrelationshiptype' = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database(sqlEndpoint, database),
+				    shared_customerrelationshiptype = Source{[Schema="shared",Item="customerrelationshiptype"]}[Data]
+				in
+				    shared_customerrelationshiptype
+
+	annotation PBI_ResultType = Exception
+
+	annotation PBI_NavigationStepName = Navigation
+

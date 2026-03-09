@@ -1,0 +1,33 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-IN
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["shared customer","shared customeraccount","shared customerrelationshiptype","shared customertradename","shared location","shared product","shared productcategory","salesadb order","salesadb orderline","salesadb orderpayment","salesfabric order","salesfabric orderline","salesfabric orderpayment","Sales order (adb +Fabric)","Sales Orderline (adb+Fabric)","Sales Orderpayment (adb + Fabric)","sqlEndpoint","database"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table 'shared customer'
+ref table 'shared customeraccount'
+ref table 'shared customerrelationshiptype'
+ref table 'shared customertradename'
+ref table 'shared location'
+ref table 'shared product'
+ref table 'shared productcategory'
+ref table 'salesadb order'
+ref table 'salesadb orderline'
+ref table 'salesadb orderpayment'
+ref table 'salesfabric order'
+ref table 'salesfabric orderline'
+ref table 'salesfabric orderpayment'
+ref table 'Sales order (adb +Fabric)'
+ref table 'Sales Orderline (adb+Fabric)'
+ref table 'Sales Orderpayment (adb + Fabric)'
+
+ref cultureInfo en-US
+

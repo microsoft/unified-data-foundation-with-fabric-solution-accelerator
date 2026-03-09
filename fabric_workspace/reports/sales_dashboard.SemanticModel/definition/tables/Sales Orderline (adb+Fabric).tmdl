@@ -1,0 +1,163 @@
+table 'Sales Orderline (adb+Fabric)'
+	lineageTag: de98c10b-f351-4e3a-8536-71acfa96bafa
+
+	measure 'Net Sales(adb + Fabric)' =
+			
+			SUMX(
+			    'Sales Orderline (adb+Fabric)',
+			    ('Sales Orderline (adb+Fabric)'[LineTotal]
+			    + 'Sales Orderline (adb+Fabric)'[TaxAmount]   -- optional, include if tax counts toward net sales
+			))
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 5e3adce7-e9a0-4e33-9945-42fca78f8e23
+
+	measure 'Revenue(adb + Fabric)' =
+			SUMX(
+			    'Sales Orderline (adb+Fabric)',
+			    'Sales Orderline (adb+Fabric)'[Quantity] * 'Sales Orderline (adb+Fabric)'[UnitPrice]
+			)
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 3ec9db50-5a2c-4b35-b6a6-1e61cdb49690
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure NetSales(Display) =
+			
+			VAR TotalSales = [Net Sales(adb + Fabric)]
+			VAR CurrencySymbol = "$"  -- Replace with ₹ or your currency
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    ABS(TotalSales) >= 1000000, CurrencySymbol & FORMAT(TotalSales/1000000, "0.0") & "M",
+			    ABS(TotalSales) >= 1000, CurrencySymbol & FORMAT(TotalSales/1000, "0.0") & "K",
+			    CurrencySymbol & FORMAT(TotalSales, "0")
+			)
+		lineageTag: 0ee99bbc-5ded-4fb3-a890-6673c9d63bfc
+
+	measure 'Net Sales Till Last Year' =
+			
+			CALCULATE(
+			    [Net Sales(adb + Fabric)],   -- your existing Net Sales measure
+			    'Sales order (adb +Fabric)'[OrderDate] <= DATE(YEAR(TODAY())-1, 12, 31)
+			)
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 37948445-95fb-4d75-b135-83165e6fcfde
+
+	column OrderId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 9514acff-1680-4a7b-8d84-aad7e63d3c49
+		summarizeBy: none
+		sourceColumn: OrderId
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderLineNumber
+		dataType: int64
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 19ca420e-1593-4546-8205-5e7d8e9e36ec
+		summarizeBy: sum
+		sourceColumn: OrderLineNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductId
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: dcb6064e-06ed-4bbe-bb99-548972f5e6b4
+		summarizeBy: none
+		sourceColumn: ProductId
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductName
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 70148f38-cff5-4086-8999-4914f2e099a9
+		summarizeBy: none
+		sourceColumn: ProductName
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quantity
+		dataType: double
+		formatString: #,0
+		sourceProviderType: float
+		lineageTag: ddaa46f9-a197-4c87-85e9-971ed6a537c6
+		summarizeBy: sum
+		sourceColumn: Quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isDecimal":true}
+
+	column UnitPrice
+		dataType: double
+		sourceProviderType: float
+		lineageTag: fdff4df5-79bf-4eb0-a3e0-9223e9dcedf7
+		summarizeBy: sum
+		sourceColumn: UnitPrice
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column LineTotal
+		dataType: double
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		sourceProviderType: float
+		lineageTag: af11e2d8-d330-4ce6-8dce-099f8a2db078
+		summarizeBy: sum
+		sourceColumn: LineTotal
+
+		annotation SummarizationSetBy = Automatic
+
+	column DiscountAmount
+		dataType: double
+		sourceProviderType: float
+		lineageTag: 78de7d23-b5d5-4586-8bb4-08437df3e573
+		summarizeBy: sum
+		sourceColumn: DiscountAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column TaxAmount
+		dataType: double
+		sourceProviderType: float
+		lineageTag: 6e0e2d21-8b1d-4a8b-adf7-994b4d8ca13b
+		summarizeBy: sum
+		sourceColumn: TaxAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column GoldLoadTimestamp
+		dataType: dateTime
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: 0facb26d-d1d9-4472-ae61-a221a219ffb0
+		summarizeBy: none
+		sourceColumn: GoldLoadTimestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Sales Orderline (adb+Fabric)' = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database(sqlEndpoint, database),
+				    salesadb_orderline = Source{[Schema="salesadb",Item="orderline"]}[Data],
+				    Source1 = Sql.Database(sqlEndpoint, database),
+				    salesfabric_orderline = Source{[Schema="salesfabric",Item="orderline"]}[Data],
+				    AppendedTables = Table.Combine({salesadb_orderline,salesfabric_orderline})
+				in
+				    AppendedTables
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Exception
+

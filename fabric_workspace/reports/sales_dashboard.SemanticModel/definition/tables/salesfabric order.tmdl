@@ -1,0 +1,197 @@
+table 'salesfabric order'
+	isHidden
+	lineageTag: 2c4e7c7a-b996-4fd8-871f-317bc91497d1
+
+	column OrderId
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 307bc55c-c2e5-47f3-9354-832b540c9a3a
+		summarizeBy: none
+		sourceColumn: OrderId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column SalesChannelId
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: c295c4f9-fd6c-44cd-9652-e3731a787a30
+		summarizeBy: none
+		sourceColumn: SalesChannelId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderNumber
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 04a8b296-c5c5-4b0a-88a1-7cacf57a61e1
+		summarizeBy: none
+		sourceColumn: OrderNumber
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerId
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 3ed667ed-592f-4c3b-98ac-c2f9fcc35026
+		summarizeBy: none
+		sourceColumn: CustomerId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerAccountId
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 71a86ad9-c4d1-493e-9ece-48624d94211d
+		summarizeBy: none
+		sourceColumn: CustomerAccountId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderDate
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		sourceProviderType: date
+		lineageTag: 51534499-e2ec-408f-b971-eec14fffca37
+		summarizeBy: none
+		sourceColumn: OrderDate
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column OrderStatus
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 8a102fd2-e4db-43ec-bf30-1bb7e14526b1
+		summarizeBy: none
+		sourceColumn: OrderStatus
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column SubTotal
+		dataType: double
+		isHidden
+		sourceProviderType: float
+		lineageTag: 5539a47a-b582-4f08-8009-9b053318874a
+		summarizeBy: sum
+		sourceColumn: SubTotal
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column TaxAmount
+		dataType: double
+		isHidden
+		sourceProviderType: float
+		lineageTag: f39f264c-0149-43fc-90ea-8057ac0a707c
+		summarizeBy: sum
+		sourceColumn: TaxAmount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column OrderTotal
+		dataType: double
+		isHidden
+		sourceProviderType: float
+		lineageTag: 7790eb68-16fe-4226-8130-c3af03315c0b
+		summarizeBy: sum
+		sourceColumn: OrderTotal
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column PaymentMethod
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 5e235935-48ba-44ff-8654-cc74f769a1d4
+		summarizeBy: none
+		sourceColumn: PaymentMethod
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsoCurrencyCode
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 5bc7448d-7f32-4e0f-84bc-aa3045405afb
+		summarizeBy: none
+		sourceColumn: IsoCurrencyCode
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column CreatedBy
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 2abf510b-70ac-46b7-a815-4347591c203f
+		summarizeBy: none
+		sourceColumn: CreatedBy
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column GoldLoadTimestamp
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: 53bb0273-2102-4049-939d-75c712772608
+		summarizeBy: none
+		sourceColumn: GoldLoadTimestamp
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'salesfabric order' = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database(sqlEndpoint, database),
+				    salesfabric_order = Source{[Schema="salesfabric",Item="order"]}[Data]
+				in
+				    salesfabric_order
+
+	changedProperty = IsHidden
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Exception
+

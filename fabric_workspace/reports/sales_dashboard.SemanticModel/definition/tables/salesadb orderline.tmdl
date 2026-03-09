@@ -1,0 +1,151 @@
+table 'salesadb orderline'
+	isHidden
+	lineageTag: 7e37d8f4-b5d0-4c34-9752-e5e3562fa8f4
+
+	column OrderId
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: b826ef98-2768-4692-8058-33b411b7b0bc
+		summarizeBy: none
+		sourceColumn: OrderId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderLineNumber
+		dataType: int64
+		isHidden
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 10770c33-e235-4d6f-9d66-69940aa0bc91
+		summarizeBy: sum
+		sourceColumn: OrderLineNumber
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductId
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 4fe95bce-3b69-4e7e-b4cf-e79178e385cf
+		summarizeBy: none
+		sourceColumn: ProductId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductName
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(8000)
+		lineageTag: 7c91eae3-5524-4307-9ac2-a3479663ce17
+		summarizeBy: none
+		sourceColumn: ProductName
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quantity
+		dataType: double
+		isHidden
+		sourceProviderType: float
+		lineageTag: 5632ab42-c447-48b7-ad37-7834b8774b5f
+		summarizeBy: sum
+		sourceColumn: Quantity
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column UnitPrice
+		dataType: double
+		isHidden
+		sourceProviderType: float
+		lineageTag: b0474dc2-fec3-41d5-a483-b462824518b6
+		summarizeBy: sum
+		sourceColumn: UnitPrice
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column LineTotal
+		dataType: double
+		isHidden
+		sourceProviderType: float
+		lineageTag: a4144d00-c6cb-4353-8387-3d44a29cc51a
+		summarizeBy: sum
+		sourceColumn: LineTotal
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column DiscountAmount
+		dataType: double
+		isHidden
+		sourceProviderType: float
+		lineageTag: f9e90eb0-092f-4c22-942e-600dd240536a
+		summarizeBy: sum
+		sourceColumn: DiscountAmount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column TaxAmount
+		dataType: double
+		isHidden
+		sourceProviderType: float
+		lineageTag: bf518d24-41d2-4183-8e4d-1fe05feed31e
+		summarizeBy: sum
+		sourceColumn: TaxAmount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column GoldLoadTimestamp
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: e1309f3f-a666-4496-b2ca-2f8b3c7656db
+		summarizeBy: none
+		sourceColumn: GoldLoadTimestamp
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'salesadb orderline' = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database(sqlEndpoint, database),
+				    salesadb_orderline = Source{[Schema="salesadb",Item="orderline"]}[Data]
+				in
+				    salesadb_orderline
+
+	changedProperty = IsHidden
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Exception
+
