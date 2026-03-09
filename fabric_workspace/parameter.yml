@@ -27,26 +27,17 @@ find_replace:
   # ORDER: MUST come BEFORE the catch-all rule for this GUID.
   # In silver_to_gold notebooks this GUID is the default_lakehouse (write target
   # for the gold layer) and appears in known_lakehouses[0].
-  - find_value: "63081e19-3045-4aa1-b19f-6425719fe664"
+  - find_value: "f6efaae4-adf6-463c-84d7-9a959877a8a5"
     replace_value:
       _ALL_: "$items.Lakehouse.maag_gold.$id"
     item_type: "Notebook"
-    file_path: "**/silver_to_gold/**/notebook-content.py"
 
   # --- GUID 63081e19: → maag_silver (all other notebooks) -------------------
   # Catch-all for remaining notebooks (schema/silver, run_bronze_to_silver,
   # data_mgmt/silver, and bronze_to_silver known_lakehouses entries).
   # After the rule above runs, this GUID is already replaced in silver_to_gold
   # files, so this rule only affects the remaining notebooks.
-  - find_value: "63081e19-3045-4aa1-b19f-6425719fe664"
-    replace_value:
-      _ALL_: "$items.Lakehouse.maag_silver.$id"
-    item_type: "Notebook"
-
-  # --- GUID 6677c554: → maag_silver (bronze_to_silver default) --------------
-  # Used as default_lakehouse and known_lakehouses[0] in all 16
-  # bronze_to_silver notebooks.
-  - find_value: "6677c554-f58d-4371-81a4-c7b5a53648b7"
+  - find_value: "be663c06-2418-4eb2-b853-0fa5e76955b7"
     replace_value:
       _ALL_: "$items.Lakehouse.maag_silver.$id"
     item_type: "Notebook"
@@ -54,9 +45,9 @@ find_replace:
   # --- GUID 400ee61d: → maag_gold -------------------------------------------
   # Used as default_lakehouse in schema/gold, run_silver_to_gold, and
   # data_mgmt/gold notebooks, and as known_lakehouses entry in silver_to_gold.
-  - find_value: "400ee61d-0fae-4cb3-9d1d-e66011e11d3b"
+  - find_value: "f6efaae4-adf6-463c-84d7-9a959877a8a5"
     replace_value:
-      _ALL_: "$items.Lakehouse.maag_gold.$id"
+      _ALL_: "$items.Lakehouse.maag_bronze.$id"
     item_type: "Notebook"
 
   # ==========================================================================
@@ -64,7 +55,7 @@ find_replace:
   # ==========================================================================
 
   # All 49 notebooks with metadata reference the same workspace ID.
-  - find_value: "82249858-6617-405c-b4be-d40ea331378b"
+  - find_value: "8b4b90aa-74f8-4b72-8fd0-1d254ff4ee59"
     replace_value:
       _ALL_: "$workspace.$id"
     item_type: "Notebook"
@@ -76,7 +67,7 @@ find_replace:
   # The sales_dashboard semantic model connects to maag_gold via its SQL
   # endpoint (defined as an expression parameter in expressions.tmdl).
   # All table partitions use: Sql.Database(sqlEndpoint, database)
-  - find_value: "ccllgusga4suzkb52t4j7lpn7y-lcmcjaqxmzoebnf62qhkgmjxrm.datawarehouse.fabric.microsoft.com"
+  - find_value: "ccllgusga4suzkb52t4j7lpn7y-vkiexc7yorzexd6qdusu75hole.datawarehouse.fabric.microsoft.com"
     replace_value:
       _ALL_: "$items.Lakehouse.maag_gold.$sqlendpoint"
     item_type: "SemanticModel"
@@ -87,7 +78,7 @@ find_replace:
 
   # The Data Agent datasource.json stores the maag_gold lakehouse reference
   # as artifactId. This must resolve to the deployed lakehouse item ID.
-  - find_value: "11e11d3b-e660-9d1d-4cb3-0fae400ee61d"
+  - find_value: "a3e8aa1e-8466-9f89-4ce5-fee786c1a3bb"
     replace_value:
       _ALL_: "$items.Lakehouse.maag_gold.$id"
     item_type: "DataAgent"
