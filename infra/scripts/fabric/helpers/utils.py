@@ -9,7 +9,6 @@ import base64
 import os
 import sys
 import json
-import uuid
 from typing import Optional
 
 
@@ -36,28 +35,6 @@ def read_file_content(file_path: str) -> str:
         raise Exception(f"Error reading file {file_path}: {e}")
 
 
-def replace_tokens_in_content(content: str, tokens: dict) -> str:
-    """
-    Replace tokens in content with their values, properly escaping for JSON.
-    
-    Args:
-        content: Content with tokens to replace
-        tokens: Dictionary mapping token names to replacement values
-        
-    Returns:
-        Content with tokens replaced and properly escaped
-    """
-    for token, value in tokens.items():
-        # Escape the value for JSON if it's a string
-        if isinstance(value, str):
-            # Escape backslashes, quotes, and control characters
-            escaped_value = json.dumps(value)[1:-1]  # Remove surrounding quotes from json.dumps
-        else:
-            escaped_value = str(value)
-        content = content.replace(token, escaped_value)
-    return content
-
-
 def get_required_env_var(var_name: str) -> str:
     """
     Get required environment variable or exit with error.
@@ -77,92 +54,6 @@ def get_required_env_var(var_name: str) -> str:
         print(f"   Please ensure the variable is set before running this script.")
         sys.exit(1)
     return value
-
-
-def build_folder_path_mapping(folders: list) -> dict:
-    """
-    Build a mapping of folder paths to folder IDs from a list of folder objects.
-    
-    Args:
-        folders: List of folder objects from Fabric API
-        
-    Returns:
-        Dictionary mapping folder paths to folder IDs
-    """
-    folder_map = {}
-    
-    # First pass: map all folders with their parent IDs
-    id_to_folder = {f['id']: f for f in folders}
-    
-    # Second pass: build full paths
-    for folder in folders:
-        path_parts = [folder['displayName']]
-        current = folder
-        
-        # Walk up the parent chain
-        while current.get('workspaceId'):
-            parent_id = current.get('workspaceId')
-            if parent_id in id_to_folder:
-                current = id_to_folder[parent_id]
-                path_parts.insert(0, current['displayName'])
-            else:
-                break
-        
-        folder_path = '/'.join(path_parts)
-        folder_map[folder_path] = folder['id']
-    
-    return folder_map
-
-
-def is_valid_guid(value):
-    """
-    Check if a string is a valid GUID.
-    
-    Args:
-        value: String to check
-        
-    Returns:
-        True if valid GUID, False otherwise
-    """
-    try:
-        uuid.UUID(str(value))
-        return True
-    except ValueError:
-        return False
-
-
-def build_notebook_spec(relative_path: str, source_lakehouse: Optional[str], 
-                       target_lakehouse: Optional[str], fabric_folders: dict) -> dict:
-    """
-    Build a notebook specification dictionary for deployment.
-    
-    Args:
-        relative_path: Relative path to notebook file (e.g., 'run_notebook.ipynb' or 'bronze_to_silver/notebook.ipynb')
-        source_lakehouse: Optional source lakehouse name
-        target_lakehouse: Optional target lakehouse name
-        fabric_folders: Dictionary mapping folder paths to folder IDs
-        
-    Returns:
-        Dictionary with notebook specification
-    """
-    # Calculate notebooks directory from current file location
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(script_dir))))
-    notebooks_directory = os.path.join(repo_root, 'src', 'fabric', 'notebooks')
-    
-    # Extract directory from relative_path and prepend 'notebooks' to build folder_path
-    notebook_dir = os.path.dirname(relative_path)
-    if notebook_dir:
-        folder_path = f"notebooks/{notebook_dir}"
-    else:
-        folder_path = "notebooks"
-    
-    return {
-        'notebook_local_path': os.path.join(notebooks_directory, relative_path),
-        'source_lakehouse_name': source_lakehouse,
-        'target_lakehouse_name': target_lakehouse,
-        'fabric_folder_id': fabric_folders.get(folder_path)
-    }
 
 
 def encode_notebook(notebook_path: str) -> str:
