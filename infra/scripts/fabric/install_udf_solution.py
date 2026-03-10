@@ -18,13 +18,25 @@ Usage:
     python install_udf_solution.py
 
 Environment Variables:
-    AZURE_FABRIC_CAPACITY_NAME          (required) Name of the Fabric capacity resource
-    SOLUTION_SUFFIX                     (required) Suffix used for resource naming
-    FABRIC_WORKSPACE_NAME               (optional) Override the default workspace name
-    AZURE_FABRIC_CAPACITY_ADMINISTRATORS (optional) JSON array of capacity administrator
-                                                    identities (supplied by main.bicep)
-    FABRIC_WORKSPACE_ADMINISTRATORS     (optional) Comma-separated list of additional
-                                                    workspace administrator identities
+    The following variables are automatically set by 'azd' from main.bicep outputs and
+    must be present in the environment before running this script:
+
+    AZURE_FABRIC_CAPACITY_NAME           (required) Name of the Fabric capacity resource.
+                                                    Sourced from main.bicep output:
+                                                    AZURE_FABRIC_CAPACITY_NAME.
+    SOLUTION_SUFFIX                      (required) Suffix used for resource naming.
+                                                    Sourced from main.bicep output:
+                                                    SOLUTION_SUFFIX.
+    AZURE_FABRIC_CAPACITY_ADMINISTRATORS (required) JSON array of capacity administrator
+                                                    identities. Sourced from main.bicep
+                                                    output: AZURE_FABRIC_CAPACITY_ADMINISTRATORS.
+
+    The following variables are optional and must be set manually if needed:
+
+    FABRIC_WORKSPACE_NAME                (optional) Override the default workspace name
+                                                    (defaults to "<SOLUTION_NAME> - <SOLUTION_SUFFIX>").
+    FABRIC_WORKSPACE_ADMINISTRATORS      (optional) Comma-separated list of additional
+                                                    workspace administrator identities.
 """
 
 import os
@@ -168,7 +180,7 @@ def main() -> None:
         "FABRIC_WORKSPACE_NAME", f"{SOLUTION_NAME} - {solution_suffix}"
     )
     workspace_administrators = parse_workspace_administrators(
-        os.getenv("AZURE_FABRIC_CAPACITY_ADMINISTRATORS"),
+        get_required_env_var("AZURE_FABRIC_CAPACITY_ADMINISTRATORS"),
         os.getenv("FABRIC_WORKSPACE_ADMINISTRATORS"),
     )
 
