@@ -71,7 +71,7 @@ You can modify the data models and notebooks in different folders under the `src
 
 <br/>
 
-### Additional resources
+## Resources
 
 [What's New in Microsoft Fabric](https://learn.microsoft.com/en-us/fabric/fundamentals/whats-new)
 
@@ -83,7 +83,7 @@ You can modify the data models and notebooks in different folders under the `src
 
 <br/>
 
-### Key features
+## Features
 <details>
   <summary>Click to learn more about the key features this solution enables</summary>
 
@@ -107,6 +107,8 @@ You can modify the data models and notebooks in different folders under the `src
 <h2><img src="./docs/images/readme/quick-deploy.png" width="48" />
 Quick deploy
 </h2>
+
+## Getting Started
 
 ### Deployment methods
 
@@ -202,6 +204,8 @@ An interactive Fabric Data Agent is illustrated below.
 <h2><img src="./docs/images/readme/supporting-documentation.png" width="48" />
 Supporting documentation
 </h2>
+
+## Guidance
 
 ### Security guidelines
 
