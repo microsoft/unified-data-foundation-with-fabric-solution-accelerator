@@ -23,16 +23,16 @@ find_replace:
   # NOTEBOOK — Lakehouse ID Replacements
   # ==========================================================================
 
-  # --- GUID f6efaae4-adf6-463c-84d7-9a959877a8a5: → maag_bronze -------------------------------------------
+  # --- GUID be663c06-2418-4eb2-b853-0fa5e76955b7: → maag_bronze -------------------------------------------
   # Used as default lakehouse in bronze_to_silver notebooks and labeled "maag_bronze".
-  - find_value: "f6efaae4-adf6-463c-84d7-9a959877a8a5"
+  - find_value: "be663c06-2418-4eb2-b853-0fa5e76955b7"
     replace_value:
       _ALL_: "$items.Lakehouse.maag_bronze.$id"
     item_type: "Notebook"
 
-  # --- GUID be663c06-2418-4eb2-b853-0fa5e76955b7: → maag_silver (silver_to_gold notebooks ONLY) -----------
+  # --- GUID f6efaae4-adf6-463c-84d7-9a959877a8a5: → maag_silver (silver_to_gold notebooks ONLY) -----------
   # Used as default lakehouse in bronze_to_silver and silver_to_gold notebooks and labeled "maag_silver".
-  - find_value: "be663c06-2418-4eb2-b853-0fa5e76955b7"
+  - find_value: "f6efaae4-adf6-463c-84d7-9a959877a8a5"
     replace_value:
       _ALL_: "$items.Lakehouse.maag_silver.$id"
     item_type: "Notebook"
