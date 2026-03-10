@@ -24,7 +24,25 @@ from typing import Dict, Optional, Any
 
 import requests
 
-from typing import Dict, Optional, Any
+
+def is_dbfs_enabled(host: str, hdrs: Dict[str, str]) -> bool:
+    """Check if DBFS is available by probing the root path."""
+    url = f"{host}/api/2.0/dbfs/get-status"
+    try:
+        r = requests.get(url, headers=hdrs, params={"path": "/"}, timeout=30)
+    except requests.RequestException:
+        return False
+    if r.status_code == 200:
+        return True
+    if r.status_code in (403, 404):
+        return False
+    try:
+        code = r.json().get("error_code", "")
+        if code in ("FEATURE_DISABLED", "PERMISSION_DENIED"):
+            return False
+    except Exception:
+        pass
+    return False
 
 
 def _normalize_widget_defaults_line(line: str, catalog: str, schema: str, base_path: str = None) -> str:
@@ -475,70 +493,51 @@ def main():
         print(f"Ensuring catalog: {catalog}")
         create_catalog(host, hdrs, catalog, managed_location=cat_loc)
 
-    # Upload all CSVs - try DBFS first, fallback to Unity Catalog volumes if DBFS is disabled
+    # Detect DBFS availability before uploading sample data
+    use_dbfs = is_dbfs_enabled(host, hdrs)
+    if not use_dbfs:
+        print("\n[INFO] DBFS is disabled in this workspace (Unity Catalog legacy feature control).")
+        print("[INFO] Will use Unity Catalog volumes for file storage.\n")
+        if not catalog or not schema:
+            raise RuntimeError(
+                "This workspace has Unity Catalog legacy features disabled (DBFS not available). "
+                "When DBFS is disabled, sample data must be stored in Unity Catalog volumes. "
+                "Please re-run the script with --catalogname and --schemaname parameters, along with "
+                "--catalog-managed-location."
+            )
+        volume_name = "sample_data"
+        print(f"Creating Unity Catalog volume: {catalog}.{schema}.{volume_name}")
+        create_volume(host, hdrs, catalog, schema, volume_name)
+        dbfs_solution = f"/Volumes/{catalog}/{schema}/{volume_name}"
+
+    # Upload all CSVs to DBFS or Unity Catalog volume
     if data_root.exists():
-        dbfs_disabled = False
-        try:
+        if use_dbfs:
             print(f"Uploading CSVs to DBFS under: {dbfs_solution}")
             dbfs_mkdirs(host, hdrs, dbfs_solution)
             for file in data_root.rglob("*.csv"):
                 dbfs_path = f"{dbfs_solution}/{file.name}"
                 print(f"  DBFS put: {file.name} -> {dbfs_path}")
                 dbfs_put(host, hdrs, file, dbfs_path, overwrite=True)
-        except RuntimeError as e:
-            error_msg = str(e)
-            error_msg_lower = error_msg.lower()
-            # Detect DBFS being disabled in a more robust way:
-            # - explicit "DBFS root is disabled" message (case-insensitive), or
-            # - a permission error that clearly references DBFS
-            if "dbfs root is disabled" in error_msg_lower or (
-                "permission_denied" in error_msg_lower and "dbfs" in error_msg_lower
-            ):
-                print(
-                    f"\n[INFO] DBFS is disabled in this workspace (Unity Catalog legacy feature control).")
-                print(
-                    f"[INFO] Switching to Unity Catalog volumes for file storage...\n")
-                dbfs_disabled = True
-            else:
-                # Log the unexpected error message to aid debugging before re-raising
-                print(
-                    f"[ERROR] Unexpected error while uploading CSVs to DBFS: {error_msg}"
-                )
-                raise
-
-        if dbfs_disabled:
-            if not catalog or not schema:
-                raise RuntimeError(
-                    "This workspace has Unity Catalog legacy features disabled (DBFS not available). "
-                    "When DBFS is disabled, sample data must be stored in Unity Catalog volumes. "
-                    "Please re-run the script with --catalogname and --schemaname parameters, along with "
-                    "--catalog-managed-location."
-                )
-            volume_name = "sample_data"
-            print(
-                f"Creating Unity Catalog volume: {catalog}.{schema}.{volume_name}")
-            create_volume(host, hdrs, catalog, schema, volume_name)
-
-            # Update the base path to use volumes
-            dbfs_solution = f"/Volumes/{catalog}/{schema}/{volume_name}"
+        else:
             print(f"Uploading CSVs to volume: {dbfs_solution}")
-
             for file in data_root.rglob("*.csv"):
                 volume_path = f"{dbfs_solution}/{file.name}"
                 print(f"  Volume put: {file.name} -> {volume_path}")
                 volume_upload_file(host, hdrs, file, volume_path)
-
-            # Re-upload notebooks with updated volume base_path so widget defaults are correct
-            print(f"\n[INFO] Re-uploading notebooks with updated base_path: {dbfs_solution}")
-            for file in notebooks_root.rglob("*"):
-                if not file.is_file() or file.suffix.lower() not in [".ipynb", ".py", ".sql"]:
-                    continue
-                ws_path = f"{solution_ws}/{file.name}" if file.name == "run_bronze_to_adb.ipynb" else f"{maag_notebooks_ws}/{file.name}"
-                import_file(host, hdrs, file, ws_path, repl, catalog=catalog or "",
-                            schema=schema or "", dbfs_solution=dbfs_solution)
     else:
         print(
             f"[warn] Data folder not found; skipping CSV upload: {data_root}")
+
+    # Re-upload notebooks if base_path changed (DBFS disabled -> volume path)
+    if not use_dbfs:
+        print(f"\n[INFO] Uploading notebooks with volume base_path: {dbfs_solution}")
+        for file in notebooks_root.rglob("*"):
+            if not file.is_file() or file.suffix.lower() not in [".ipynb", ".py", ".sql"]:
+                continue
+            ws_path = f"{solution_ws}/{file.name}" if file.name == "run_bronze_to_adb.ipynb" else f"{maag_notebooks_ws}/{file.name}"
+            import_file(host, hdrs, file, ws_path, repl, catalog=catalog or "",
+                        schema=schema or "", dbfs_solution=dbfs_solution)
 
     # Run orchestrator notebook if cluster provided
     if catalog and schema and cluster_id:
