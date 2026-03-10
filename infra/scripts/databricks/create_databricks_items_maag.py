@@ -471,29 +471,12 @@ def main():
     print(f"Ensuring maag-notebooks folder: {maag_notebooks_ws}")
     mkdirs(host, hdrs, maag_notebooks_ws)
 
-    # Upload notebooks with widget normalization
-    if not notebooks_root.exists():
-        raise RuntimeError(f"Notebooks folder not found: {notebooks_root}")
-    print(f"Uploading notebooks from: {notebooks_root}")
-    repl: Dict[str, str] = {}
-    repl.setdefault('WORKSPACE_NAME = "Fabric_MAAG"',
-                    f'WORKSPACE_NAME = "{args.solutionname}"')
-    repl['base_path = \'/FileStore/tables/sales\''] = "base_path = os.environ.get('DATABRICKS_DBFS_BASE', '/FileStore/tables/sales')"
-    repl['base_path = "/FileStore/tables/sales"'] = 'base_path = os.environ.get("DATABRICKS_DBFS_BASE", "/FileStore/tables/sales")'
-    for file in notebooks_root.rglob("*"):
-        if not file.is_file() or file.suffix.lower() not in [".ipynb", ".py", ".sql"]:
-            continue
-        ws_path = f"{solution_ws}/{file.name}" if file.name == "run_bronze_to_adb.ipynb" else f"{maag_notebooks_ws}/{file.name}"
-        print(f"  Import: {file.name} -> {ws_path}")
-        import_file(host, hdrs, file, ws_path, repl, catalog=catalog or "",
-                    schema=schema or "", dbfs_solution=dbfs_solution)
-
-    # Create Unity Catalog if needed (before CSV upload in case volumes are needed)
+    # Create Unity Catalog if needed (before DBFS check, in case volumes are required)
     if catalog:
         print(f"Ensuring catalog: {catalog}")
         create_catalog(host, hdrs, catalog, managed_location=cat_loc)
 
-    # Detect DBFS availability before uploading sample data
+    # Detect DBFS availability before uploading anything
     use_dbfs = is_dbfs_enabled(host, hdrs)
     if not use_dbfs:
         print("\n[INFO] DBFS is disabled in this workspace (Unity Catalog legacy feature control).")
@@ -509,6 +492,23 @@ def main():
         print(f"Creating Unity Catalog volume: {catalog}.{schema}.{volume_name}")
         create_volume(host, hdrs, catalog, schema, volume_name)
         dbfs_solution = f"/Volumes/{catalog}/{schema}/{volume_name}"
+
+    # Upload notebooks with widget normalization (once, using the final dbfs_solution)
+    if not notebooks_root.exists():
+        raise RuntimeError(f"Notebooks folder not found: {notebooks_root}")
+    print(f"Uploading notebooks from: {notebooks_root}")
+    repl: Dict[str, str] = {}
+    repl.setdefault('WORKSPACE_NAME = "Fabric_MAAG"',
+                    f'WORKSPACE_NAME = "{args.solutionname}"')
+    repl['base_path = \'/FileStore/tables/sales\''] = "base_path = os.environ.get('DATABRICKS_DBFS_BASE', '/FileStore/tables/sales')"
+    repl['base_path = "/FileStore/tables/sales"'] = 'base_path = os.environ.get("DATABRICKS_DBFS_BASE", "/FileStore/tables/sales")'
+    for file in notebooks_root.rglob("*"):
+        if not file.is_file() or file.suffix.lower() not in [".ipynb", ".py", ".sql"]:
+            continue
+        ws_path = f"{solution_ws}/{file.name}" if file.name == "run_bronze_to_adb.ipynb" else f"{maag_notebooks_ws}/{file.name}"
+        print(f"  Import: {file.name} -> {ws_path}")
+        import_file(host, hdrs, file, ws_path, repl, catalog=catalog or "",
+                    schema=schema or "", dbfs_solution=dbfs_solution)
 
     # Upload all CSVs to DBFS or Unity Catalog volume
     if data_root.exists():
@@ -528,16 +528,6 @@ def main():
     else:
         print(
             f"[warn] Data folder not found; skipping CSV upload: {data_root}")
-
-    # Re-upload notebooks if base_path changed (DBFS disabled -> volume path)
-    if not use_dbfs:
-        print(f"\n[INFO] Uploading notebooks with volume base_path: {dbfs_solution}")
-        for file in notebooks_root.rglob("*"):
-            if not file.is_file() or file.suffix.lower() not in [".ipynb", ".py", ".sql"]:
-                continue
-            ws_path = f"{solution_ws}/{file.name}" if file.name == "run_bronze_to_adb.ipynb" else f"{maag_notebooks_ws}/{file.name}"
-            import_file(host, hdrs, file, ws_path, repl, catalog=catalog or "",
-                        schema=schema or "", dbfs_solution=dbfs_solution)
 
     # Run orchestrator notebook if cluster provided
     if catalog and schema and cluster_id:
