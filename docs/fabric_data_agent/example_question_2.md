@@ -1,0 +1,1 @@
+I need to analyze our sales performance and identify our most valuable customers. Can you show me the top-performing customers by total revenue, their order patterns, and how different customer segments contribute to our overall sales? I also want to understand seasonal trends in our sales data.

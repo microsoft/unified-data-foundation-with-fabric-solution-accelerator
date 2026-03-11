@@ -28,11 +28,11 @@ cd unified-data-foundation-with-fabric-solution-accelerator/infra/scripts/utils
 
 # Set Environment Variables
 $env:AZURE_FABRIC_CAPACITY_NAME="your-existing-capacity-name"
-$env:AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
+$env:FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 
 # Run Deployment Script
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\run_python_script_fabric.ps1
+.\Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 #### Option 2: Windows with WSL2 (Recommended)
@@ -50,11 +50,11 @@ cd unified-data-foundation-with-fabric-solution-accelerator/infra/scripts/utils
 
 # Set environment variables
 export AZURE_FABRIC_CAPACITY_NAME="your-existing-capacity-name"
-export AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
+export FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 
 # Run deployment
-chmod +x run_python_script_fabric.ps1
-pwsh ./run_python_script_fabric.ps1
+chmod +x Run-PythonScript.ps1
+pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 ### Linux Development
@@ -71,11 +71,11 @@ cd unified-data-foundation-with-fabric-solution-accelerator/infra/scripts/utils
 
 # Set environment variables
 export AZURE_FABRIC_CAPACITY_NAME="your-existing-capacity-name"
-export AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
+export FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 
 # Run deployment
-chmod +x run_python_script_fabric.ps1
-pwsh ./run_python_script_fabric.ps1
+chmod +x Run-PythonScript.ps1
+pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 #### RHEL/CentOS/Fedora
@@ -90,11 +90,11 @@ cd unified-data-foundation-with-fabric-solution-accelerator/infra/scripts/utils
 
 # Set environment variables
 export AZURE_FABRIC_CAPACITY_NAME="your-existing-capacity-name"
-export AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
+export FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 
 # Run deployment
-chmod +x run_python_script_fabric.ps1
-pwsh ./run_python_script_fabric.ps1
+chmod +x Run-PythonScript.ps1
+pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 ### macOS Development
@@ -112,11 +112,11 @@ cd unified-data-foundation-with-fabric-solution-accelerator/infra/scripts/utils
 
 # Set environment variables
 export AZURE_FABRIC_CAPACITY_NAME="your-existing-capacity-name"
-export AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
+export FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 
 # Run deployment
-chmod +x run_python_script_fabric.ps1
-pwsh ./run_python_script_fabric.ps1
+chmod +x Run-PythonScript.ps1
+pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 > **Note**: Manual scripts do **not** create the Fabric capacity or Azure infrastructure. These must exist beforehand. For complete infrastructure deployment, use `azd up` instead.
@@ -135,7 +135,7 @@ pwsh ./run_python_script_fabric.ps1
 ### Required Environment Variables
 
 - `AZURE_FABRIC_CAPACITY_NAME`: Name of existing Fabric capacity (Required)
-- `AZURE_FABRIC_WORKSPACE_NAME`: Custom workspace name (Optional - defaults to generated name if not specified)
+- `FABRIC_WORKSPACE_NAME`: Custom workspace name (Optional - defaults to generated name if not specified)
 
 ### Platform-Specific Configuration
 
@@ -144,7 +144,7 @@ pwsh ./run_python_script_fabric.ps1
 ```powershell
 # Set environment variables
 $env:AZURE_FABRIC_CAPACITY_NAME="your-capacity-name"
-$env:AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
+$env:FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 ```
 
 #### Windows Command Prompt
@@ -152,7 +152,7 @@ $env:AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 ```cmd
 rem Set environment variables
 set AZURE_FABRIC_CAPACITY_NAME=your-capacity-name
-set AZURE_FABRIC_WORKSPACE_NAME=MAAG Data Foundation Workspace
+set FABRIC_WORKSPACE_NAME=MAAG Data Foundation Workspace
 ```
 
 #### Linux/macOS Bash/Zsh
@@ -160,7 +160,7 @@ set AZURE_FABRIC_WORKSPACE_NAME=MAAG Data Foundation Workspace
 ```bash
 # Set environment variables
 export AZURE_FABRIC_CAPACITY_NAME="your-capacity-name"
-export AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
+export FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 ```
 
 ---
@@ -204,14 +204,14 @@ export AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 
    ```bash
    export AZURE_FABRIC_CAPACITY_NAME="your-capacity-name"
-   export AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
+   export FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
    ```
   
    **Windows PowerShell:**
 
   ```powershell
    $env:AZURE_FABRIC_CAPACITY_NAME="your-capacity-name"
-   $env:AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
+   $env:FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
    ```
 
 ### Step 3: Execute Deployment
@@ -222,8 +222,8 @@ export AZURE_FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 
 ```bash
 cd infra/scripts/utils
-chmod +x run_python_script_fabric.ps1
-pwsh ./run_python_script_fabric.ps1
+chmod +x Run-PythonScript.ps1
+pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 **For Windows PowerShell:**
@@ -231,7 +231,7 @@ pwsh ./run_python_script_fabric.ps1
 ```powershell
 cd infra\scripts\utils
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\run_python_script_fabric.ps1
+.\Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
 ```
 
 ### Step 4: Monitor Deployment Progress
@@ -268,7 +268,7 @@ Expected output:
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `AZURE_FABRIC_CAPACITY_NAME` | Yes | None | Name of existing Fabric capacity |
-| `AZURE_FABRIC_WORKSPACE_NAME` | No | Generated | Custom workspace name |
+| `FABRIC_WORKSPACE_NAME` | No | Generated | Custom workspace name |
 | `AZURE_SUBSCRIPTION_ID` | No | Default | Azure subscription to use |
 | `AZURE_RESOURCE_GROUP` | No | From capacity | Resource group containing capacity |
 
@@ -276,7 +276,7 @@ Expected output:
 
 #### Workspace Creation
 
-- If `AZURE_FABRIC_WORKSPACE_NAME` is set, creates/uses workspace with that name
+- If `FABRIC_WORKSPACE_NAME` is set, creates/uses workspace with that name
 - If not set, generates workspace name based on capacity and timestamp
 - Verifies workspace is associated with the specified capacity
 
@@ -343,7 +343,7 @@ In your Fabric workspace, verify:
 | Issue | Possible Cause | Resolution |
 |-------|----------------|------------|
 | Script not found | Incorrect directory | Ensure you're in `infra/scripts/utils` directory |
-| Permission denied | Script not executable | Run `chmod +x run_python_script_fabric.ps1` |
+| Permission denied | Script not executable | Run `chmod +x Run-PythonScript.ps1` |
 | Authentication error | Not logged into Azure | Run `az login` and verify authentication |
 | Capacity not found | Wrong capacity name | Verify capacity name with `az fabric capacity list` |
 | Workspace creation failed | Insufficient permissions | Ensure Fabric admin permissions on capacity |
@@ -380,14 +380,14 @@ In your Fabric workspace, verify:
 **For Linux/macOS/Cloud Shell:**
 
 ```bash
-pwsh -c './run_python_script_fabric.ps1 -Verbose'
+pwsh -c './Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py" -Verbose'
 ```
 
 **For Windows PowerShell:**
 
 ```powershell
 $VerbosePreference = "Continue"
-.\run_python_script_fabric.ps1 -Verbose
+.\Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py" -Verbose
 ```
 
 #### Check Environment Variables
@@ -395,11 +395,11 @@ $VerbosePreference = "Continue"
 ```bash
 # Linux/macOS/Cloud Shell
 echo "Capacity: $AZURE_FABRIC_CAPACITY_NAME"
-echo "Workspace: $AZURE_FABRIC_WORKSPACE_NAME"
+echo "Workspace: $FABRIC_WORKSPACE_NAME"
 
 # Windows PowerShell
 Write-Host "Capacity: $env:AZURE_FABRIC_CAPACITY_NAME"
-Write-Host "Workspace: $env:AZURE_FABRIC_WORKSPACE_NAME"
+Write-Host "Workspace: $env:FABRIC_WORKSPACE_NAME"
 ```
 
 #### Validate Azure Context
@@ -467,10 +467,11 @@ Create a pipeline step for manual deployment:
     azureSubscription: '$(serviceConnectionName)'
     scriptType: 'powershell'
     scriptLocation: 'scriptPath'
-    scriptPath: 'infra/scripts/utils/run_python_script_fabric.ps1'
+    scriptPath: 'infra/scripts/utils/Run-PythonScript.ps1'
+    arguments: '-ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"'
   env:
     AZURE_FABRIC_CAPACITY_NAME: $(fabricCapacityName)
-    AZURE_FABRIC_WORKSPACE_NAME: $(fabricWorkspaceName)
+    FABRIC_WORKSPACE_NAME: $(fabricWorkspaceName)
 ```
 
 ### GitHub Actions Integration
@@ -481,11 +482,11 @@ Create a workflow step for manual deployment:
 - name: Deploy Fabric Components
   run: |
     cd infra/scripts/utils
-    chmod +x run_python_script_fabric.ps1
-    pwsh ./run_python_script_fabric.ps1
+    chmod +x Run-PythonScript.ps1
+    pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
   env:
     AZURE_FABRIC_CAPACITY_NAME: ${{ secrets.FABRIC_CAPACITY_NAME }}
-    AZURE_FABRIC_WORKSPACE_NAME: ${{ vars.FABRIC_WORKSPACE_NAME }}
+    FABRIC_WORKSPACE_NAME: ${{ vars.FABRIC_WORKSPACE_NAME }}
 ```
 
 ---

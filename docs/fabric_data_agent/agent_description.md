@@ -1,0 +1,54 @@
+# Microsoft Fabric Data Agent for Unified Data Foundation with Fabric Solution Accelerator 
+
+## Overview
+
+Deployed with Unified Data Foundation with Fabric Solution Accelerator, this intelligent AI assistant analyzes and explores data in Microsoft Fabric Gold the gold tier data lake named `maag_gold`. It can be deployed as an MCP server for VS Code integration. This agent provides natural language querying across sales, customer, and financial data domains. 
+
+## Core Capabilities
+
+**Data Analysis**
+
+- Natural language to SQL/PySpark code generation
+- Cross-domain analysis (customer, sales, product, financial data)
+- Automatic schema detection and intelligent column mapping
+- Support for T-SQL endpoints and PySpark notebooks
+
+**Business Intelligence**
+- Customer segmentation and lifetime value analysis
+- Sales performance tracking and trend identification
+- Product profitability and cross-selling analysis
+- Financial health monitoring and receivables management
+- Statistical insights and optimization recommendations
+
+## Data Sources
+
+**Primary Tables**
+- `shared.customer` - Demographics, relationship types, contact info
+- `salesfabric.[order]` - Transaction records and order details  
+- `salesfabric.orderline` - Line item details and quantities
+- `shared.product` - Product catalog, categories, pricing
+- `salesfabric.orderpayment` - Payment methods and amounts
+
+## Example Use Cases
+
+- "Show me top customers by lifetime value"
+- "What are our best-performing products this quarter?"
+- "Which customers have overdue payments and total amounts?"
+- "Analyze purchase patterns by customer relationship type"
+- "Identify cross-selling opportunities in product categories"
+
+## Technical Details
+
+**Platform**: Microsoft Fabric Gold tier lakehouse
+**Languages**: T-SQL, PySpark (Python)
+**Formats**: Parquet, Delta Lake, CSV
+**Integration**: Power BI, MCP server for VS Code, Azure services
+**Scale**: Optimized for millions of records with intelligent caching
+
+## MCP Server Deployment
+
+This agent can function as a Model Context Protocol server in VS Code:
+1. Publish the agent in Microsoft Fabric
+2. Configure MCP server URL in VS Code (.vscode/mcp.json)
+3. Enable Agent Mode and select orchestrator (GPT-4, Claude, etc.)
+4. Query organizational data directly from VS Code

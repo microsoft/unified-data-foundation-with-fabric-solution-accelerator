@@ -1,0 +1,305 @@
+#!/usr/bin/env python3
+"""
+UDF Data Agent Setup Module
+
+This module provides Data Agent creation and configuration functionality 
+for the Unified Data Foundation solution with Lakehouse data sources.
+"""
+
+import sys
+import os
+import json
+import base64
+from typing import Optional
+
+# Add parent directory to path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from fabric_api import FabricWorkspaceApiClient, FabricApiError
+from helpers.utils import read_file_content, replace_tokens_in_content
+
+
+def setup_data_agent(workspace_client: FabricWorkspaceApiClient, 
+                               data_agent_name: str,
+                               lakehouse_id: str,
+                               lakehouse_workspace_id: str,
+                               environment_id: str,
+                               selected_tables: list,
+                               notebook_path: str,
+                               notebook_fabric_folder_id: Optional[str] = None,
+                               data_agent_folder_id: Optional[str] = None) -> dict:
+    """
+    Create a Data Agent and configure it with a Lakehouse data source via notebook.
+    
+    Args:
+        workspace_client: Authenticated FabricWorkspaceApiClient instance
+        data_agent_name: Name of the Data Agent to create
+        lakehouse_id: ID of the Lakehouse to connect as data source
+        lakehouse_workspace_id: ID of the workspace containing the Lakehouse
+        environment_id: ID of the environment for data agent configuration
+        selected_tables: List of [schema, table_name] pairs to include in data agent
+                        Example: [["dbo", "customers"], ["dbo", "orders"]]
+        notebook_path: Path to the configuration notebook template file (name will be extracted from path)
+        notebook_fabric_folder_id: Optional folder ID where to create the notebook
+        data_agent_folder_id: Optional folder ID where to create the data agent
+        
+    Returns:
+        dict: Data Agent information if successful
+        
+    Raises:
+        FabricApiError: If creation fails
+    """
+    print(f"🤖 Creating Data Agent: '{data_agent_name}'")
+    
+    # Extract notebook name from notebook path
+    notebook_name = os.path.splitext(os.path.basename(notebook_path))[0]
+    
+    try:
+        # Check if Data Agent already exists
+        try:
+            existing_agent = workspace_client.get_data_agent_by_name(data_agent_name)
+        except FabricApiError:
+            existing_agent = None
+        if existing_agent:
+            data_agent = existing_agent
+            print(f"   ℹ️  Data Agent '{data_agent_name}' already exists")
+        else:
+            # Create the Data Agent
+            data_agent = workspace_client.create_data_agent(data_agent_name, folder_id=data_agent_folder_id)
+            print(f"   ✅ Successfully created Data Agent: {data_agent_name}")
+        
+        # Get data agent ID and fail if not found
+        data_agent_id = data_agent.get('id')
+        if not data_agent_id:
+            raise FabricApiError(f"Failed to retrieve Data Agent ID for '{data_agent_name}'")
+        
+        # Calculate repository directory (script is in infra/scripts/fabric/helpers, so go up 4 levels)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(script_dir))))
+        
+        # Read configuration files
+        print(f"   📖 Reading configuration files from: {repo_dir}")
+        
+        # Paths to configuration files (notebook path is provided as argument)
+        agent_instructions_path = os.path.join(repo_dir, "src", "fabric", "data_agent", "agent_instructions.md")
+        data_source_description_path = os.path.join(repo_dir, "src", "fabric", "data_agent", "data_source_description.md")
+        data_source_instructions_path = os.path.join(repo_dir, "src", "fabric", "data_agent", "data_source_instructions.md")
+        query_examples_path = os.path.join(repo_dir, "src", "fabric", "data_agent", "query_examples.json")
+        
+        # Read all configuration files
+        notebook_content = read_file_content(notebook_path)
+        agent_instructions = read_file_content(agent_instructions_path)
+        data_source_description = read_file_content(data_source_description_path)
+        data_source_instructions = read_file_content(data_source_instructions_path)
+        query_examples_json = read_file_content(query_examples_path)
+        
+        print(f"   ✅ Successfully read all configuration files")
+        
+        # Parse query examples JSON to Python dict format for replacement
+        query_examples_dict = json.loads(query_examples_json)
+        query_examples_python = str(query_examples_dict)
+        
+        # Convert selected tables list to Python string format
+        selected_tables_python = str(selected_tables)
+        
+        # Replace tokens in notebook content
+        print(f"   🔄 Replacing configuration tokens...")
+        tokens = {
+            "__AGENT_ID__": data_agent_id,
+            "__LAKEHOUSE_ID__": lakehouse_id,
+            "__LAKEHOUSE_WORKSPACE_ID__": lakehouse_workspace_id,
+            "__ENVIRONMENT_ID__": environment_id,
+            "__WORKSPACE_ID__": workspace_client.workspace_id,
+            "__AGENT_INSTRUCTIONS__": agent_instructions,
+            "__DATA_SOURCE_INSTRUCTIONS__": data_source_instructions,
+            "__DATA_SOURCE_DESCRIPTION__": data_source_description,
+            "__QUERY_EXAMPLES__": query_examples_python,
+            "__SELECTED_TABLES__": selected_tables_python
+        }
+        
+        configured_notebook_content = replace_tokens_in_content(notebook_content, tokens)
+        print(f"   ✅ Successfully replaced configuration tokens")
+        
+        # Create or update notebook
+        print(f"   📓 Creating/updating notebook: '{notebook_name}'")
+        
+        # Check if notebook already exists
+        try:
+            notebook = workspace_client.get_notebook_by_name(notebook_name)
+        except FabricApiError:
+            notebook = None
+        
+        # Parse and encode notebook content as base64
+        notebook_json = json.loads(configured_notebook_content)
+        notebook_base64 = base64.b64encode(
+            json.dumps(notebook_json).encode('utf-8')
+        ).decode('utf-8')
+        
+        if notebook:
+            # Update existing notebook
+            notebook_id = notebook.get('id')
+            if not notebook_id:
+                raise FabricApiError(f"Failed to retrieve notebook ID for existing notebook '{notebook_name}'")
+            print(f"   ℹ️  Notebook '{notebook_name}' already exists, updating...")
+            workspace_client.update_notebook(notebook_id, notebook_base64)
+            print(f"   ✅ Successfully updated notebook: {notebook_name} ({notebook_id})")
+        else:
+            # Create new notebook (LRO returns empty dict)
+            workspace_client.create_notebook(notebook_name, notebook_base64, notebook_fabric_folder_id)
+            
+            # Retrieve notebook details after creation
+            notebook = workspace_client.get_notebook_by_name(notebook_name)
+            if not notebook:
+                raise FabricApiError(f"Failed to retrieve notebook '{notebook_name}' after creation")
+            notebook_id = notebook.get('id')
+            if not notebook_id:
+                raise FabricApiError(f"Failed to retrieve notebook ID for created notebook '{notebook_name}'")
+            print(f"   ✅ Successfully created notebook: {notebook_name} ({notebook_id})")
+        
+        # Run the notebook
+        print(f"   ▶️  Running configuration notebook...")
+        job_result = workspace_client.schedule_notebook_job(notebook_id)
+        
+        print(f"   📊 Notebook execution completed:")
+        print(f"      Status: {job_result.get('status')}")
+        print(f"      Duration: {job_result.get('duration')}")
+        
+        if job_result.get('status') != 'Completed':
+            if 'error' in job_result:
+                print(f"      Error: {job_result.get('error')}")
+            raise FabricApiError(f"Notebook execution failed with status: {job_result.get('status')}")
+        
+        print(f"   ✅ Data Agent configuration completed successfully!")
+        
+        return data_agent
+        
+    except FabricApiError as e:
+        print(f"❌ Failed to create/configure Data Agent '{data_agent_name}': {e}")
+        raise
+    except FileNotFoundError as e:
+        print(f"❌ Configuration file not found: {e}")
+        raise FabricApiError(f"Configuration file error: {e}")
+    except json.JSONDecodeError as e:
+        print(f"❌ Invalid JSON in configuration file: {e}")
+        raise FabricApiError(f"JSON parsing error: {e}")
+    except Exception as e:
+        print(f"❌ Unexpected error creating/configuring Data Agent '{data_agent_name}': {e}")
+        raise FabricApiError(f"Error creating Data Agent: {e}")
+
+
+def main():
+    """Main function to create a Data Agent and configure it with Lakehouse data source."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description="Create a Microsoft Fabric Data Agent and configure it with Lakehouse data source via notebook",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Create and configure Data Agent with Lakehouse
+  python udf_data_agent.py --workspace-id "12345678-1234-1234-1234-123456789012" --data-agent-name "Sales Agent" --lakehouse-id "87654321-4321-4321-4321-210987654321" --lakehouse-workspace-id "87654321-4321-4321-4321-210987654321" --environment-id "99999999-8888-7777-6666-555544443333" --notebook-path "/path/to/configure_data_agent.ipynb" --selected-tables "dbo:customers" "dbo:orders" "sales:products"
+        """
+    )
+    
+    parser.add_argument(
+        "--workspace-id",
+        required=True,
+        help="ID of the workspace where the Data Agent will be created"
+    )
+    
+    parser.add_argument(
+        "--data-agent-name",
+        required=True,
+        help="Name of the Data Agent to create"
+    )
+    
+    parser.add_argument(
+        "--lakehouse-id",
+        required=True,
+        help="ID of the Lakehouse to add as a data source"
+    )
+    
+    parser.add_argument(
+        "--lakehouse-workspace-id",
+        required=True,
+        help="ID of the workspace containing the Lakehouse"
+    )
+    
+    parser.add_argument(
+        "--environment-id",
+        required=True,
+        help="ID of the environment for data agent configuration"
+    )
+    
+    parser.add_argument(
+        "--selected-tables",
+        nargs="+",
+        required=True,
+        help="List of table names to include in the data agent. Use format: schema:table (e.g., dbo:customers dbo:orders sales:products)"
+    )
+    
+    parser.add_argument(
+        "--notebook-path",
+        required=True,
+        help="Path to the configuration notebook template file (notebook name will be extracted from filename)"
+    )
+    
+    parser.add_argument(
+        "--notebook-fabric-folder-id",
+        required=False,
+        help="Optional folder ID where to create the notebook"
+    )
+    
+    parser.add_argument(
+        "--data-agent-folder-id",
+        required=False,
+        help="Optional folder ID where to create the data agent"
+    )
+    
+    args = parser.parse_args()
+    
+    # Parse selected_tables from schema:table format to list of [schema, table] pairs
+    selected_tables_parsed = []
+    for table_spec in args.selected_tables:
+        if ':' in table_spec:
+            schema, table = table_spec.split(':', 1)
+            selected_tables_parsed.append([schema, table])
+        else:
+            # Default to dbo schema if not specified
+            selected_tables_parsed.append(["dbo", table_spec])
+    
+    try:
+        from fabric_api import FabricWorkspaceApiClient, FabricApiError
+        
+        workspace_client = FabricWorkspaceApiClient(workspace_id=args.workspace_id)
+        
+        result = setup_data_agent(
+            workspace_client=workspace_client,
+            data_agent_name=args.data_agent_name,
+            lakehouse_id=args.lakehouse_id,
+            lakehouse_workspace_id=args.lakehouse_workspace_id,
+            environment_id=args.environment_id,
+            selected_tables=selected_tables_parsed,
+            notebook_path=args.notebook_path,
+            notebook_fabric_folder_id=args.notebook_fabric_folder_id,
+            data_agent_folder_id=args.data_agent_folder_id
+        )
+        
+        print(f"\n🎉 Final Results:")
+        print(f"   Data Agent ID: {result.get('id', 'N/A')}")
+        print(f"   Data Agent Name: {args.data_agent_name}")
+        print(f"   Lakehouse ID: {args.lakehouse_id}")
+        print(f"   Selected Tables: {', '.join([f'{schema}.{table}' for schema, table in selected_tables_parsed])}")
+        print(f"   Configuration Status: Complete")
+        print(f"   Ready for use in Microsoft Fabric!")
+        
+    except FabricApiError as e:
+        print(f"❌ Fabric API Error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

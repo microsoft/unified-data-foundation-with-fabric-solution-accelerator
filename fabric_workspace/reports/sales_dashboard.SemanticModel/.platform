@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "sales_dashboard"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "c4c7bdcf-5110-bc21-4a91-784a5dfab392"
+  }
+}

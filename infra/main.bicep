@@ -37,6 +37,14 @@ param fabricAdminMembers array = []
 @description('Optional. SKU tier of the Fabric resource.')
 param skuName string = 'F2'
 
+@description('Optional. Name of an existing Fabric capacity to use. If empty, a new capacity will be created.')
+param existingFabricCapacityName string = ''
+
+@description('Optional. Created by user name.')
+param createdBy string = contains(deployer(), 'userPrincipalName') ? split(deployer().userPrincipalName, '@')[0] : deployer().objectId
+
+var useExistingFabricCapacity = !empty(existingFabricCapacityName)
+
 var solutionSuffix = toLower(trim(replace(
   replace(
     replace(replace(replace(replace('${solutionName}${solutionUniqueText}', '-', ''), '_', ''), '.', ''), '/', ''),
@@ -46,6 +54,21 @@ var solutionSuffix = toLower(trim(replace(
   '*',
   ''
 )))
+
+// ========== Resource Group Tag ========== //
+resource resourceGroupTags 'Microsoft.Resources/tags@2021-04-01' = {
+  name: 'default'
+  properties: {
+    tags: union(
+      resourceGroup().tags,
+      {
+        TemplateName: 'Unified Data Foundation with Fabric'
+        CreatedBy: createdBy
+        Type: 'Non-WAF'
+      }
+    )
+  }
+}
 
 // var userAssignedIdentityResourceName = 'id-${solutionSuffix}'
 // module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
@@ -57,12 +80,12 @@ var solutionSuffix = toLower(trim(replace(
 //   }
 // }
 
-var fabricCapacityResourceName = 'fc${solutionSuffix}'
+var fabricCapacityResourceName = useExistingFabricCapacity ? existingFabricCapacityName : 'fc${solutionSuffix}'
 var fabricCapacityDefaultAdmins = deployer().?userPrincipalName == null
   ? [deployer().objectId]
   : [deployer().userPrincipalName]
 var fabricTotalAdminMembers = union(fabricCapacityDefaultAdmins, fabricAdminMembers)
-module fabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = {
+module newFabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = if (!useExistingFabricCapacity) {
   name: take('avm.res.fabric.capacity.${fabricCapacityResourceName}', 64)
   params: {
     name: fabricCapacityResourceName
@@ -81,7 +104,10 @@ output AZURE_LOCATION string = location
 output AZURE_RESOURCE_GROUP string = resourceGroup().name
 
 @description('The name of the Fabric capacity resource')
-output AZURE_FABRIC_CAPACITY_NAME string = fabricCapacity.outputs.name
+output AZURE_FABRIC_CAPACITY_NAME string = fabricCapacityResourceName
 
-@description('The identities added as Fabric Capacity Admin members')
-output AZURE_FABRIC_ADMIN_MEMBERS array = fabricTotalAdminMembers
+@description('The identities assigned as Fabric Capacity Admin members when a new capacity is created. When an existing capacity is used, this value is not applied and is provided for informational purposes only.')
+output AZURE_FABRIC_CAPACITY_ADMINISTRATORS array = fabricTotalAdminMembers
+
+@description('The unique solution suffix of the deployed resources')
+output SOLUTION_SUFFIX string = solutionSuffix

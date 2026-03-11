@@ -1,0 +1,1 @@
+I need to analyze our product performance to understand which products are driving revenue. Can you show me the top-selling products by revenue and quantity, product performance by category, and identify which products have the best profit margins? I also want to see how product preferences vary across different customer segments.
