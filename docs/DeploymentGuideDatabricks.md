@@ -129,6 +129,8 @@ Required values (collect these before running the script):
 3. Databricks Cluster ID 
 4. Catalog Managed Location (external location name or URI)
 
+> **Important**: The Databricks cluster must use **Single User** or **Shared** access mode. Legacy "No Isolation Shared" mode does not support Unity Catalog and will cause `CATALOG_NOT_FOUND` errors. You can verify or change this in the cluster configuration under **Advanced Options > Access Mode**.
+
 ### 2. Navigate to Deployment Directory
 
 ```bash
@@ -297,6 +299,7 @@ After creating shortcuts, verify data access in Fabric:
 | Issue | Likely Cause | Action |
 |-------|--------------|--------|
 | DBFS permission denied | Unity Catalog legacy features disabled | Script automatically uses volumes; ensure catalog/schema are specified |
+| CATALOG_NOT_FOUND error | Cluster using legacy access mode | Change cluster access mode to **Single User** or **Shared** (not "No Isolation Shared") |
 | Shortcut creation fails | External Data Access disabled | Enable in ADB workspace settings, retry. |
 | Zero rows after load | Wrong CSV path | Re-check volume or DBFS path based on workspace config |
 | Table not found in SHOW TABLES | Schema mismatch | Ensure schema/catalog name in model notebook matches validation SQL. |
