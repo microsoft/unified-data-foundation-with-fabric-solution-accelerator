@@ -172,17 +172,60 @@ def run_notebook_once(host: str, hdrs: Dict[str, str], notebook_path: str,
         ]
     }
     run_id = _jobs_runs_submit(host, hdrs, submit)
+    run_url = ""
+    print(f"  Submitted job run_id={run_id}, waiting for completion...")
     start = time.time()
+    last_print = start
+    last_life = None
     while True:
         resp = _jobs_runs_get(host, hdrs, run_id)
         life = resp.get("state", {}).get("life_cycle_state")
         res = resp.get("state", {}).get("result_state")
+        if not run_url:
+            run_url = resp.get("run_page_url", "")
+            if run_url:
+                print(f"  Run URL: {run_url}")
+        now = time.time()
+        elapsed = int(now - start)
+        if life != last_life:
+            print(f"  [{elapsed}s] lifecycle={life} result={res}")
+            last_life = life
+            last_print = now
+        elif now - last_print >= 20:
+            msg = resp.get("state", {}).get("state_message", "")
+            task_info = ""
+            for t in resp.get("tasks", []):
+                ts = t.get("state", {}).get("life_cycle_state", "")
+                tk = t.get("task_key", "")
+                if ts:
+                    task_info = f" | task '{tk}': {ts}"
+            print(f"  [{elapsed}s] still running{task_info}{'  ' + msg if msg else ''}")
+            last_print = now
         if life in ("TERMINATED", "SKIPPED", "INTERNAL_ERROR"):
             if res == "SUCCESS":
                 print("Orchestration notebook finished successfully.")
                 return
+            # Fetch detailed error from task run output
+            for task in resp.get("tasks", []):
+                task_run_id = task.get("run_id")
+                if task_run_id:
+                    try:
+                        out = requests.get(
+                            f"{host}/api/2.0/jobs/runs/get-output?run_id={task_run_id}",
+                            headers=hdrs, timeout=60).json()
+                        err = out.get("error", "")
+                        trace = out.get("error_trace", "")
+                        if err:
+                            print(f"\n--- Task '{task.get('task_key')}' error ---")
+                            print(err[:2000])
+                        if trace:
+                            print(f"\n--- Task '{task.get('task_key')}' traceback ---")
+                            print(trace[:3000])
+                    except Exception:
+                        pass
+            run_url = resp.get("run_page_url", "")
             raise RuntimeError(
-                f"Notebook run failed: {json.dumps(resp, indent=2)}")
+                f"Notebook run failed (run_id={run_id}). See: {run_url}")
         if time.time() - start > timeout_s:
             raise RuntimeError("Timeout waiting for notebook to finish.")
         time.sleep(10)
