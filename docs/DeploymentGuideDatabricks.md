@@ -298,7 +298,7 @@ After creating shortcuts, verify data access in Fabric:
 
 | Issue | Likely Cause | Action |
 |-------|--------------|--------|
-| DBFS permission denied | Unity Catalog legacy features disabled | Script automatically uses volumes; ensure catalog/schema are specified |
+| DBFS permission denied | PAT/user lacks DBFS permissions or legacy DBFS explicitly disabled | Grant DBFS/DBFS API permissions to the PAT/user, or explicitly disable legacy DBFS so the workspace returns `FEATURE_DISABLED` (in which case the script falls back to volumes); then rerun and ensure catalog/schema are specified |
 | CATALOG_NOT_FOUND error | Cluster using legacy access mode | Change cluster access mode to **Single User** or **Shared** (not "No Isolation Shared") |
 | Shortcut creation fails | External Data Access disabled | Enable in ADB workspace settings, retry. |
 | Zero rows after load | Wrong CSV path | Re-check volume or DBFS path based on workspace config |
