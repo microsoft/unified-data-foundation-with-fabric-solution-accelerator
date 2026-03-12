@@ -43,19 +43,35 @@ def is_dbfs_enabled(host: str, hdrs: Dict[str, str]) -> bool:
     except requests.Timeout as exc:
         raise RuntimeError("Timed out while checking DBFS status") from exc
     except requests.RequestException as exc:
-        raise RuntimeError(f"Network error while checking DBFS status: {exc}") from exc
+        raise RuntimeError(
+            f"Network error while checking DBFS status: {exc}"
+        ) from exc
     if r.status_code == 200:
         return True
-    if r.status_code in (403, 404):
-        return False
+    # Parse error_code from the response body
+    error_code = ""
     try:
-        code = r.json().get("error_code", "")
-        if code in ("FEATURE_DISABLED", "PERMISSION_DENIED"):
-            return False
+        error_code = r.json().get("error_code", "")
     except Exception:
         pass
+    # Only treat FEATURE_DISABLED as "DBFS is disabled"
+    if error_code == "FEATURE_DISABLED":
+        return False
+    # 403/PERMISSION_DENIED likely means the token lacks DBFS
+    # permissions, not that DBFS is disabled. Surface the error
+    # so the user can check PAT permissions.
+    if r.status_code == 403 or error_code == "PERMISSION_DENIED":
+        raise RuntimeError(
+            f"DBFS permission denied ({r.status_code}, "
+            f"{error_code or 'no error_code'}). "
+            "This may mean the PAT token lacks DBFS access. "
+            "Verify token permissions or disable DBFS legacy "
+            "features explicitly if using Unity Catalog volumes."
+        )
     raise RuntimeError(
-        f"Unexpected response while checking DBFS status: {r.status_code} {r.text}")
+        f"Unexpected response while checking DBFS status: "
+        f"{r.status_code} {r.text}"
+    )
 
 
 def _normalize_widget_defaults_line(line: str, catalog: str, schema: str, base_path: str = None) -> str:
