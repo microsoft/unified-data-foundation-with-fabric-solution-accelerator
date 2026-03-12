@@ -505,8 +505,8 @@ def main():
     p.add_argument("--solutionname", required=True)
     p.add_argument("--catalogname", default="")
     p.add_argument("--schemaname", default="")
-    p.add_argument("--cluster-id", required=True,
-                   help="Existing cluster ID to run the orchestration notebook")
+    p.add_argument("--cluster-id", default="",
+                   help="Existing cluster ID to run the orchestration notebook (required only when --catalogname and --schemaname are both provided)")
     p.add_argument("--catalog-managed-location", default="",
                    help="External Location name or cloud URI for catalog managed storage (required when --catalogname is set)")
 
@@ -516,7 +516,7 @@ def main():
     host = get_host(args.workspaceUrl)
     hdrs = headers(args.token)
 
-    # Cluster ID (argparse enforces presence)
+    # Cluster ID is optional; only required when running the orchestrator notebook
     cluster_id = args.cluster_id.strip()
 
     # Use catalog managed location as provided by user
@@ -605,7 +605,12 @@ def main():
             f"[warn] Data folder not found; skipping CSV upload: {data_root}")
 
     # Run orchestrator notebook if cluster provided
-    if catalog and schema and cluster_id:
+    if catalog and schema:
+        if not cluster_id:
+            raise RuntimeError(
+                "--cluster-id is required when --catalogname and --schemaname are both provided "
+                "in order to run the orchestration notebook."
+            )
         nb_path = f"{solution_ws}/run_bronze_to_adb.ipynb"
         print(f"Running orchestration notebook: {nb_path}")
         # Pass the updated base_path (which may be a volume path if DBFS was disabled)
