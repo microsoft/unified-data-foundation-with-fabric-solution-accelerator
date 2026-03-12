@@ -23,15 +23,27 @@ from pathlib import Path
 from typing import Dict, Optional, Any
 
 import requests
+from urllib.parse import quote
 
 
 def is_dbfs_enabled(host: str, hdrs: Dict[str, str]) -> bool:
-    """Check if DBFS is available by probing the root path."""
+    """Check if DBFS is available by probing the root path.
+
+    Returns:
+        True if DBFS is enabled and reachable.
+        False only when the API explicitly indicates DBFS is disabled/unsupported.
+
+    Raises:
+        RuntimeError: If there is a network/HTTP error or an unexpected response
+            that does not clearly indicate DBFS is disabled.
+    """
     url = f"{host}/api/2.0/dbfs/get-status"
     try:
         r = requests.get(url, headers=hdrs, params={"path": "/"}, timeout=30)
-    except requests.RequestException:
-        return False
+    except requests.Timeout as exc:
+        raise RuntimeError("Timed out while checking DBFS status") from exc
+    except requests.RequestException as exc:
+        raise RuntimeError(f"Network error while checking DBFS status: {exc}") from exc
     if r.status_code == 200:
         return True
     if r.status_code in (403, 404):
@@ -42,7 +54,8 @@ def is_dbfs_enabled(host: str, hdrs: Dict[str, str]) -> bool:
             return False
     except Exception:
         pass
-    return False
+    raise RuntimeError(
+        f"Unexpected response while checking DBFS status: {r.status_code} {r.text}")
 
 
 def _normalize_widget_defaults_line(line: str, catalog: str, schema: str, base_path: str = None) -> str:
@@ -416,7 +429,10 @@ def create_volume(host: str, hdrs: Dict[str, str], catalog_name: str, schema_nam
 
 def volume_upload_file(host: str, hdrs: Dict[str, str], local_path: Path, volume_path: str, overwrite: bool = True):
     """Upload a file to a Unity Catalog volume using the Files API."""
-    url = f"{host}/api/2.0/fs/files{volume_path}"
+    if not volume_path.startswith("/Volumes/"):
+        raise ValueError(f"volume_path must start with '/Volumes/': {volume_path}")
+    encoded_path = "/".join(quote(seg, safe="") for seg in volume_path.split("/"))
+    url = f"{host}/api/2.0/fs/files{encoded_path}"
     if overwrite:
         url += "?overwrite=true"
     # Read the file content as raw bytes
