@@ -92,41 +92,28 @@ This phase creates the physical resources in your Azure subscription.
 ### 2️⃣ Phase 2: Data Platform (Fabric)
 
 *Powered by Python & Fabric REST APIs*
-This phase configures the logical architecture inside Microsoft Fabric through 10 deployment steps:
+This phase is orchestrated by [`install_udf_solution.py`](../infra/scripts/fabric/install_udf_solution.py), which performs 4 bootstrap steps and then delegates the remaining solution setup to the installer notebook:
 
-1. **Workspace Setup**: Creates or configures the workspace on your Capacity
+1. **Workspace Setup**: Creates or configures the workspace and assigns it to the Fabric capacity
 2. **Workspace Administrators**: Adds administrators to the workspace
-3. **Folder Structure**: Creates organized folder structure (lakehouses, notebooks, reports, environment)
-4. **Lakehouses**: Deploys the Medallion Architecture (`Bronze` → `Silver` → `Gold`)
-5. **Sample Data**: Loads sample CSV datasets into the Bronze lakehouse
-6. **Notebooks**: Deploys 50+ notebooks for data transformation and management
-7. **Data Pipelines**: Executes sequential data transformation jobs (Bronze→Silver→Gold)
-8. **Power BI Reports**: Deploys Power BI reports and configures dataset connections
-9. **Environment**: Creates Fabric Environment with custom Python libraries
-10. **Data Agent**: Configures AI Data Agent with Lakehouse data source (preview feature)
+3. **Upload Installer Notebook**: Uploads [`udf_solution_installer.ipynb`](../infra/deploy/udf_solution_installer.ipynb) to the workspace
+4. **Run Installer Notebook**: Executes [`udf_solution_installer.ipynb`](../infra/deploy/udf_solution_installer.ipynb) end-to-end inside Fabric. The notebook uses the [`fabric-launcher`](https://github.com/microsoft/fabric-launcher) library to pull the solution directly from GitHub and deploy all Fabric items leveraging [Fabric's Git integration and CI/CD capabilities](https://learn.microsoft.com/fabric/cicd/git-integration/intro-to-git-integration). The Fabric items (lakehouses, notebooks, reports, semantic models, data agent) are defined in the [`fabric_workspace/`](../fabric_workspace/) folder at the repository root, which is structured to match the [Fabric workspace Git format](https://learn.microsoft.com/fabric/cicd/git-integration/git-get-started). The notebook then runs the following post-deployment tasks:
+   - Run `run_bronze_to_silver` notebook: convert and standardize data from Bronze to Silver lakehouse
+   - Run `run_silver_to_gold` notebook: segment and aggregate data from Silver to Gold lakehouse
 
 #### Deployment Architecture
 
-The Fabric deployment is orchestrated by [`deploy_udf_solution.py`](../infra/scripts/fabric/deploy_udf_solution.py), which coordinates modular helper functions:
+The Fabric deployment entry-point is [`install_udf_solution.py`](../infra/scripts/fabric/install_udf_solution.py), which coordinates the bootstrap steps using a small set of helper modules:
 
 | Helper Module | Purpose | Key Functions |
 |---------------|---------|---------------|
 | [`udf_workspace.py`](../infra/scripts/fabric/helpers/udf_workspace.py) | Workspace creation and capacity assignment | `setup_workspace()` |
 | [`udf_workspace_admins.py`](../infra/scripts/fabric/helpers/udf_workspace_admins.py) | Administrator management with Graph API integration | `setup_workspace_administrators()` |
-| [`udf_folder.py`](../infra/scripts/fabric/helpers/udf_folder.py) | Folder structure creation | `setup_folder_structure()` |
-| [`udf_lakehouse.py`](../infra/scripts/fabric/helpers/udf_lakehouse.py) | Lakehouse deployment and data loading | `setup_lakehouses()`, `load_csv_data_to_lakehouse()` |
-| [`udf_notebook.py`](../infra/scripts/fabric/helpers/udf_notebook.py) | Notebook deployment with lakehouse references | `deploy_notebooks()` |
-| [`udf_jobs.py`](../infra/scripts/fabric/helpers/udf_jobs.py) | Sequential notebook execution | `schedule_notebook_jobs_sequential()` |
-| [`udf_powerbi.py`](../infra/scripts/fabric/helpers/udf_powerbi.py) | Power BI report deployment and dataset configuration | `deploy_powerbi_reports()` |
-| [`udf_environment.py`](../infra/scripts/fabric/helpers/udf_environment.py) | Environment creation with custom libraries | `setup_environment()` |
-| [`udf_data_agent.py`](../infra/scripts/fabric/helpers/udf_data_agent.py) | Data Agent configuration | `setup_data_agent()` |
-| [`utils.py`](../infra/scripts/fabric/helpers/utils.py) | Common utilities | Token replacement, file operations, logging |
+| [`utils.py`](../infra/scripts/fabric/helpers/utils.py) | Common utilities | Notebook encoding, environment variable helpers, logging |
 
-This modular architecture enables:
-- **Independent testing** of each deployment component
-- **Graceful error handling** with detailed progress tracking
-- **Easy customization** by modifying individual helper modules
-- **Reusability** across different deployment scenarios
+All Fabric item definitions (lakehouses, notebooks, reports, semantic models, data agent) live in the [`fabric_workspace/`](../fabric_workspace/) folder at the repository root. This folder follows the [Fabric workspace Git format](https://learn.microsoft.com/fabric/cicd/git-integration/git-get-started), enabling [Fabric CI/CD](https://learn.microsoft.com/fabric/cicd/git-integration/intro-to-git-integration) deployment via the [`fabric-launcher`](https://github.com/microsoft/fabric-launcher) library.
+
+The installer notebook ([`udf_solution_installer.ipynb`](../infra/deploy/udf_solution_installer.ipynb)) is uploaded to the workspace and executed as a Fabric notebook job. It uses [`fabric-launcher`](https://github.com/microsoft/fabric-launcher) to download the repository from GitHub and deploy all items from the [`fabric_workspace/`](../fabric_workspace/) folder directly into the Fabric workspace using Fabric's native CI/CD import capabilities.
 
 ### 🔄 Idempotency & Re-runs
 
@@ -394,17 +381,11 @@ The solution includes sample data for:
 
 #### Power BI Reports
 
-Power BI reports are automatically deployed as part of **Step 8** of the deployment process. Any `.pbix` files found in the `reports/` directory will be deployed to the workspace's reports folder with automatic dataset configuration:
+Power BI reports and their backing semantic models are deployed as native **Fabric items** as part of the **installer notebook** execution (step 4 of the deployment process). They are defined in the [`fabric_workspace/`](../fabric_workspace/) folder at the repository root and deployed via the [`fabric-launcher`](https://github.com/microsoft/fabric-launcher) library using [Fabric's CI/CD import capabilities](https://learn.microsoft.com/fabric/cicd/git-integration/intro-to-git-integration):
 
-- **Report Deployment**: Scans recursively through the reports directory and uploads each report
-- **Conflict Resolution**: Uses Create or Overwrite mode for idempotent deployments
-- **Dataset Configuration**: Automatically configures dataset parameters to connect to the Gold lakehouse SQL endpoint
-  - Updates `ServerName` parameter with lakehouse connection string
-  - Updates `DatabaseName` parameter with lakehouse name
-- **Folder Organization**: Assigns reports to the reports folder within the workspace
-- **Error Handling**: Continues deployment if individual reports fail, with detailed logging
-
-**Note**: Dataset parameter updates require appropriate Power BI API permissions. Service Principals may experience limitations - see [Known Limitations](#7-known-limitations) for details.
+- **Item-based deployment**: Reports (`Report`) and semantic models (`SemanticModel`) are deployed as Fabric workspace items — no `.pbix` upload or manual SQL parameter patching required
+- **Staged deployment**: Lakehouses are deployed first, then notebooks, reports, semantic models, and data agents in a second stage, ensuring correct dependency order
+- **Idempotent**: Re-running the installer notebook updates existing items in-place
 
 ##### PowerBI files
 
@@ -425,8 +406,9 @@ The solution accelerator provides flexible configuration options to customize yo
 > - Infrastructure: [`infra/main.bicep`](../infra/main.bicep) - Azure resource definitions
 > - Deployment orchestration: [`azure.yaml`](../azure.yaml) - AZD project configuration  
 > - CI/CD workflow: [`.github/workflows/azure-dev.yml`](../.github/workflows/azure-dev.yml) - GitHub Actions pipeline
-> - Fabric deployment: [`infra/scripts/fabric/deploy_udf_solution.py`](../infra/scripts/fabric/deploy_udf_solution.py) - Fabric workspace setup orchestrator
-> - Helper modules: [`infra/scripts/fabric/helpers/`](../infra/scripts/fabric/helpers/) - Modular deployment functions
+> - Fabric deployment: [`infra/scripts/fabric/install_udf_solution.py`](../infra/scripts/fabric/install_udf_solution.py) - Fabric solution bootstrap orchestrator
+> - Installer notebook: [`infra/deploy/udf_solution_installer.ipynb`](../infra/deploy/udf_solution_installer.ipynb) - Full solution deployment notebook
+> - Helper modules: [`infra/scripts/fabric/helpers/`](../infra/scripts/fabric/helpers/) - Bootstrap helper functions
 
 ### 🏗️ Infrastructure Configuration
 
@@ -491,7 +473,7 @@ For detailed capacity planning, see [Fabric capacity planning](https://learn.mic
 
 ### 🏢 Fabric Workspace Configuration
 
-Customize the Fabric workspace setup and naming conventions. These parameters are used by the [`deploy_udf_solution.py`](../infra/scripts/fabric/deploy_udf_solution.py) script during post-provisioning.
+Customize the Fabric workspace setup and naming conventions. These parameters are used by the [`install_udf_solution.py`](../infra/scripts/fabric/install_udf_solution.py) script during post-provisioning.
 
 > **⚠️ Important**: Variables marked as "Bicep output" (like `AZURE_FABRIC_CAPACITY_NAME`, `SOLUTION_SUFFIX`, `AZURE_FABRIC_CAPACITY_ADMINISTRATORS`) are automatically set by the deployment process and should **NOT** be manually configured. These are outputs from [`main.bicep`](../infra/main.bicep) and will be populated after infrastructure deployment.
 
@@ -538,7 +520,7 @@ env:
 
 ### 👥 Fabric Workspace Administrator Configuration
 
-Manage workspace administrators and security permissions for the Fabric workspace. These parameters are processed by both the Bicep template ([`main.bicep`](../infra/main.bicep)) for capacity-level admins and the Fabric deployment script ([`deploy_udf_solution.py`](../infra/scripts/fabric/deploy_udf_solution.py)) for workspace-level admins.
+Manage workspace administrators and security permissions for the Fabric workspace. These parameters are processed by both the Bicep template ([`main.bicep`](../infra/main.bicep)) for capacity-level admins and the Fabric deployment script ([`install_udf_solution.py`](../infra/scripts/fabric/install_udf_solution.py)) for workspace-level admins.
 
 <details>
 <summary><strong>Admin Assignment Options</strong></summary>
@@ -654,12 +636,12 @@ hooks:
   postprovision:
     windows:
       shell: pwsh
-      run: ./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
+      run: ./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/install_udf_solution.py"
       interactive: true
       continueOnError: false
     posix:
       shell: pwsh
-      run: ./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py" -SkipPythonVirtualEnvironment
+      run: ./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/install_udf_solution.py" -SkipPythonVirtualEnvironment
       interactive: true
       continueOnError: false
   predown:
@@ -686,7 +668,7 @@ These parameters are automatically optimized in [`azure-dev.yml`](../.github/wor
 - name: Run Fabric Provisioning Script
   run: |
     pwsh ./infra/scripts/utils/Run-PythonScript.ps1 `
-      -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py" `
+      -ScriptPath "infra/scripts/fabric/install_udf_solution.py" `
       -SkipPythonVirtualEnvironment `
       -SkipPythonDependencies `
       -SkipPipUpgrade
@@ -702,44 +684,7 @@ These parameters are automatically optimized in [`azure-dev.yml`](../.github/wor
 
 This section documents known limitations in the deployment process and their workarounds.
 
-### 🔒 Power BI API Parameter Updates
-
-**Issue**: Service Principals cannot update Power BI dataset parameters via API, resulting in HTTP 403 errors.
-
-**Impact**:
-
-- During automated deployment, if deployment identity is a Service Principal or a Managed Identity, Power BI reports are deployed but dataset parameters (SQL endpoint connection strings) may not be automatically configured
-- Reports may show connection errors until manually configured
-
-**Technical Details**:
-Power BI dataset parameter updates are handled by the deployment process. Note that Service Principals may have restricted API access for this operation.
-
-```python
-# From the deployment helper modules
-try:
-    powerbi_client.update_powerbi_dataset_parameters(
-        dataset_id=dataset['id'], 
-        parameters=[
-            {"name": "sqlEndpoint", "newValue": sql_endpoint},
-            {"name": "database", "newValue": lakehouse_name}
-        ]
-    )
-    print(f"✅ Dataset parameters updated successfully for '{report_name}'")
-except Exception as param_error:
-    if "HTTP 403" in str(param_error):
-        print(f"⚠️ WARNING: Cannot update dataset parameters automatically")
-        print(f"    Manual configuration required in Power BI service")
-```
-
-**Workaround**:
-
-- The deployment continues successfully despite this limitation
-- Follow the manual configuration steps in the [Power BI Deployment Guide](./DeploymentGuidePowerBI.md) to complete the report setup
-- This typically involves updating the `sqlEndpoint` and `database` parameters in the Power BI service
-
----
-
-### 👤 Graph API Principal (user or service principal) Lookup Limitations
+###  Graph API Principal (user or service principal) Lookup Limitations
 
 **Issue**: The deployment identity may lack permissions to query user object IDs from Azure Active Directory via Microsoft Graph API.
 
@@ -795,7 +740,7 @@ def detect_principal_type(admin_identifier, graph_client=None):
 - Graceful exit with clear guidance on permission requirements
 
 **Technical Details**:
-The [`deploy_udf_solution.py`](../infra/scripts/fabric/deploy_udf_solution.py) script provides specific error handling for authorization failures:
+The [`install_udf_solution.py`](../infra/scripts/fabric/install_udf_solution.py) script provides specific error handling for authorization failures:
 
 ```python
 except FabricApiError as e:

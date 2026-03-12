@@ -213,7 +213,8 @@ catch {
         "3. Check that all required environment variables are set",
         "4. Ensure the Python script path is correct and accessible",
         "5. Verify Python 3.9+ is installed and available in PATH",
-        "6. Check that requirements.txt exists and is accessible"
+        "6. Check that requirements.txt exists and is accessible",
+        "7. If the Python script started running, review the error output above for details on what failed during execution"
     ) | ForEach-Object { Write-Host $_ -ForegroundColor White }
     exit 1
 }
