@@ -64,7 +64,7 @@ You can modify the data models and notebooks in different folders under the `src
 | [Update Silver to Gold Processing](./src/fabric/notebooks/silver_to_gold) | Customize data enrichment and aggregation |
 | [Update Runner Notebooks](./src/fabric/notebooks) | Adjust orchestration when notebooks are added or removed |
 
-### Additional resources
+## Resources
 
 | Resource | Description |
 |---|---|
@@ -75,7 +75,7 @@ You can modify the data models and notebooks in different folders under the `src
 
 <br/>
 
-### Key features
+## Features
 <details>
   <summary>Click to learn more about the key features this solution enables</summary>
 
@@ -97,6 +97,8 @@ You can modify the data models and notebooks in different folders under the `src
 <h2 id="quick-deploy"><img src="./docs/images/readme/quick-deploy.png" width="48" />
 Quick deploy
 </h2>
+
+## Getting Started
 
 ### Deployment methods
 
@@ -207,6 +209,8 @@ Both data engineers and sales analysts work within the same Fabric workspace to 
 <h2 id="supporting-documentation"><img src="./docs/images/readme/supporting-documentation.png" width="48" />
 Supporting documentation
 </h2>
+
+## Guidance
 
 ### Security guidelines
 
