@@ -57,6 +57,15 @@ def is_dbfs_enabled(host: str, hdrs: Dict[str, str]) -> bool:
     # Only treat FEATURE_DISABLED as "DBFS is disabled"
     if error_code == "FEATURE_DISABLED":
         return False
+    # Some workspaces return PERMISSION_DENIED with a message
+    # indicating that public DBFS root is disabled.
+    error_message = ""
+    try:
+        error_message = r.json().get("message", "")
+    except Exception:
+        pass
+    if "DBFS root is disabled" in error_message:
+        return False
     # 403/PERMISSION_DENIED likely means the token lacks DBFS
     # permissions, not that DBFS is disabled. Surface the error
     # so the user can check PAT permissions.
