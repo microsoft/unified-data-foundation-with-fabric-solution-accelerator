@@ -44,6 +44,11 @@ Deploys 3 lakehouses (Bronze, Silver, Gold), 48 notebooks, 2 SQL scripts, and Po
 | [![Azure Cloud Shell](https://img.shields.io/static/v1?style=for-the-badge&label=Azure%20Cloud%20Shell&message=Open&color=0078D4&logo=microsoft-azure&logoColor=white)](https://shell.azure.com) | [![GitHub Codespaces](https://img.shields.io/static/v1?style=for-the-badge&label=GitHub%20Codespaces&message=Open&color=181717&logo=github&logoColor=white)](https://codespaces.new/microsoft/unified-data-foundation-with-fabric-solution-accelerator?quickstart=1) | [![Dev Container](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Container&message=Open&color=blue&logo=docker&logoColor=white)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator) |
 |---|---|---|
 
+**NOTE:** If you are running the latest azd version (version 1.23.9), please run the following command. 
+```bash 
+azd config set provision.preflight off
+```
+
 ```bash
 git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
 cd unified-data-foundation-with-fabric-solution-accelerator
