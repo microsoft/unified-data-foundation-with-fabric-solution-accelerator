@@ -439,7 +439,8 @@ Configure the Azure infrastructure components through Bicep template parameters 
 |-----------|-------------------------|------------------------|-------------|---------|---------|
 | **Solution Name** | `solutionName` | `AZURE_ENV_NAME` | Friendly name for the application/solution (3-20 chars) | `udfwfsa` | `mycompany-fabric` |
 | **Location** | `AZURE_LOCATION` | `AZURE_LOCATION` | Azure region for resource deployment | Resource group location | `eastus`, `westus2`, `westeurope` |
-| **Fabric Capacity SKU** | `skuName` | Not directly supported* | Fabric capacity tier and performance level | `F2` | `F4`, `F8`, `F16`, `F32`, `F64`, `F128`, `F256`, `F512`, `F1024`, `F2048` |
+| **Existing Fabric Capacity** *(Optional)* | `AZURE_EXISTING_FABRIC_CAPACITY_NAME` | `AZURE_EXISTING_FABRIC_CAPACITY_NAME` | Name of an existing Fabric capacity to use. If provided, skips capacity creation and uses the specified capacity instead | Empty (creates new capacity) | `fc-mycompany-prod` |
+| **Fabric Capacity SKU** | `skuName` | Not directly supported* | Fabric capacity tier and performance level (only applies when creating new capacity) | `F2` | `F4`, `F8`, `F16`, `F32`, `F64`, `F128`, `F256`, `F512`, `F1024`, `F2048` |
 | **Enable Telemetry** | `enableTelemetry` | Not directly supported* | Enable/disable usage telemetry collection | `true` | `false` |
 
 *GitHub Actions can use additional parameters through Bicep parameter files or workflow modifications.*
@@ -454,6 +455,10 @@ Configure the Azure infrastructure components through Bicep template parameters 
 azd env set AZURE_LOCATION "westeurope"
 azd env set skuName "F8"
 azd env set enableTelemetry false
+
+# Optional: Use an existing Fabric capacity instead of creating a new one
+azd env set AZURE_EXISTING_FABRIC_CAPACITY_NAME "fc-mycompany-prod"
+
 azd up
 ```
 
@@ -479,6 +484,8 @@ Modify [`azure-dev.yml`](../.github/workflows/azure-dev.yml) Deploy Infrastructu
 </details>
 
 **Fabric Capacity SKU Selection Guide:**
+
+> **Note:** SKU selection only applies when creating a new Fabric capacity. If you specify `AZURE_EXISTING_FABRIC_CAPACITY_NAME`, the SKU setting is ignored.
 
 - **F2-F4**: Development and testing environments
 - **F8-F32**: Small to medium production workloads
