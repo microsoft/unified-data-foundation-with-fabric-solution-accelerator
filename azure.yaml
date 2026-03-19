@@ -18,12 +18,12 @@ hooks:
   postprovision:
     windows:
       shell: pwsh
-      run: ./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py"
+      run: ./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/install_udf_solution.py"
       interactive: true
       continueOnError: false
     posix:
       shell: pwsh
-      run: ./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solution.py" -SkipPythonVirtualEnvironment
+      run: ./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/install_udf_solution.py" -SkipPythonVirtualEnvironment
       interactive: true
       continueOnError: false
   predown:

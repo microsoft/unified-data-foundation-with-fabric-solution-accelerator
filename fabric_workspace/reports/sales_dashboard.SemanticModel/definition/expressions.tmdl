@@ -1,4 +1,4 @@
-expression sqlEndpoint = "ccllgusga4suzkb52t4j7lpn7y-vkiexc7yorzexd6qdusu75hole.datawarehouse.fabric.microsoft.com" meta [IsParameterQuery = true, IsParameterQueryRequired = true, Type = "Any"]
+expression sqlEndpoint = "ccllgusga4suzkb52t4j7lpn7y-igpgb3opinbepkznbwl3f5yqxm.datawarehouse.fabric.microsoft.com" meta [IsParameterQuery = true, IsParameterQueryRequired = true, Type = "Any"]
 	lineageTag: 5189c03a-a586-481e-8931-e17cec3c0d5b
 
 	annotation PBI_NavigationStepName = Navigation
