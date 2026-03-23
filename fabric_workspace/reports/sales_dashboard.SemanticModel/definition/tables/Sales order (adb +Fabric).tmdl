@@ -137,10 +137,12 @@ table 'Sales order (adb +Fabric)'
 
 		annotation SummarizationSetBy = Automatic
 
-	column Year = YEAR('Sales order (adb +Fabric)'[OrderDate])
+	column Year
+		dataType: int64
 		formatString: 0
-		lineageTag: 9c9cc23b-5af0-43e4-91f4-f9abe4ea4bda
+		lineageTag: 5c62efa8-7270-4fbd-9d8d-2e73b59c7cab
 		summarizeBy: sum
+		sourceColumn: Year
 
 		annotation SummarizationSetBy = Automatic
 
@@ -152,11 +154,12 @@ table 'Sales order (adb +Fabric)'
 				    salesadb_order = Source1{[Schema="salesadb",Item="order"]}[Data],
 				    Source = Sql.Database(sqlEndpoint, database),
 				    salesfabric_order = Source{[Schema="salesfabric",Item="order"]}[Data],
-				    AppendedTables = Table.Combine({salesadb_order,salesfabric_order})
+				    AppendedTables = Table.Combine({salesadb_order,salesfabric_order}),
+				    #"Inserted Year" = Table.AddColumn(AppendedTables, "Year", each Date.Year([OrderDate]), Int64.Type)
 				in
-				    AppendedTables
+				    #"Inserted Year"
 
 	annotation PBI_NavigationStepName = Navigation
 
-	annotation PBI_ResultType = Exception
+	annotation PBI_ResultType = Table
 
