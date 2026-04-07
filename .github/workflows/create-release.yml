@@ -3,6 +3,14 @@ name: "Create Release"
 on:
   push:
     branches: ["main"]
+    paths:
+      - "infra/**"
+      - "src/**"
+      - "fabric_workspace/**"
+      - "azure.yaml"
+      - "requirements.txt"
+      - "reports/**"
+      - ".github/workflows/create-release.yml"
 
   workflow_dispatch:
 

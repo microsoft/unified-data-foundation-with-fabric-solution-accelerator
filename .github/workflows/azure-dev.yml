@@ -10,6 +10,9 @@ on:
     paths:
       - "infra/**"
       - "src/**"
+      - "fabric_workspace/**"
+      - "azure.yaml"
+      - "requirements.txt"
       - ".github/workflows/azure-dev.yml"
   pull_request:
     branches:
@@ -17,6 +20,9 @@ on:
     paths:
       - "infra/**"
       - "src/**"
+      - "fabric_workspace/**"
+      - "azure.yaml"
+      - "requirements.txt"
       - ".github/workflows/azure-dev.yml"
 
 # Set up permissions for deploying with secretless Azure federated credentials
