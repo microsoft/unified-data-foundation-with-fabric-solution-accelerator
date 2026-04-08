@@ -1,3 +1,4 @@
+targetScope = 'resourceGroup'
 metadata name = 'Unified data foundation with Fabric solution accelerator'
 metadata description = '''CSA CTO Gold Standard Solution Accelerator for Unified Data Foundation with Fabric.
 '''
