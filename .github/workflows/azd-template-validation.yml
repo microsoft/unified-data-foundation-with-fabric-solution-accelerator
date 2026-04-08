@@ -13,7 +13,7 @@ jobs:
   template_validation:
     runs-on: ubuntu-latest
     name: azd template validation
-    environment: production
+    environment: udfwf-build
     steps:
       - uses: actions/checkout@v4
 
