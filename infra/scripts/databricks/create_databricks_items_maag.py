@@ -18,6 +18,7 @@ import re
 import argparse
 import base64
 import json
+import subprocess
 import time
 from pathlib import Path
 from typing import Dict, Optional, Any
@@ -25,6 +26,10 @@ from typing import Dict, Optional, Any
 import requests
 from urllib.parse import quote
 
+import requests
+
+# Well-known Azure AD application ID for Azure Databricks (same across all tenants)
+DATABRICKS_RESOURCE_ID = "2ff814a6-3304-4ab8-85cb-cd0e6f879c1d"
 
 def is_dbfs_enabled(host: str, hdrs: Dict[str, str]) -> bool:
     """Check if DBFS is available by probing the root path.
@@ -287,12 +292,52 @@ def get_host(cli_url: Optional[str]) -> str:
     if not host:
         raise RuntimeError("Set DATABRICKS_HOST env or pass --workspaceUrl")
     return host
+ 
+ 
+def _get_entra_token() -> Optional[str]:
+    """Attempt to obtain a Databricks access token via Azure CLI (Entra ID).
+    
+    Tries two methods in order:
+      1. Azure CLI: az account get-access-token (requires 'az login')
+      2. azure-identity: DefaultAzureCredential (supports managed identity, VS Code, etc.)
+    """
+    # Method 1: Azure CLI
+    try:
+        az_cmd = "az" if os.name != "nt" else "az.cmd"
+        result = subprocess.run(
+            [az_cmd, "account", "get-access-token", "--resource", DATABRICKS_RESOURCE_ID, "--query", "accessToken", "-o", "tsv"],
+            capture_output=True, text=True, timeout=30
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    # Method 2: azure-identity DefaultAzureCredential
+    try:
+        from azure.identity import DefaultAzureCredential
+        credential = DefaultAzureCredential()
+        token = credential.get_token(f"{DATABRICKS_RESOURCE_ID}/.default")
+        if token.token:
+            return token.token
+    except Exception:
+        pass
+
+    return None
 
 
 def headers(token: Optional[str]) -> Dict[str, str]:
     tok = (token or os.environ.get("DATABRICKS_TOKEN") or "").strip()
     if not tok:
-        raise RuntimeError("Set DATABRICKS_TOKEN env or pass --token")
+        print("[AUTH] No --token provided. Attempting Azure CLI login (Entra ID)...")
+        tok = _get_entra_token()
+        if not tok:
+            raise RuntimeError(
+                "Could not obtain a Databricks token. Either:\n"
+                "  1. Log in with: az login  (recommended)\n"
+                "  2. Pass --token <PAT>     (fallback)"
+            )
+        print("[AUTH] Successfully obtained token via Azure CLI (Entra ID).")
     return {"Authorization": f"Bearer {tok}"}
 
 

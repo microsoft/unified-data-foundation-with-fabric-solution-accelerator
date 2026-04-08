@@ -63,7 +63,17 @@ You will need the following values for deployment process later. Be sure to reco
    - Use the URL copied in Step 1 → Substep 6.
    
 
-- **Personal Access Token (PAT):**  
+- **Authentication (choose one):**
+
+  **Option A — Azure CLI / Entra ID (Recommended):**  
+  If you have Azure CLI installed and have run `az login`, the deployment scripts will automatically obtain a token. No manual token generation is needed.
+
+  ```bash
+  az login
+  ```
+
+  **Option B — Personal Access Token (PAT) (Fallback):**  
+  Use this option for service principals, CI/CD pipelines, or environments without Azure CLI.
   - In Databricks workspace, click your profile icon (top-right) and select Settings. 
   - Navigate to **Developer → Access tokens → Manage.** 
   - Click **Generate new token**, add a comment, and set the lifetime.
