@@ -9,7 +9,8 @@
     The Databricks workspace URL (e.g. https://adb-xxxx.azuredatabricks.net).
 
 .PARAMETER Token
-    The Databricks personal access token (starts with dapi...).
+    (Optional) A Databricks personal access token or Entra ID token.
+    If omitted, the script auto-acquires a token via Azure CLI (az login).
 
 .PARAMETER SolutionName
     The solution name (e.g. maag).
@@ -29,7 +30,7 @@
 .EXAMPLE
     .\provision_databricks_items.ps1 `
         -WorkspaceUrl "https://adb-xxxx.azuredatabricks.net" `
-        -Token "dapi..." `
+        -Token "dapi... or omit for Entra ID" `
         -SolutionName "maag" `
         -CatalogName "maagcatalog" `
         -SchemaName "sales" `
@@ -39,6 +40,7 @@
 .NOTES
     Prerequisites:
     - Python 3.8+ with pip
+    - Azure CLI (az login) for Entra ID auth (recommended), or a Databricks PAT
     - Appropriate permissions in Databricks
 #>
 
@@ -48,7 +50,6 @@ param(
     [string]$WorkspaceUrl,
 
     [Parameter(Mandatory = $false)]
-    [ValidatePattern("^dapi.*")]
     [string]$Token,
 
     [Parameter(Mandatory = $false)]
@@ -87,17 +88,65 @@ function Prompt-IfMissing {
     return $Value
 }
 
+# Well-known Azure AD application ID for Azure Databricks (same across all tenants)
+$DatabricksResourceId = "2ff814a6-3304-4ab8-85cb-cd0e6f879c1d"
+
 # Prompt if running interactively
 $WorkspaceUrl = Prompt-IfMissing $WorkspaceUrl "Enter Databricks Workspace URL (e.g. https://adb-xxxx.azuredatabricks.net)"
-$Token = Prompt-IfMissing $Token "Enter Databricks Token"
+# Auto-acquire token via Azure CLI if not provided
+if (-not $Token -or $Token -eq "") {
+    Write-Host "[AUTH] No token provided. Attempting Azure CLI login (Entra ID)..." -ForegroundColor Yellow
+    try {
+        # Check if user is already logged in
+        $account = az account show 2>$null
+        if ($LASTEXITCODE -ne 0 -or -not $account) {
+            Write-Host "[AUTH] No active Azure CLI session found. Running 'az login'..." -ForegroundColor Yellow
+            az login --use-device-code | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                throw "az login failed"
+            }
+        } else {
+            Write-Host "[AUTH] Active Azure CLI session detected." -ForegroundColor Green
+        }
+        $Token = (az account get-access-token --resource $DatabricksResourceId --query accessToken -o tsv 2>$null)
+        if (-not $Token -or $Token -eq "") {
+            throw "Failed to obtain token"
+        }
+        Write-Host "[AUTH] Successfully obtained token via Azure CLI (Entra ID)." -ForegroundColor Green
+    } catch {
+        Write-Host "[AUTH] Azure CLI token failed. Falling back to manual entry." -ForegroundColor Yellow
+        $Token = Prompt-IfMissing $Token "Enter Databricks Token (PAT or Entra ID)"
+    }
+}
 $SolutionName = Prompt-IfMissing $SolutionName "Enter Solution Name (e.g. maag)"
 $CatalogName = Prompt-IfMissing $CatalogName "Enter Catalog Name (e.g. maagcatalog)"
 $SchemaName = Prompt-IfMissing $SchemaName "Enter Schema Name (e.g. sales)"
-$ClusterId = Prompt-IfMissing $ClusterId "Enter Cluster ID"
+# Auto-detect Cluster ID via Databricks REST API if not provided
+if (-not $ClusterId -or $ClusterId -eq "") {
+    Write-Host "[AUTO] Attempting to detect Databricks cluster ID..." -ForegroundColor Yellow
+    try {
+        $headers = @{ "Authorization" = "Bearer $Token" }
+        $response = Invoke-RestMethod -Uri "${WorkspaceUrl}/api/2.0/clusters/list" -Headers $headers -Method Get -ErrorAction Stop
+        $clusters = $response.clusters
+        if ($clusters -and $clusters.Count -gt 0) {
+            # Prefer a RUNNING cluster, fall back to first available
+            $running = $clusters | Where-Object { $_.state -eq "RUNNING" }
+            $pick = if ($running) { @($running)[0] } else { $clusters[0] }
+            $ClusterId = $pick.cluster_id
+            Write-Host "[AUTO] Found cluster: $ClusterId ($($pick.cluster_name) - $($pick.state))" -ForegroundColor Green
+        } else {
+            Write-Host "[AUTO] No clusters found in workspace." -ForegroundColor Yellow
+        }
+    } catch {
+        Write-Host "[AUTO] Could not auto-detect cluster: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+    $ClusterId = Prompt-IfMissing $ClusterId "Enter Cluster ID"
+}
 $CatalogManagedLocation = Prompt-IfMissing $CatalogManagedLocation "Enter Catalog Managed Location (external location name or URI)"
 
 Write-Host "`n[INFO] Starting Databricks deployment..." -ForegroundColor Green
 Write-Host "Workspace: $WorkspaceUrl" -ForegroundColor Cyan
+Write-Host "Auth: $(if ($Token.StartsWith('dapi')) { 'PAT' } else { 'Entra ID' })" -ForegroundColor Cyan
 Write-Host "Solution: $SolutionName, Catalog: $CatalogName, Schema: $SchemaName" -ForegroundColor Cyan
 
 # Check Python
