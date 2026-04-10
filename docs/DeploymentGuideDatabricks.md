@@ -125,7 +125,7 @@ Ensure you have an Azure Databricks workspace available and that you have comple
 Required values (collect these before running the script):
 
 1. Workspace URL (e.g. https://adb-xxxx.azuredatabricks.net)
-2. Personal Access Token (PAT)
+2. Authentication — Azure CLI login (`az login`) is recommended; PAT token is supported as fallback
 3. Databricks Cluster ID 
 4. Catalog Managed Location (external location name or URI)
 
@@ -172,7 +172,7 @@ chmod +x provision_databricks_items.sh
 ./provision_databricks_items.sh
 ```
 
-Once you start the script, it will prompt you for required arguments such as Workspace URL, Personal Access Token, Cluster ID, Solution name, Catalog name,Schema name, and Managed Location. Provide valid values for each prompt to ensure a successful deployment.
+Once you start the script, it will prompt you for required arguments such as Workspace URL, Cluster ID, Solution name, Catalog name, Schema name, and Managed Location. If you are logged in via Azure CLI (`az login`), the token is obtained automatically via Entra ID. Otherwise, you will be prompted for a Personal Access Token (PAT).
 ![Catalog Location](./images/deployment/7-Databricks-scriptexecution.png) 
 
 > **Note:**  
