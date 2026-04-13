@@ -41,6 +41,7 @@ Environment Variables:
 
 import os
 import sys
+import time
 from datetime import datetime
 
 # Add current directory to path so local modules can be imported
@@ -133,29 +134,63 @@ def _upload_installer_notebook(workspace_client, notebook_path: str) -> str:
     return notebook_id
 
 
-def _run_installer_notebook(workspace_client, notebook_id: str, monitor_interval: int = 20) -> None:
+def _run_installer_notebook(workspace_client, notebook_id: str, monitor_interval: int = 20,
+                            max_retries: int = 3, initial_backoff: int = 30) -> None:
     """Schedule and monitor the installer notebook job until completion.
+
+    Transient Fabric Spark errors (e.g. ``GetManagedVnetTimeout``) are retried
+    automatically with exponential back-off.
 
     Args:
         workspace_client: Authenticated :class:`FabricWorkspaceApiClient`.
         notebook_id: ID of the notebook to execute.
         monitor_interval: Seconds between status-polling requests (default: 20).
+        max_retries: Maximum number of retry attempts for transient errors (default: 3).
+        initial_backoff: Initial back-off in seconds before the first retry (default: 30).
 
     Raises:
-        FabricApiError: If the notebook job fails to start or returns an error status.
+        FabricApiError: If the notebook job fails to start or returns an error status
+            after all retry attempts are exhausted.
     """
-    print(f"   Scheduling notebook job: {INSTALLER_NOTEBOOK_NAME} ({notebook_id})")
-    result = workspace_client.schedule_notebook_job(notebook_id, monitor_interval=monitor_interval)
+    # Error substrings that indicate a transient Spark/VNet issue worth retrying.
+    retryable_errors = ["GetManagedVnetTimeout", "Please retry"]
 
-    status = result.get("status", "Unknown")
-    duration = result.get("duration", "N/A")
+    for attempt in range(1, max_retries + 1):
+        print(f"   Scheduling notebook job (attempt {attempt}/{max_retries}): "
+              f"{INSTALLER_NOTEBOOK_NAME} ({notebook_id})")
+        try:
+            result = workspace_client.schedule_notebook_job(notebook_id, monitor_interval=monitor_interval)
+        except FabricApiError as exc:
+            error_str = str(exc)
+            if attempt < max_retries and any(err in error_str for err in retryable_errors):
+                backoff = initial_backoff * (2 ** (attempt - 1))
+                print(f"   ⚠️  Transient error detected (attempt {attempt}/{max_retries}): {error_str}")
+                print(f"   ⏳ Retrying in {backoff}s…")
+                time.sleep(backoff)
+                continue
+            raise
 
-    print(f"   📊 Execution result:")
-    print(f"      Status:   {status}")
-    print(f"      Duration: {duration}")
+        status = result.get("status", "Unknown")
+        duration = result.get("duration", "N/A")
 
-    if status != "Completed":
+        print(f"   📊 Execution result:")
+        print(f"      Status:   {status}")
+        print(f"      Duration: {duration}")
+
+        if status == "Completed":
+            print(f"   ✅ Installer notebook completed successfully")
+            return
+
         error_detail = result.get("error", "No error details available")
+        error_str = str(error_detail)
+
+        if attempt < max_retries and any(err in error_str for err in retryable_errors):
+            backoff = initial_backoff * (2 ** (attempt - 1))
+            print(f"   ⚠️  Transient error detected (attempt {attempt}/{max_retries}): {error_detail}")
+            print(f"   ⏳ Retrying in {backoff}s…")
+            time.sleep(backoff)
+            continue
+
         raise FabricApiError(
             f"Installer notebook finished with status '{status}'. Error: {error_detail}"
         )
