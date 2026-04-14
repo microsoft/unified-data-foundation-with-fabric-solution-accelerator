@@ -228,16 +228,17 @@ class FabricApiClient:
         except requests.Timeout as e:
             raise FabricApiError(f"Request timed out after {timeout or self.timeout_sec} seconds: {str(e)}")
         except requests.ConnectionError as e:
+            max_attempts = max_retries + 1
             if retry_count < max_retries:
                 wait_time = min(60, 2 ** retry_count)
                 self._log(
-                    f"Connection error (attempt {retry_count + 1}/{max_retries}): {str(e)}. "
+                    f"Connection error (attempt {retry_count + 1}/{max_attempts}): {str(e)}. "
                     f"Retrying in {wait_time} seconds...",
                     "WARNING"
                 )
                 time.sleep(wait_time)
                 return self._make_request(uri, method, data, headers, timeout, wait_for_lro, max_retries, retry_count + 1)
-            raise FabricApiError(f"Connection error after {max_retries} retries: {str(e)}")
+            raise FabricApiError(f"Connection error after {max_attempts} attempts: {str(e)}")
         except requests.RequestException as e:
             raise FabricApiError(f"Request failed: {str(e)}")
     

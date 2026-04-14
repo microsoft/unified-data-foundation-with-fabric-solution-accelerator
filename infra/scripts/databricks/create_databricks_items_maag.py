@@ -26,8 +26,6 @@ from typing import Dict, Optional, Any
 import requests
 from urllib.parse import quote
 
-import requests
-
 # Well-known Azure AD application ID for Azure Databricks (same across all tenants)
 DATABRICKS_RESOURCE_ID = "2ff814a6-3304-4ab8-85cb-cd0e6f879c1d"
 
@@ -328,7 +326,7 @@ def _get_entra_token() -> Optional[str]:
 def headers(token: Optional[str]) -> Dict[str, str]:
     tok = (token or os.environ.get("DATABRICKS_TOKEN") or "").strip()
     if not tok:
-        print("[AUTH] No --token provided. Attempting Azure CLI login (Entra ID)...")
+        print("[AUTH] No --token provided. Attempting to obtain token via Azure CLI (requires prior 'az login')...")
         tok = _get_entra_token()
         if not tok:
             raise RuntimeError(
