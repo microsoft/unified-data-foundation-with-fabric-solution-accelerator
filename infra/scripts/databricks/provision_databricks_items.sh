@@ -31,11 +31,58 @@ done
 
 # Prompt for missing arguments
 prompt_if_missing workspaceUrl "Enter Databricks Workspace URL (e.g. https://adb-xxxx.azuredatabricks.net)"
-prompt_if_missing token "Enter Databricks Token"
+# Well-known Azure AD application ID for Azure Databricks (same across all tenants)
+DATABRICKS_RESOURCE_ID="2ff814a6-3304-4ab8-85cb-cd0e6f879c1d"
+
+# Auto-acquire token via Azure CLI if not provided
+if [ -z "$token" ]; then
+  echo "[AUTH] No token provided. Attempting Azure CLI login (Entra ID)..."
+  # Check if user is already logged in
+  if az account show &>/dev/null; then
+    echo "[AUTH] Active Azure CLI session detected."
+  else
+    echo "[AUTH] No active Azure CLI session found. Running 'az login'..."
+    az login > /dev/null
+    if [ $? -ne 0 ]; then
+      echo "[AUTH] az login failed. Falling back to manual entry."
+      prompt_if_missing token "Enter Databricks Token (PAT or Entra ID)"
+    fi
+  fi
+  if [ -z "$token" ]; then
+    token=$(az account get-access-token --resource "$DATABRICKS_RESOURCE_ID" --query accessToken -o tsv 2>/dev/null)
+    if [ -n "$token" ]; then
+      echo "[AUTH] Successfully obtained token via Azure CLI (Entra ID)."
+    else
+      echo "[AUTH] Azure CLI token failed. Falling back to manual entry."
+      prompt_if_missing token "Enter Databricks Token (PAT or Entra ID)"
+    fi
+  fi
+fi
 prompt_if_missing solutionname "Enter Solution Name (e.g. maag)"
 prompt_if_missing catalogname "Enter Catalog Name (e.g. maagcatalog)"
 prompt_if_missing schemaname "Enter Schema Name (e.g. sales)"
-prompt_if_missing cluster_id "Enter Cluster ID"
+# Auto-detect Cluster ID via Databricks REST API if not provided
+if [ -z "$cluster_id" ]; then
+  echo "[AUTO] Attempting to detect Databricks cluster ID..."
+  clusters_json=$(curl -sf -X GET "${workspaceUrl}/api/2.0/clusters/list" \
+    -H "Authorization: Bearer ${token}" 2>/dev/null || true)
+  if [ -n "$clusters_json" ]; then
+    detected_id=$(echo "$clusters_json" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+clusters = data.get('clusters', [])
+running = [c for c in clusters if c.get('state') == 'RUNNING']
+pick = running[0] if running else (clusters[0] if clusters else None)
+if pick:
+    print(pick['cluster_id'])
+" 2>/dev/null || true)
+    if [ -n "$detected_id" ]; then
+      cluster_id="$detected_id"
+      echo "[AUTO] Found cluster: $cluster_id"
+    fi
+  fi
+  prompt_if_missing cluster_id "Enter Cluster ID"
+fi
 prompt_if_missing catalog_managed_location "Enter Catalog Managed Location (external location name or URI)"
 
 # Check Python
