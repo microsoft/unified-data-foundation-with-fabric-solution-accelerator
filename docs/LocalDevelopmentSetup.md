@@ -1,16 +1,88 @@
 # Local Development Setup Guide
 
-This guide provides comprehensive instructions for setting up the Unified Data Foundation with Fabric solution accelerator for local development and manual deployment across Windows, Linux, and macOS platforms.
+This guide provides comprehensive instructions for setting up the Unified Data Foundation with Fabric solution accelerator for local development and deployment across Windows, Linux, and macOS platforms.
 
-## When to Use This Guide
+## Deployment Options
 
+| Method | Best For | Prerequisites |
+|--------|----------|---------------|
+| **`azd up` (Recommended)** | Full automated deployment | Azure CLI, azd, Bicep CLI, Python 3.9+ |
+| **Manual Scripts** | Selective deployment, restricted environments | Azure CLI, Python 3.9+, existing Fabric capacity |
+| **DevContainer** | Consistent dev environment | Docker, VS Code |
+
+---
+
+## Option 1: Automated Deployment with `azd up` (Recommended)
+
+### Prerequisites
+
+| Tool | Minimum Version | Install Command |
+|------|----------------|-----------------|
+| Python | 3.9+ | `winget install Python.Python.3.12` |
+| Azure CLI | 2.50+ | `winget install Microsoft.AzureCLI` |
+| azd | 1.17.1+ | `winget install Microsoft.Azd` |
+| Bicep CLI | 0.33+ | `az bicep install` |
+| Git | Latest | `winget install Git.Git` |
+
+### Required Environment Variables (azd)
+
+These are managed automatically by `azd env`. Set them with `azd env set <NAME> <value>`:
+
+| Variable | Required | Description | Example |
+|----------|----------|-------------|---------|
+| `AZURE_ENV_NAME` | Yes | Environment name | `udfdev01` |
+| `AZURE_LOCATION` | Yes | Azure region | `eastus2` |
+| `AZURE_SUBSCRIPTION_ID` | Yes | Azure subscription GUID | `1d5876cd-...` |
+| `AZURE_RESOURCE_GROUP` | Yes | Resource group name | `rg-udfdev01` |
+| `AZURE_FABRIC_CAPACITY_NAME` | Yes | Fabric capacity name | `fcudfdev01fgmmd` |
+| `AZURE_FABRIC_CAPACITY_ADMINISTRATORS` | Yes | JSON array of admin emails | `["user@domain.com"]` |
+| `SOLUTION_SUFFIX` | Yes | Unique suffix for naming | `udfdev01fgmmd` |
+
+### Quick Start (Windows)
+
+```powershell
+# 1. Clone the repository
+git clone https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator.git
+cd unified-data-foundation-with-fabric-solution-accelerator
+
+# 2. Set UTF-8 encoding (required on Windows to avoid emoji errors)
+$env:PYTHONUTF8 = "1"
+$env:PYTHONIOENCODING = "utf-8"
+
+# 3. Login to Azure
+az login
+azd auth login
+
+# 4. Initialize environment
+azd init
+
+# 5. Deploy everything
+azd up
+```
+
+> **Note:** The installer notebook (Step 4/4) can take **15-60+ minutes** to complete in Fabric. This is normal — it creates lakehouses, uploads notebooks, and loads sample data.
+
+### Verify Deployment
+
+After `azd up` succeeds, verify in the Fabric portal:
+
+- **Workspace** created: `Unified Data Foundation - <suffix>`
+- **Lakehouses**: `maag_bronze`, `maag_silver`, `maag_gold`
+- **Notebooks**: 52 notebooks organized in folders
+- **Power BI Reports**: `sales_dashboard` deployed
+
+---
+
+## Option 2: Manual Deployment
+
+Use manual deployment when:
 - You need granular control over the deployment process
 - You're working in a restricted environment where azd can't be installed
 - You want to deploy only specific components
 - You're integrating with existing automation pipelines
 - You have existing Fabric capacity and want to use manual scripts only
 
-## Quick Start by Platform
+### Quick Start by Platform
 
 ### Windows Development
 
@@ -349,6 +421,12 @@ In your Fabric workspace, verify:
 | Workspace creation failed | Insufficient permissions | Ensure Fabric admin permissions on capacity |
 | Python import errors | Missing dependencies | Install required packages with pip |
 | PowerShell execution error | Execution policy | Use `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` |
+| `azure-identity` version conflict | Conflicting requirements across files | Root `requirements.txt` uses `azure-identity==1.20.0` and `azure-core==1.39.0`. Ensure all requirement files are compatible |
+| Windows long path error during pip install | Path exceeds 260 char limit | Enable Windows Long Paths: run `New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force` as admin, or install packages individually |
+| Bicep CLI not found | Not installed | Run `az bicep install` to install Bicep CLI |
+| Installer notebook timeout | Notebook takes >30min | This is normal for first deployment. Check Fabric portal to verify notebook completed. Re-run `azd provision` if needed |
+| DNS resolution failure during polling | Transient network issue | The notebook may still complete in Fabric. Check portal and re-run `azd provision` |
+| Unicode/emoji encoding error on Windows | Terminal uses cp1252 encoding | Set `$env:PYTHONUTF8 = "1"` and `$env:PYTHONIOENCODING = "utf-8"` before running `azd up`. Or add to your PowerShell profile for a permanent fix |
 
 ### Environment-Specific Issues
 
