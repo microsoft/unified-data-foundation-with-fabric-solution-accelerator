@@ -1,2 +1,3 @@
-requests==2.31.0
+# HTTP requests security fix.
+requests==2.33.0
 
