@@ -57,7 +57,7 @@ var solutionSuffix = toLower(trim(replace(
 )))
 
 // ========== Resource Group Tag ========== //
-resource resourceGroupTags 'Microsoft.Resources/tags@2021-04-01' = {
+resource resourceGroupTags 'Microsoft.Resources/tags@2023-07-01' = {
   name: 'default'
   properties: {
     tags: union(
@@ -72,7 +72,7 @@ resource resourceGroupTags 'Microsoft.Resources/tags@2021-04-01' = {
 }
 
 // var userAssignedIdentityResourceName = 'id-${solutionSuffix}'
-// module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
+// module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.5.0' = {
 //   name: take('avm.res.managed-identity.user-assigned-identity.${userAssignedIdentityResourceName}', 64)
 //   params: {
 //     name: userAssignedIdentityResourceName
@@ -86,7 +86,7 @@ var fabricCapacityDefaultAdmins = deployer().?userPrincipalName == null
   ? [deployer().objectId]
   : [deployer().userPrincipalName]
 var fabricTotalAdminMembers = union(fabricCapacityDefaultAdmins, fabricAdminMembers)
-module newFabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = if (!useExistingFabricCapacity) {
+module newFabricCapacity 'br/public:avm/res/fabric/capacity:0.1.2' = if (!useExistingFabricCapacity) {
   name: take('avm.res.fabric.capacity.${fabricCapacityResourceName}', 64)
   params: {
     name: fabricCapacityResourceName
