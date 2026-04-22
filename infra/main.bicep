@@ -72,7 +72,7 @@ resource resourceGroupTags 'Microsoft.Resources/tags@2023-07-01' = {
 }
 
 // var userAssignedIdentityResourceName = 'id-${solutionSuffix}'
-// module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.5.0' = {
+// module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
 //   name: take('avm.res.managed-identity.user-assigned-identity.${userAssignedIdentityResourceName}', 64)
 //   params: {
 //     name: userAssignedIdentityResourceName
