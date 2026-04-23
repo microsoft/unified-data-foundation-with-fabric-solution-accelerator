@@ -324,7 +324,7 @@ def main() -> None:
     print_step(4, 4, "Running installer notebook",
                notebook_id=notebook_id)
     try:
-        _run_installer_notebook(workspace_client, notebook_id)
+        _run_installer_notebook(workspace_client, notebook_id, max_retries=5, initial_backoff=60)
         print("✅ Successfully completed: run_installer")
         executed_steps.append("run_installer")
     except Exception as exc:
