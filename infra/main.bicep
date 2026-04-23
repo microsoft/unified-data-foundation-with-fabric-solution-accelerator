@@ -87,17 +87,14 @@ var fabricCapacityDefaultAdmins = deployer().?userPrincipalName == null
   : [deployer().userPrincipalName]
 var fabricTotalAdminMembers = union(fabricCapacityDefaultAdmins, fabricAdminMembers)
 
-// Create new Fabric capacity using native resource (AVM module unavailable in registry)
-resource newFabricCapacity 'Microsoft.Fabric/capacities@2023-11-01' = if (!useExistingFabricCapacity) {
-  name: fabricCapacityResourceName
-  location: location
-  sku: {
-    name: skuName
-  }
-  properties: {
-    administration: {
-      members: fabricTotalAdminMembers
-    }
+module newFabricCapacity 'br/public:avm/res/fabric/capacity:0.1.1' = if (!useExistingFabricCapacity) {
+  name: take('avm.res.fabric.capacity.${fabricCapacityResourceName}', 64)
+  params: {
+    name: fabricCapacityResourceName
+    location: location
+    enableTelemetry: enableTelemetry
+    skuName: skuName
+    adminMembers: fabricTotalAdminMembers
   }
 }
 
