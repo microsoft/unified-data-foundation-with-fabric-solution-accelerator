@@ -30,6 +30,7 @@ Before you begin, ensure you have the following:
 | **Azure subscription** | An active Azure subscription. [Create a free account](https://azure.microsoft.com/free/) if needed. |
 | **Permissions** | Contributor role and RBAC permissions at the subscription level. |
 | **Fabric capacity** | Microsoft Fabric capacity of F64 or higher. |
+| **Bicep CLI** | Bicep CLI version 0.33.0 or higher. [Install Bicep](https://learn.microsoft.com/azure/azure-resource-manager/bicep/install). |
 
 For detailed setup instructions, see [Azure Account Setup](./AzureAccountSetUp.md).
 
