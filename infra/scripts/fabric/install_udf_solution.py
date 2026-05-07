@@ -37,12 +37,16 @@ Environment Variables:
                                                     (defaults to "<SOLUTION_NAME> - <SOLUTION_SUFFIX>").
     FABRIC_WORKSPACE_ADMINISTRATORS      (optional) Comma-separated list of additional
                                                     workspace administrator identities.
+    GITHUB_TOKEN                         (optional) GitHub token passed only as a
+                                                    notebook run parameter for private
+                                                    or internal source repositories.
 """
 
 import os
 import sys
 import time
 from datetime import datetime
+from typing import Optional
 
 # Add current directory to path so local modules can be imported
 sys.path.append(os.path.dirname(__file__))
@@ -135,7 +139,8 @@ def _upload_installer_notebook(workspace_client, notebook_path: str) -> str:
 
 
 def _run_installer_notebook(workspace_client, notebook_id: str, monitor_interval: int = 20,
-                            max_retries: int = 3, initial_backoff: int = 30) -> None:
+                            max_retries: int = 3, initial_backoff: int = 30,
+                            github_token: Optional[str] = None) -> None:
     """Schedule and monitor the installer notebook job until completion.
 
     Transient Fabric Spark errors (e.g. ``GetManagedVnetTimeout``) are retried
@@ -147,6 +152,7 @@ def _run_installer_notebook(workspace_client, notebook_id: str, monitor_interval
         monitor_interval: Seconds between status-polling requests (default: 20).
         max_retries: Maximum number of retry attempts for transient errors (default: 3).
         initial_backoff: Initial back-off in seconds before the first retry (default: 30).
+        github_token: Optional GitHub token for internal/private repository downloads.
 
     Raises:
         FabricApiError: If the notebook job fails to start or returns an error status
@@ -159,7 +165,12 @@ def _run_installer_notebook(workspace_client, notebook_id: str, monitor_interval
         print(f"   Scheduling notebook job (attempt {attempt}/{max_retries}): "
               f"{INSTALLER_NOTEBOOK_NAME} ({notebook_id})")
         try:
-            result = workspace_client.schedule_notebook_job(notebook_id, monitor_interval=monitor_interval)
+            parameters = {"github_token": github_token} if github_token else None
+            result = workspace_client.schedule_notebook_job(
+                notebook_id,
+                monitor_interval=monitor_interval,
+                parameters=parameters,
+            )
         except FabricApiError as exc:
             error_str = str(exc)
             if attempt < max_retries and any(err in error_str for err in retryable_errors):
@@ -218,6 +229,7 @@ def main() -> None:
         get_required_env_var("AZURE_FABRIC_CAPACITY_ADMINISTRATORS"),
         os.getenv("FABRIC_WORKSPACE_ADMINISTRATORS"),
     )
+    github_token = os.getenv("GITHUB_TOKEN")
 
     notebook_path = _notebook_path()
 
@@ -232,6 +244,8 @@ def main() -> None:
     print(f"Installer Notebook:{notebook_path}")
     if workspace_administrators:
         print(f"Administrators:    {', '.join(workspace_administrators)}")
+    if github_token:
+        print("GitHub Token:      present (not logged)")
     print(f"Start time:        {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
 
@@ -324,7 +338,7 @@ def main() -> None:
     print_step(4, 4, "Running installer notebook",
                notebook_id=notebook_id)
     try:
-        _run_installer_notebook(workspace_client, notebook_id)
+        _run_installer_notebook(workspace_client, notebook_id, github_token=github_token)
         print("✅ Successfully completed: run_installer")
         executed_steps.append("run_installer")
     except Exception as exc:

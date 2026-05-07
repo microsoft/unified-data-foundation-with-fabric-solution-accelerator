@@ -807,13 +807,19 @@ class FabricWorkspaceApiClient(FabricApiClient):
             raise FabricApiError(f"Unexpected error searching for notebook '{notebook_name}': {str(e)}")
     
     # Notebook execution operations
-    def schedule_notebook_job(self, notebook_id: str, monitor_interval: int = 20) -> Dict[str, Any]:
+    def schedule_notebook_job(
+        self,
+        notebook_id: str,
+        monitor_interval: int = 20,
+        parameters: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """
         Schedule a single notebook job and monitor its completion.
         
         Args:
             notebook_id: Notebook ID to execute
             monitor_interval: Seconds to wait between status checks (default: 20)
+            parameters: Optional notebook job parameters to pass for this run.
             
         Returns:
             Dictionary with execution results including status, duration, and details
@@ -833,7 +839,15 @@ class FabricWorkspaceApiClient(FabricApiClient):
             notebook_name = notebook_info.get('displayName', 'Unknown')
             
             self._log(f"Scheduling execution for notebook '{notebook_name}' (ID: {notebook_id})")
-            response = self._make_request(job_url, method="POST", wait_for_lro=False)
+            payload = None
+            if parameters:
+                payload = {
+                    "parameters": [
+                        {"name": name, "value": value, "type": "Text"}
+                        for name, value in parameters.items()
+                    ]
+                }
+            response = self._make_request(job_url, method="POST", data=payload, wait_for_lro=False)
             
             # Handle immediate completion (HTTP 200)
             if response.status_code == 200:
