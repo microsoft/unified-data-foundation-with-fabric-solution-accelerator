@@ -822,15 +822,22 @@ def check_cross_layer() -> list[CheckResult]:
 
 def _check_ui_report_copy_and_contract() -> CheckResult:
     report = _read_text_rel("fabric_workspace/reports/sales_dashboard.Report/report.json")
-    required = [
-        "Sales Analysis",
-        "Sales Overview",
-        "Filter Pane",
-        "Top 5 Selling Products by Quantity",
-        "ProductName",
-        "Quantity",
+    required_label_groups = {
+        "report page title": ("Sales Analysis", "Renewable Energy Portfolio"),
+        "overview title": ("Sales Overview", "Renewable Portfolio Overview"),
+        "filter group": ("Filter Pane", "Portfolio Filters"),
+        "top product visual": (
+            "Top 5 Selling Products by Quantity",
+            "Top Renewable Products by Delivered Quantity",
+        ),
+    }
+    required_contract = ["ProductName", "Quantity"]
+    missing = [
+        label
+        for label, options in required_label_groups.items()
+        if not any(option in report for option in options)
     ]
-    missing = [item for item in required if item not in report]
+    missing += [item for item in required_contract if item not in report]
     if missing:
         return CheckResult(
             name="ui_contract:power-bi-report-copy-and-fields",
@@ -844,7 +851,7 @@ def _check_ui_report_copy_and_contract() -> CheckResult:
     return CheckResult(
         name="ui_contract:power-bi-report-copy-and-fields",
         passed=True,
-        details="report labels and ProductName/Quantity bindings are present",
+        details="report display labels and ProductName/Quantity bindings are present",
     )
 
 
@@ -858,11 +865,26 @@ def _check_ui_data_agent_copy_and_contract() -> CheckResult:
     datasource = _read_text_rel(
         "fabric_workspace/Data Agent for UDF.DataAgent/Files/Config/draft/lakehouse-tables-maag_gold/datasource.json"
     )
-    required_stage = ["synthetically generated", "do not offer charts", "root cause analysis"]
+    required_stage_groups = {
+        "synthetic-data disclaimer": ("synthetically generated", "fully synthetic"),
+        "chart limitation": ("do not offer charts",),
+        "root-cause limitation": ("root cause analysis",),
+    }
     required_contract = ["maag_gold", "CustomerId", "OrderId", "ProductName", "Quantity"]
-    missing = [item for item in required_stage if item not in stage]
+    missing = [
+        label
+        for label, options in required_stage_groups.items()
+        if not any(option in stage for option in options)
+    ]
     missing += [item for item in required_contract if item not in datasource]
-    if "customer base" not in fewshots.lower() or "sales performance" not in fewshots.lower():
+    fewshots_lower = fewshots.lower()
+    has_sales_examples = "customer base" in fewshots_lower and "sales performance" in fewshots_lower
+    has_renewable_examples = (
+        "renewable offtaker" in fewshots_lower
+        and "renewable products" in fewshots_lower
+        and "settlement invoices" in fewshots_lower
+    )
+    if not (has_sales_examples or has_renewable_examples):
         missing.append("representative Data Agent few-shot questions")
     if missing:
         return CheckResult(

@@ -1,11 +1,51 @@
 CategoryID,ParentCategoryId,CategoryName,CategoryDescription,BrandName,BrandLogoUrl,IsActive
-201,Parent_2,Coffee Makers,Coffee Makers for home and business kitchens.,Contoso Kitchen,https://contoso.com/kitchen-logo.png,True
-202,Parent_2,Cutlery,Cutlery for home and business kitchens.,Contoso Kitchen,https://contoso.com/kitchen-logo.png,True
-203,Parent_2,Cups & Mugs,Cups & Mugs for home and business kitchens.,Contoso Kitchen,https://contoso.com/kitchen-logo.png,True
-204,Parent_2,Serving Dishes,Serving Dishes for home and business kitchens.,Contoso Kitchen,https://contoso.com/kitchen-logo.png,True
-205,Parent_2,Ice Cream Dishes,Ice Cream Dishes for home and business kitchens.,Contoso Kitchen,https://contoso.com/kitchen-logo.png,True
-206,Parent_2,Mixing Bowls,Mixing Bowls for home and business kitchens.,Contoso Kitchen,https://contoso.com/kitchen-logo.png,True
-207,Parent_2,Bakeware,Bakeware for home and business kitchens.,Contoso Kitchen,https://contoso.com/kitchen-logo.png,True
-208,Parent_2,Storage Containers,Storage Containers for home and business kitchens.,Contoso Kitchen,https://contoso.com/kitchen-logo.png,True
-209,Parent_2,Cooking Utensils,Cooking Utensils for home and business kitchens.,Contoso Kitchen,https://contoso.com/kitchen-logo.png,True
-210,Parent_2,Measuring Tools,Measuring Tools for home and business kitchens.,Contoso Kitchen,https://contoso.com/kitchen-logo.png,True
+301,RenewableParent-01,Solar PPA 01,Synthetic solar power purchase agreement products; synthetic taxonomy entry 01.,Contoso Renewable Demo,url coming in future,TRUE
+302,RenewableParent-01,Wind PPA 02,Synthetic wind power purchase agreement products; synthetic taxonomy entry 02.,Contoso Renewable Demo,url coming in future,TRUE
+303,RenewableParent-01,Hybrid PPA 03,Synthetic solar plus wind settlement products; synthetic taxonomy entry 03.,Contoso Renewable Demo,url coming in future,TRUE
+304,RenewableParent-01,Storage Services 04,Synthetic battery storage capacity and energy services; synthetic taxonomy entry 04.,Contoso Renewable Demo,url coming in future,TRUE
+305,RenewableParent-01,Renewable Energy Credits 05,Synthetic REC bundles and certificate settlements; synthetic taxonomy entry 05.,Contoso Renewable Demo,url coming in future,TRUE
+306,RenewableParent-02,Capacity Attributes 06,Synthetic capacity and resource adequacy attributes; synthetic taxonomy entry 06.,Contoso Renewable Demo,url coming in future,TRUE
+307,RenewableParent-02,Curtailment Settlement 07,Synthetic curtailment and balancing settlement products; synthetic taxonomy entry 07.,Contoso Renewable Demo,url coming in future,TRUE
+308,RenewableParent-02,Green Tariff 08,Synthetic utility green tariff products; synthetic taxonomy entry 08.,Contoso Renewable Demo,url coming in future,TRUE
+309,RenewableParent-02,Community Solar 09,Synthetic community solar subscription products; synthetic taxonomy entry 09.,Contoso Renewable Demo,url coming in future,TRUE
+310,RenewableParent-02,Hydro and Geothermal 10,Synthetic hydro and geothermal renewable products; synthetic taxonomy entry 10.,Contoso Renewable Demo,url coming in future,TRUE
+311,RenewableParent-03,Solar PPA 11,Synthetic solar power purchase agreement products; synthetic taxonomy entry 11.,Contoso Renewable Demo,url coming in future,TRUE
+312,RenewableParent-03,Wind PPA 12,Synthetic wind power purchase agreement products; synthetic taxonomy entry 12.,Contoso Renewable Demo,url coming in future,TRUE
+313,RenewableParent-03,Hybrid PPA 13,Synthetic solar plus wind settlement products; synthetic taxonomy entry 13.,Contoso Renewable Demo,url coming in future,TRUE
+314,RenewableParent-03,Storage Services 14,Synthetic battery storage capacity and energy services; synthetic taxonomy entry 14.,Contoso Renewable Demo,url coming in future,TRUE
+315,RenewableParent-03,Renewable Energy Credits 15,Synthetic REC bundles and certificate settlements; synthetic taxonomy entry 15.,Contoso Renewable Demo,url coming in future,TRUE
+316,RenewableParent-04,Capacity Attributes 16,Synthetic capacity and resource adequacy attributes; synthetic taxonomy entry 16.,Contoso Renewable Demo,url coming in future,TRUE
+317,RenewableParent-04,Curtailment Settlement 17,Synthetic curtailment and balancing settlement products; synthetic taxonomy entry 17.,Contoso Renewable Demo,url coming in future,TRUE
+318,RenewableParent-04,Green Tariff 18,Synthetic utility green tariff products; synthetic taxonomy entry 18.,Contoso Renewable Demo,url coming in future,TRUE
+319,RenewableParent-04,Community Solar 19,Synthetic community solar subscription products; synthetic taxonomy entry 19.,Contoso Renewable Demo,url coming in future,TRUE
+320,RenewableParent-04,Hydro and Geothermal 20,Synthetic hydro and geothermal renewable products; synthetic taxonomy entry 20.,Contoso Renewable Demo,url coming in future,TRUE
+321,RenewableParent-05,Solar PPA 21,Synthetic solar power purchase agreement products; synthetic taxonomy entry 21.,Contoso Renewable Demo,url coming in future,TRUE
+322,RenewableParent-05,Wind PPA 22,Synthetic wind power purchase agreement products; synthetic taxonomy entry 22.,Contoso Renewable Demo,url coming in future,TRUE
+323,RenewableParent-05,Hybrid PPA 23,Synthetic solar plus wind settlement products; synthetic taxonomy entry 23.,Contoso Renewable Demo,url coming in future,TRUE
+324,RenewableParent-05,Storage Services 24,Synthetic battery storage capacity and energy services; synthetic taxonomy entry 24.,Contoso Renewable Demo,url coming in future,TRUE
+325,RenewableParent-05,Renewable Energy Credits 25,Synthetic REC bundles and certificate settlements; synthetic taxonomy entry 25.,Contoso Renewable Demo,url coming in future,TRUE
+326,RenewableParent-06,Capacity Attributes 26,Synthetic capacity and resource adequacy attributes; synthetic taxonomy entry 26.,Contoso Renewable Demo,url coming in future,TRUE
+327,RenewableParent-06,Curtailment Settlement 27,Synthetic curtailment and balancing settlement products; synthetic taxonomy entry 27.,Contoso Renewable Demo,url coming in future,TRUE
+328,RenewableParent-06,Green Tariff 28,Synthetic utility green tariff products; synthetic taxonomy entry 28.,Contoso Renewable Demo,url coming in future,TRUE
+329,RenewableParent-06,Community Solar 29,Synthetic community solar subscription products; synthetic taxonomy entry 29.,Contoso Renewable Demo,url coming in future,TRUE
+330,RenewableParent-06,Hydro and Geothermal 30,Synthetic hydro and geothermal renewable products; synthetic taxonomy entry 30.,Contoso Renewable Demo,url coming in future,TRUE
+331,RenewableParent-07,Solar PPA 31,Synthetic solar power purchase agreement products; synthetic taxonomy entry 31.,Contoso Renewable Demo,url coming in future,TRUE
+332,RenewableParent-07,Wind PPA 32,Synthetic wind power purchase agreement products; synthetic taxonomy entry 32.,Contoso Renewable Demo,url coming in future,TRUE
+333,RenewableParent-07,Hybrid PPA 33,Synthetic solar plus wind settlement products; synthetic taxonomy entry 33.,Contoso Renewable Demo,url coming in future,TRUE
+334,RenewableParent-07,Storage Services 34,Synthetic battery storage capacity and energy services; synthetic taxonomy entry 34.,Contoso Renewable Demo,url coming in future,TRUE
+335,RenewableParent-07,Renewable Energy Credits 35,Synthetic REC bundles and certificate settlements; synthetic taxonomy entry 35.,Contoso Renewable Demo,url coming in future,TRUE
+336,RenewableParent-08,Capacity Attributes 36,Synthetic capacity and resource adequacy attributes; synthetic taxonomy entry 36.,Contoso Renewable Demo,url coming in future,TRUE
+337,RenewableParent-08,Curtailment Settlement 37,Synthetic curtailment and balancing settlement products; synthetic taxonomy entry 37.,Contoso Renewable Demo,url coming in future,TRUE
+338,RenewableParent-08,Green Tariff 38,Synthetic utility green tariff products; synthetic taxonomy entry 38.,Contoso Renewable Demo,url coming in future,TRUE
+339,RenewableParent-08,Community Solar 39,Synthetic community solar subscription products; synthetic taxonomy entry 39.,Contoso Renewable Demo,url coming in future,TRUE
+340,RenewableParent-08,Hydro and Geothermal 40,Synthetic hydro and geothermal renewable products; synthetic taxonomy entry 40.,Contoso Renewable Demo,url coming in future,TRUE
+341,RenewableParent-09,Solar PPA 41,Synthetic solar power purchase agreement products; synthetic taxonomy entry 41.,Contoso Renewable Demo,url coming in future,TRUE
+342,RenewableParent-09,Wind PPA 42,Synthetic wind power purchase agreement products; synthetic taxonomy entry 42.,Contoso Renewable Demo,url coming in future,TRUE
+343,RenewableParent-09,Hybrid PPA 43,Synthetic solar plus wind settlement products; synthetic taxonomy entry 43.,Contoso Renewable Demo,url coming in future,TRUE
+344,RenewableParent-09,Storage Services 44,Synthetic battery storage capacity and energy services; synthetic taxonomy entry 44.,Contoso Renewable Demo,url coming in future,TRUE
+345,RenewableParent-09,Renewable Energy Credits 45,Synthetic REC bundles and certificate settlements; synthetic taxonomy entry 45.,Contoso Renewable Demo,url coming in future,TRUE
+346,RenewableParent-10,Capacity Attributes 46,Synthetic capacity and resource adequacy attributes; synthetic taxonomy entry 46.,Contoso Renewable Demo,url coming in future,TRUE
+347,RenewableParent-10,Curtailment Settlement 47,Synthetic curtailment and balancing settlement products; synthetic taxonomy entry 47.,Contoso Renewable Demo,url coming in future,TRUE
+348,RenewableParent-10,Green Tariff 48,Synthetic utility green tariff products; synthetic taxonomy entry 48.,Contoso Renewable Demo,url coming in future,TRUE
+349,RenewableParent-10,Community Solar 49,Synthetic community solar subscription products; synthetic taxonomy entry 49.,Contoso Renewable Demo,url coming in future,TRUE
+350,RenewableParent-10,Hydro and Geothermal 50,Synthetic hydro and geothermal renewable products; synthetic taxonomy entry 50.,Contoso Renewable Demo,url coming in future,TRUE
