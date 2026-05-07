@@ -613,6 +613,33 @@ class FabricWorkspaceApiClient(FabricApiClient):
         self.workspace_id = workspace_id
         self._workspace_info = None  # Cache for workspace information
         self._log(f"Initialized FabricWorkspaceApiClient for workspace {workspace_id}")
+
+    def list_items(self) -> List[Dict[str, Any]]:
+        """
+        Get all items in the current workspace.
+
+        Returns:
+            List of workspace item objects.
+
+        Raises:
+            FabricApiError: If request fails.
+        """
+        items: List[Dict[str, Any]] = []
+        uri = f"workspaces/{self.workspace_id}/items"
+
+        while uri:
+            response = self._make_request(uri)
+            data = response.json()
+            items.extend(data.get("value", []))
+
+            continuation_uri = data.get("continuationUri")
+            if continuation_uri:
+                uri = continuation_uri.replace(f"{self.api_url}/", "", 1)
+            else:
+                uri = ""
+
+        self._log(f"Found {len(items)} item(s) in workspace {self.workspace_id}")
+        return items
     
     # Notebook operations
     def get_notebook(self, notebook_id: str) -> Dict[str, Any]:

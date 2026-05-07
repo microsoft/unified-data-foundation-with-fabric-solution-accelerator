@@ -70,6 +70,16 @@ from helpers.udf_workspace_admins import setup_workspace_administrators
 
 SOLUTION_NAME = "Unified Data Foundation"
 INSTALLER_NOTEBOOK_NAME = "udf_solution_installer"
+EXPECTED_DEPLOYED_ITEMS = {
+    ("maag_bronze", "Lakehouse"),
+    ("maag_silver", "Lakehouse"),
+    ("maag_gold", "Lakehouse"),
+    ("run_bronze_to_silver", "Notebook"),
+    ("run_silver_to_gold", "Notebook"),
+    ("sales_dashboard", "Report"),
+    ("sales_dashboard", "SemanticModel"),
+    ("Data Agent for UDF", "DataAgent"),
+}
 
 ALL_DEPLOYMENT_STEPS = [
     "setup_workspace",
@@ -209,6 +219,26 @@ def _run_installer_notebook(workspace_client, notebook_id: str, monitor_interval
     print(f"   ✅ Installer notebook completed successfully")
 
 
+def _verify_solution_items(workspace_client) -> None:
+    """Verify that the installer deployed the expected solution items."""
+    print("   Verifying deployed Fabric solution items")
+    items = workspace_client.list_items()
+    item_pairs = {
+        (item.get("displayName"), item.get("type"))
+        for item in items
+    }
+
+    missing = sorted(EXPECTED_DEPLOYED_ITEMS - item_pairs)
+    if missing:
+        missing_text = ", ".join(f"{name} ({item_type})" for name, item_type in missing)
+        raise FabricApiError(
+            "Installer notebook completed, but required solution items are missing: "
+            f"{missing_text}"
+        )
+
+    print(f"   ✅ Verified {len(EXPECTED_DEPLOYED_ITEMS)} deployed solution item(s)")
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -339,6 +369,7 @@ def main() -> None:
                notebook_id=notebook_id)
     try:
         _run_installer_notebook(workspace_client, notebook_id, github_token=github_token)
+        _verify_solution_items(workspace_client)
         print("✅ Successfully completed: run_installer")
         executed_steps.append("run_installer")
     except Exception as exc:
