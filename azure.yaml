@@ -22,8 +22,8 @@ hooks:
       interactive: true
       continueOnError: false
     posix:
-      shell: pwsh
-      run: ./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/install_udf_solution.py" -SkipPythonVirtualEnvironment
+      shell: sh
+      run: bash ./infra/scripts/utils/Run-PythonScript.sh -ScriptPath "infra/scripts/fabric/install_udf_solution.py"
       interactive: true
       continueOnError: false
   predown:
@@ -33,7 +33,7 @@ hooks:
       interactive: true
       continueOnError: false
     posix:
-      shell: pwsh
-      run: ./infra/scripts/utils/Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/remove_udf_solution.py" -SkipPythonVirtualEnvironment
+      shell: sh
+      run: bash ./infra/scripts/utils/Run-PythonScript.sh -ScriptPath "infra/scripts/fabric/remove_udf_solution.py"
       interactive: true
       continueOnError: false
