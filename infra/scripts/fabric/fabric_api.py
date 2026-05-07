@@ -856,7 +856,7 @@ class FabricWorkspaceApiClient(FabricApiClient):
         """
         
         try:
-            job_url = f"workspaces/{self.workspace_id}/items/{notebook_id}/jobs/instances?jobType=RunNotebook"
+            job_url = f"workspaces/{self.workspace_id}/items/{notebook_id}/jobs/RunNotebook/instances"
             start_time = time.time()
 
             # Verify notebook exists before executing
