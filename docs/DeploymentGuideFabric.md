@@ -37,6 +37,7 @@ You need these tools installed to run the deployment commands.
 | Tool | Version | Purpose | Download |
 |------|---------|---------|----------|
 | **Azure Developer CLI** | Latest | Orchestrates deployment | [Install azd](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) |
+| **Bicep CLI** | 0.33.0+ | Compiles infrastructure templates | [Install Bicep](https://learn.microsoft.com/azure/azure-resource-manager/bicep/install) |
 | **Azure CLI** | Latest | Authentication | [Install az](https://learn.microsoft.com/cli/azure/install-azure-cli) |
 | **Python** | 3.9+ | Fabric configuration scripts | [Install Python](https://www.python.org/downloads/) |
 
