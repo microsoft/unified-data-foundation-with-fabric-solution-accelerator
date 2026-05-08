@@ -14,6 +14,9 @@ requests==2.33.1
 # Date/time utilities (required by powerbi_api.py and fabric_api.py)
 python-dateutil==2.9.0.post0
 
+# Fabric item deployment from local repository files
+fabric-launcher==0.4.1
+
 # Standard library packages (included with Python)
 # - json (built-in)
 # - base64 (built-in) 

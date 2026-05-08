@@ -23,6 +23,7 @@ Author: Generated for Unified Data Foundation with Fabric (UDFWF) project
 
 import time
 import json
+import subprocess
 import requests
 from typing import Dict, List, Optional, Union, Any
 from azure.identity import AzureCliCredential
@@ -111,7 +112,32 @@ class FabricApiClient:
             
             return self._token
         except Exception as e:
-            raise FabricApiError(f"Authentication failed: {str(e)}")
+            try:
+                result = subprocess.run(
+                    [
+                        "az",
+                        "account",
+                        "get-access-token",
+                        "--resource",
+                        self.resource_url,
+                        "--output",
+                        "json",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                    timeout=30,
+                )
+                token_data = json.loads(result.stdout)
+                self._token = token_data["accessToken"]
+                self._token_expiry = token_data.get("expires_on")
+                self._log("Authentication successful")
+                return self._token
+            except Exception as fallback_error:
+                raise FabricApiError(
+                    "Authentication failed: "
+                    f"{str(e)}; Azure CLI fallback failed: {str(fallback_error)}"
+                ) from e
     
     def _make_request(self,
                      uri: str,

@@ -46,10 +46,16 @@ import os
 import sys
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 # Add current directory to path so local modules can be imported
 sys.path.append(os.path.dirname(__file__))
+
+from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
+from azure.identity import AzureCliCredential
+from azure.storage.filedatalake import DataLakeServiceClient
+from fabric_launcher.fabric_deployer import FabricDeployer
 
 from fabric_api import FabricApiError, create_fabric_client, create_workspace_fabric_client
 from graph_api import create_graph_client
@@ -85,7 +91,7 @@ ALL_DEPLOYMENT_STEPS = [
     "setup_workspace",
     "setup_administrators",
     "upload_installer",
-    "run_installer",
+    "deploy_solution",
 ]
 
 
@@ -104,6 +110,12 @@ def _notebook_path() -> str:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     infra_dir = os.path.dirname(os.path.dirname(script_dir))
     return os.path.join(infra_dir, "deploy", f"{INSTALLER_NOTEBOOK_NAME}.ipynb")
+
+
+def _repo_root() -> Path:
+    """Return the repository root for local deployment operations."""
+    script_dir = Path(__file__).resolve().parent
+    return script_dir.parent.parent.parent
 
 
 def _upload_installer_notebook(workspace_client, notebook_path: str) -> str:
@@ -232,11 +244,154 @@ def _verify_solution_items(workspace_client) -> None:
     if missing:
         missing_text = ", ".join(f"{name} ({item_type})" for name, item_type in missing)
         raise FabricApiError(
-            "Installer notebook completed, but required solution items are missing: "
+            "Required solution items are missing: "
             f"{missing_text}"
         )
 
     print(f"   ✅ Verified {len(EXPECTED_DEPLOYED_ITEMS)} deployed solution item(s)")
+
+
+class _AzureCliNotebookUtils:
+    """Minimal notebookutils credential shim for fabric-launcher local deployments."""
+
+    class _Credentials:
+        def __init__(self) -> None:
+            self._credential = AzureCliCredential()
+
+        def getToken(self, _resource: str) -> str:
+            return self._credential.get_token("https://api.fabric.microsoft.com/.default").token
+
+    def __init__(self) -> None:
+        self.credentials = self._Credentials()
+
+
+def _deploy_items_from_local_repo(workspace_id: str, repo_root: Path) -> None:
+    """Deploy Fabric items directly from the checked-out local repository."""
+    repository_directory = repo_root / "fabric_workspace"
+    if not repository_directory.is_dir():
+        raise FabricApiError(f"Fabric workspace directory not found: {repository_directory}")
+
+    for stage in (["Lakehouse"], ["Notebook", "Report", "DataAgent", "SemanticModel"]):
+        print(f"   Deploying Fabric item stage: {', '.join(stage)}")
+        for attempt in range(1, 4):
+            deployer = FabricDeployer(
+                workspace_id=workspace_id,
+                repository_directory=str(repository_directory),
+                notebookutils=_AzureCliNotebookUtils(),
+                allow_non_empty_workspace=True,
+            )
+            try:
+                deployer.deploy_items(item_types=stage)
+                break
+            except Exception as exc:
+                if attempt == 3:
+                    raise
+                backoff = 20 * attempt
+                print(
+                    f"   ⚠️  Fabric item stage failed on attempt {attempt}/3: {exc}. "
+                    f"Retrying in {backoff}s."
+                )
+                time.sleep(backoff)
+
+
+def _ensure_onelake_directory(file_system_client, base_path: str, directory_path: str,
+                              created_paths: set[str]) -> None:
+    """Create a OneLake directory under a Lakehouse Files root if it is missing."""
+    if not directory_path or directory_path == base_path:
+        return
+    if not directory_path.startswith(f"{base_path}/"):
+        raise FabricApiError(f"Unexpected OneLake target path: {directory_path}")
+
+    current = base_path
+    for part in directory_path[len(base_path) + 1:].split("/"):
+        current = f"{current}/{part}"
+        if current in created_paths:
+            continue
+        try:
+            file_system_client.get_directory_client(current).create_directory()
+        except ResourceExistsError:
+            pass
+        created_paths.add(current)
+
+
+def _upload_data_to_bronze_lakehouse(workspace_name: str, repo_root: Path,
+                                     lakehouse_name: str = "maag_bronze") -> None:
+    """Upload repository data files to the bronze Lakehouse Files root."""
+    source_root = repo_root / "infra" / "data"
+    if not source_root.is_dir():
+        raise FabricApiError(f"Data source directory not found: {source_root}")
+
+    service_client = DataLakeServiceClient(
+        account_url="https://onelake.dfs.fabric.microsoft.com",
+        credential=AzureCliCredential(),
+    )
+    file_system_client = service_client.get_file_system_client(workspace_name)
+    base_path = f"{lakehouse_name}.Lakehouse/Files"
+    created_paths: set[str] = set()
+    uploaded_count = 0
+
+    for source_file in sorted(path for path in source_root.rglob("*") if path.is_file()):
+        relative_path = source_file.relative_to(source_root).as_posix()
+        target_path = f"{base_path}/{relative_path}"
+        parent_path = target_path.rsplit("/", 1)[0]
+        _ensure_onelake_directory(file_system_client, base_path, parent_path, created_paths)
+
+        file_client = file_system_client.get_file_client(target_path)
+        try:
+            file_client.delete_file()
+        except ResourceNotFoundError:
+            pass
+
+        data = source_file.read_bytes()
+        file_client.create_file()
+        if data:
+            file_client.append_data(data=data, offset=0, length=len(data))
+        file_client.flush_data(len(data))
+        uploaded_count += 1
+
+    print(f"   ✅ Uploaded {uploaded_count} data file(s) to {lakehouse_name}/Files")
+
+
+def _run_post_deployment_notebooks(workspace_client) -> None:
+    """Run the standard post-deployment transformation notebooks."""
+    items = workspace_client.list_items()
+    notebooks = {
+        item.get("displayName"): item
+        for item in items
+        if item.get("type") == "Notebook"
+    }
+
+    for notebook_name in ("run_bronze_to_silver", "run_silver_to_gold"):
+        notebook = notebooks.get(notebook_name)
+        if not notebook:
+            raise FabricApiError(f"Post-deployment notebook not found: {notebook_name}")
+
+        print(f"   Running post-deployment notebook: {notebook_name}")
+        result = workspace_client.schedule_notebook_job(
+            notebook["id"],
+            monitor_interval=30,
+        )
+        status = result.get("status", "Unknown")
+        duration = result.get("duration", "N/A")
+        print(f"      Status:   {status}")
+        print(f"      Duration: {duration}")
+        if status != "Completed":
+            error_detail = result.get("error", "No error details available")
+            raise FabricApiError(
+                f"Post-deployment notebook '{notebook_name}' finished with "
+                f"status '{status}'. Error: {error_detail}"
+            )
+
+
+def _deploy_solution_locally(workspace_id: str, workspace_name: str, workspace_client) -> None:
+    """Deploy the solution from local files, upload data, and run transformations."""
+    repo_root = _repo_root()
+    print("   Deploying Fabric items from local repository")
+    _deploy_items_from_local_repo(workspace_id, repo_root)
+    print("   Uploading sample data to bronze Lakehouse")
+    _upload_data_to_bronze_lakehouse(workspace_name, repo_root)
+    print("   Running post-deployment transformations")
+    _run_post_deployment_notebooks(workspace_client)
 
 
 # ---------------------------------------------------------------------------
@@ -245,7 +400,7 @@ def _verify_solution_items(workspace_client) -> None:
 
 
 def main() -> None:
-    """Orchestrate the minimal three-step solution installation."""
+    """Orchestrate the solution installation."""
 
     # ------------------------------------------------------------------
     # Configuration from environment variables
@@ -275,7 +430,7 @@ def main() -> None:
     if workspace_administrators:
         print(f"Administrators:    {', '.join(workspace_administrators)}")
     if github_token:
-        print("GitHub Token:      present (not logged)")
+        print("GitHub Token:      present (not required for local deployment)")
     print(f"Start time:        {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
 
@@ -363,17 +518,17 @@ def main() -> None:
         _abort("upload_installer", exc)
 
     # ------------------------------------------------------------------
-    # Step 4 – Run installer notebook
+    # Step 4 – Deploy solution artifacts, data, and transformations
     # ------------------------------------------------------------------
-    print_step(4, 4, "Running installer notebook",
-               notebook_id=notebook_id)
+    print_step(4, 4, "Deploying solution artifacts, data, and transformations",
+               workspace_id=workspace_id)
     try:
-        _run_installer_notebook(workspace_client, notebook_id, github_token=github_token)
+        _deploy_solution_locally(workspace_id, workspace_name, workspace_client)
         _verify_solution_items(workspace_client)
-        print("✅ Successfully completed: run_installer")
-        executed_steps.append("run_installer")
+        print("✅ Successfully completed: deploy_solution")
+        executed_steps.append("deploy_solution")
     except Exception as exc:
-        _abort("run_installer", exc)
+        _abort("deploy_solution", exc)
 
     # ------------------------------------------------------------------
     # Success summary
