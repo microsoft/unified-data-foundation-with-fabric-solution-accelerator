@@ -1,51 +1,201 @@
 OrderId,OrderLineNumber,ProductId,ProductName,Quantity,UnitPrice,LineTotal,DiscountAmount,TaxAmount
-37da6bf8-6689-5691-a2d2-09223831c3c8,1,1001,Solar MWh Settlement Product 01,88.00,27.50,2420.00,0.00,60.50
-b93a70cd-ad31-5ecb-93fe-24401cda583c,1,1002,Wind MWh Settlement Product 02,101.00,30.50,3080.50,0.00,77.01
-fccfa082-690d-5a6d-b40f-058eb9f0f50e,1,1003,Hybrid MWh Settlement Product 03,114.00,33.50,3819.00,0.00,95.48
-23a7c3d4-5f88-589c-82b8-ad6b83cb174c,1,1004,Storage Storage MWh Settlement Product 04,127.00,36.50,4635.50,0.00,115.89
-2d00d80e-2583-5d4b-b4d8-dc1bdde1972e,1,1005,REC REC Settlement Product 05,140.00,39.50,5530.00,0.00,138.25
-0651d081-8f55-55a2-8e2d-7020b3bd67b0,1,1006,Capacity MW-month Settlement Product 06,153.00,42.50,6377.50,125.00,159.44
-175ab6d9-5e4f-5038-b7cd-aadaf2305d33,1,1007,Curtailment MWh Settlement Product 07,166.00,45.50,7553.00,0.00,188.83
-72ed41d3-74d0-5c55-9a88-ceccdbe677b2,1,1008,Green Tariff MWh Settlement Product 08,179.00,48.50,8681.50,0.00,217.04
-9af02002-b91c-591c-a180-9b56930cfc6a,1,1009,Community Solar Subscription MWh Settlement Product 09,192.00,51.50,9888.00,0.00,247.20
-20cfbaf7-6314-5ec3-86e2-be24e232af87,1,1010,Geothermal MWh Settlement Product 10,205.00,54.50,11172.50,0.00,279.31
-f968cf02-5534-54e8-8af2-f1bde5a69ad1,1,1011,Solar MWh Settlement Product 11,218.00,24.50,5341.00,0.00,133.53
-22ad546a-add3-5dcf-b08f-ef7a480940dd,1,1012,Wind MWh Settlement Product 12,231.00,27.50,6227.50,125.00,155.69
-a422a76f-803b-53d5-9abc-d16511aa18f8,1,1013,Hybrid MWh Settlement Product 13,244.00,30.50,7442.00,0.00,186.05
-f858619a-1cde-5f64-bdd3-85e72bafb055,1,1014,Storage Storage MWh Settlement Product 14,257.00,33.50,8609.50,0.00,215.24
-4d26edd8-7e8d-5103-b341-0675405d3886,1,1015,REC REC Settlement Product 15,270.00,36.50,9855.00,0.00,246.38
-259b6dbb-b5a5-54bd-a5ee-5d5b0539d034,1,1016,Capacity MW-month Settlement Product 16,283.00,39.50,11178.50,0.00,279.46
-470cbacb-daa5-5d54-b2a8-22118956d667,1,1017,Curtailment MWh Settlement Product 17,0.00,42.50,0.00,0.00,0.00
-e9e17dd8-f86d-5bcd-8b74-a96df474028b,1,1018,Green Tariff MWh Settlement Product 18,309.00,45.50,13934.50,125.00,348.36
-9c76b31f-bb4e-55ae-aaca-e607cc727995,1,1019,Community Solar Subscription MWh Settlement Product 19,322.00,48.50,15617.00,0.00,390.43
-4411e9bd-1c52-536f-974a-cd1936c78e40,1,1020,Geothermal MWh Settlement Product 20,335.00,51.50,17252.50,0.00,431.31
-96465afe-4342-564a-9563-5e912861369d,1,1021,Solar MWh Settlement Product 21,348.00,54.50,18966.00,0.00,474.15
-d45dc0d3-5ddc-51f0-95f5-644dd38f3f64,1,1022,Wind MWh Settlement Product 22,361.00,24.50,8844.50,0.00,221.11
-19efa0c5-855d-5ae5-b252-75cc8cf16721,1,1023,Hybrid MWh Settlement Product 23,374.00,27.50,10285.00,0.00,257.13
-d2f3a8b7-b6b0-53e9-af00-940857679232,1,1024,Storage Storage MWh Settlement Product 24,387.00,30.50,11678.50,125.00,291.96
-868a1a11-4809-5b2c-993a-b16e88418d29,1,1025,REC REC Settlement Product 25,400.00,33.50,13400.00,0.00,335.00
-dc805ec6-6fa3-5a91-85f5-17cbeac66842,1,1026,Capacity MW-month Settlement Product 26,413.00,36.50,15074.50,0.00,376.86
-59ce34cd-66a2-59d8-bdd4-6b606f9be49a,1,1027,Curtailment MWh Settlement Product 27,426.00,39.50,16827.00,0.00,420.68
-c100671c-82dd-5fe3-a55f-141f2b8c5d58,1,1028,Green Tariff MWh Settlement Product 28,439.00,42.50,18657.50,0.00,466.44
-245e518c-1672-53bf-ab2b-e288595fe106,1,1029,Community Solar Subscription MWh Settlement Product 29,452.00,45.50,20566.00,0.00,514.15
-9d780f46-4e70-51be-a37f-098ddbef7d02,1,1030,Geothermal MWh Settlement Product 30,465.00,48.50,22427.50,125.00,560.69
-ac10a6e1-5447-5304-b196-e8f75cf91ea7,1,1031,Solar MWh Settlement Product 31,478.00,51.50,24617.00,0.00,615.43
-fc5531cc-1586-5952-8dbd-4f9b971ce666,1,1032,Wind MWh Settlement Product 32,491.00,54.50,26759.50,0.00,668.99
-ccdc61c0-8055-562f-91d9-6a057efd8c26,1,1033,Hybrid MWh Settlement Product 33,79.00,24.50,1935.50,0.00,48.39
-137ce603-bd2f-5a4a-9809-1f07c0becc14,1,1034,Storage Storage MWh Settlement Product 34,0.00,27.50,0.00,0.00,0.00
-6de06839-67f7-5757-9ace-06ad791df623,1,1035,REC REC Settlement Product 35,105.00,30.50,3202.50,0.00,80.06
-fadc91be-5244-5a2f-adf2-19711cb44fcb,1,1036,Capacity MW-month Settlement Product 36,118.00,33.50,3828.00,125.00,95.70
-79d2638a-893b-505e-b634-733e489e44df,1,1037,Curtailment MWh Settlement Product 37,131.00,36.50,4781.50,0.00,119.54
-f8f23a5d-b16e-5dfd-829f-6a3419e3b681,1,1038,Green Tariff MWh Settlement Product 38,144.00,39.50,5688.00,0.00,142.20
-b81bd90e-6e35-5abc-9daa-42fba1182ace,1,1039,Community Solar Subscription MWh Settlement Product 39,157.00,42.50,6672.50,0.00,166.81
-f85c9707-ef8b-5368-bd82-4151eb7103a1,1,1040,Geothermal MWh Settlement Product 40,170.00,45.50,7735.00,0.00,193.38
-3b693128-771c-5694-bdbb-742bf19b6e8d,1,1041,Solar MWh Settlement Product 41,183.00,48.50,8875.50,0.00,221.89
-1b54e0b7-6edc-5b9f-82b1-6bdc455729b8,1,1042,Wind MWh Settlement Product 42,196.00,51.50,9969.00,125.00,249.23
-c0fbd39b-3b01-5c00-aa6b-504305ede9e4,1,1043,Hybrid MWh Settlement Product 43,209.00,54.50,11390.50,0.00,284.76
-b26b7c81-d357-533c-905b-d83843a965ce,1,1044,Storage Storage MWh Settlement Product 44,222.00,24.50,5439.00,0.00,135.98
-9c2738c7-d279-5357-96a6-652e7e2b7db7,1,1045,REC REC Settlement Product 45,235.00,27.50,6462.50,0.00,161.56
-5c3be67c-67f6-5ce7-865c-2fdc45fa0fe1,1,1046,Capacity MW-month Settlement Product 46,248.00,30.50,7564.00,0.00,189.10
-af538c4b-94b0-58be-b2b0-172c27eb0660,1,1047,Curtailment MWh Settlement Product 47,261.00,33.50,8743.50,0.00,218.59
-3c33cebe-f4cb-5d02-aa7b-e9cfb7854558,1,1048,Green Tariff MWh Settlement Product 48,274.00,36.50,9876.00,125.00,246.90
-84558a02-c381-5305-ac79-059ab74ad350,1,1049,Community Solar Subscription MWh Settlement Product 49,287.00,39.50,11336.50,0.00,283.41
-0b766ad6-4c49-5c55-89d2-d30d90ffc573,1,1050,Geothermal MWh Settlement Product 50,300.00,42.50,12750.00,0.00,318.75
+7cc9b3d9-7aed-5f4a-94d8-402666bffdb6,1,1001,Solar MWh Settlement Product 01,83.00,27.50,2282.50,0.00,57.06
+9873cdfd-ef75-5d97-aabb-f845de716f9f,1,1002,Wind MWh Settlement Product 02,96.00,30.50,2928.00,0.00,73.20
+e0c2275d-1d78-5e54-b07a-5f3911d54601,1,1003,Hybrid MWh Settlement Product 03,109.00,33.50,3651.50,0.00,91.29
+eb300a05-117d-5fef-adb2-90402d509949,1,1004,Storage Storage MWh Settlement Product 04,122.00,36.50,4453.00,0.00,111.33
+b932ea43-b96a-57b8-9a5b-e9873fb95edf,1,1005,REC REC Settlement Product 05,135.00,39.50,5332.50,0.00,133.31
+1795c204-e4b3-5517-b4e8-8394b7bd7d82,1,1006,Capacity MW-month Settlement Product 06,148.00,42.50,6165.00,125.00,154.13
+67ef24c9-7f97-5f74-a5cc-37b565091d09,1,1007,Curtailment MWh Settlement Product 07,161.00,45.50,7325.50,0.00,183.14
+d9246506-1e30-5774-9903-0981c095de55,1,1008,Green Tariff MWh Settlement Product 08,174.00,48.50,8439.00,0.00,210.98
+b79374e2-7d07-5f16-9e3e-846e6fcce457,1,1009,Community Solar Subscription MWh Settlement Product 09,187.00,51.50,9630.50,0.00,240.76
+e70ccc5a-a036-587f-875c-a0e91db1e23e,1,1010,Geothermal MWh Settlement Product 10,80.00,54.50,4360.00,0.00,109.00
+82a70c65-b46a-5039-856b-eab909c83d49,1,1011,Solar MWh Settlement Product 11,93.00,24.50,2278.50,0.00,56.96
+0c34bb41-f675-5054-bd1e-396946c82106,1,1012,Wind MWh Settlement Product 12,106.00,27.50,2790.00,125.00,69.75
+71bf31f6-0e46-5b48-abae-1d53a466b31a,1,1013,Hybrid MWh Settlement Product 13,119.00,30.50,3629.50,0.00,90.74
+67b72028-6c17-5ddb-b8f7-a3ed70da6a78,1,1014,Storage Storage MWh Settlement Product 14,132.00,33.50,4422.00,0.00,110.55
+4d1700a3-4bd0-5859-8178-5dff229e3c2b,1,1015,REC REC Settlement Product 15,145.00,36.50,5292.50,0.00,132.31
+3256e5ec-e7a2-5278-90df-eb2ad439cca1,1,1016,Capacity MW-month Settlement Product 16,158.00,39.50,6241.00,0.00,156.03
+5fdbc5a1-d820-5338-a469-7acf19c0a722,1,1017,Curtailment MWh Settlement Product 17,171.00,42.50,7267.50,0.00,181.69
+62d08db1-29e1-549c-9d4a-be063081e3d0,1,1018,Green Tariff MWh Settlement Product 18,184.00,45.50,8247.00,125.00,206.18
+613cda30-bae0-5e4c-b0cf-0b7813fb9b82,1,1019,Community Solar Subscription MWh Settlement Product 19,77.00,48.50,3734.50,0.00,93.36
+51c29fa8-e305-5931-bf3a-7c66097aa45c,1,1020,Geothermal MWh Settlement Product 20,90.00,51.50,4635.00,0.00,115.88
+5a2f356d-fabe-5bb9-b764-fbd3fe501a74,1,1021,Solar MWh Settlement Product 21,103.00,54.50,5613.50,0.00,140.34
+27e3e60a-0d9b-5aa8-a0a8-49623996e6d0,1,1022,Wind MWh Settlement Product 22,136.88,24.50,3353.56,0.00,83.84
+54ba8d22-d1f4-5393-87e9-678f64e4660e,1,1023,Hybrid MWh Settlement Product 23,152.22,27.50,4186.05,0.00,104.65
+bd52c430-ba6b-5d99-a483-bec60d7c9df2,1,1024,Storage Storage MWh Settlement Product 24,167.56,30.50,4985.58,125.00,124.64
+2c033227-f6f6-500f-ba89-181e3ae37f38,1,1025,REC REC Settlement Product 25,182.90,33.50,6127.15,0.00,153.18
+93e9aaea-a4f4-543f-8dcb-ed382bf1a438,1,1026,Capacity MW-month Settlement Product 26,198.24,36.50,7235.76,0.00,180.89
+be28ef0d-0c7d-592b-9af7-9336956384ea,1,1027,Curtailment MWh Settlement Product 27,213.58,39.50,8436.41,0.00,210.91
+0d3e80d8-0eb0-577b-9422-dbbbbaa09166,1,1028,Green Tariff MWh Settlement Product 28,87.32,42.50,3711.10,0.00,92.78
+5578dc68-845b-53bf-8b46-57c5b5f51e2e,1,1029,Community Solar Subscription MWh Settlement Product 29,102.66,45.50,4671.03,0.00,116.78
+3b3bd097-283b-5d12-b028-0afdb80c1bab,1,1030,Geothermal MWh Settlement Product 30,118.00,48.50,5598.00,125.00,139.95
+a67b2c54-4196-5c34-9af6-438e61ba7e79,1,1031,Solar MWh Settlement Product 31,133.34,51.50,6867.01,0.00,171.68
+378143e8-cfba-5f56-a255-51a565f39c30,1,1032,Wind MWh Settlement Product 32,148.68,54.50,8103.06,0.00,202.58
+f5631f16-7eb5-57a9-9080-e8a4f0df8368,1,1033,Hybrid MWh Settlement Product 33,164.02,24.50,4018.49,0.00,100.46
+9c1c3419-fc07-53c3-b660-786309b252d6,1,1034,Storage Storage MWh Settlement Product 34,179.36,27.50,4932.40,0.00,123.31
+6aadf942-d129-59f8-b35f-38080f9befcb,1,1035,REC REC Settlement Product 35,194.70,30.50,5938.35,0.00,148.46
+0d719fcf-624d-56b7-8d39-767e20cf1a70,1,1036,Capacity MW-month Settlement Product 36,210.04,33.50,6911.34,125.00,172.78
+650c5692-cd20-5342-8cf3-babebb34a093,1,1037,Curtailment MWh Settlement Product 37,83.78,36.50,3057.97,0.00,76.45
+f1909b68-0a68-5136-a421-918ca5cf072a,1,1038,Green Tariff MWh Settlement Product 38,99.12,39.50,3915.24,0.00,97.88
+3c9a9e2a-6546-5dfc-92a9-b556ba426b3e,1,1039,Community Solar Subscription MWh Settlement Product 39,114.46,42.50,4864.55,0.00,121.61
+99918182-7133-5a4f-b371-a62d0466951a,1,1040,Geothermal MWh Settlement Product 40,110.00,45.50,5005.00,0.00,125.13
+5d74df1c-b48f-5589-a06e-8a0a71ef3e21,1,1041,Solar MWh Settlement Product 41,123.00,48.50,5965.50,0.00,149.14
+37c81494-025c-5823-a7fe-16961cfedb39,1,1042,Wind MWh Settlement Product 42,136.00,51.50,6879.00,125.00,171.98
+bb0eacb2-73a0-5c40-abfe-8e3400b5ee79,1,1043,Hybrid MWh Settlement Product 43,149.00,54.50,8120.50,0.00,203.01
+502734d2-d97d-55e4-9770-989c60679153,1,1044,Storage Storage MWh Settlement Product 44,162.00,24.50,3969.00,0.00,99.23
+1c264255-04d7-53b7-862d-ccc358e26b34,1,1045,REC REC Settlement Product 45,175.00,27.50,4812.50,0.00,120.31
+58ee2292-805a-5fcd-b9f5-13dee2f63a7f,1,1046,Capacity MW-month Settlement Product 46,188.00,30.50,5734.00,0.00,143.35
+2bdccc0f-4a37-5262-bd00-5dd268771635,1,1047,Curtailment MWh Settlement Product 47,81.00,33.50,2713.50,0.00,67.84
+a61a0420-fee4-5567-90ee-8109f8081717,1,1048,Green Tariff MWh Settlement Product 48,94.00,36.50,3306.00,125.00,82.65
+14c47cd2-2e55-5b70-a165-9018bcf106c8,1,1049,Community Solar Subscription MWh Settlement Product 49,107.00,39.50,4226.50,0.00,105.66
+de70dcd5-a421-5ea6-b613-1e8b19d852e8,1,1050,Geothermal MWh Settlement Product 50,120.00,42.50,5100.00,0.00,127.50
+042e125b-7236-5991-bf2a-d1905f172b0d,1,1001,Solar MWh Settlement Product 01,90.00,27.50,2475.00,0.00,61.88
+ddbf757c-ded9-5464-97e2-c7d2383c52ea,1,1002,Wind MWh Settlement Product 02,103.00,30.50,3141.50,0.00,78.54
+504fbbee-5536-57b5-94da-dce6779d0bd0,1,1003,Hybrid MWh Settlement Product 03,116.00,33.50,3886.00,0.00,97.15
+b90a0b98-8758-55e4-8292-cd06a680021e,1,1004,Storage Storage MWh Settlement Product 04,129.00,36.50,4583.50,125.00,114.59
+f4e337d8-e26d-5323-889e-5c1d7318e6a8,1,1005,REC REC Settlement Product 05,142.00,39.50,5609.00,0.00,140.23
+f23b176b-12ac-5b9c-85d8-af711abe03ea,1,1006,Capacity MW-month Settlement Product 06,155.00,42.50,6587.50,0.00,164.69
+52499008-c7f9-5651-82f6-93c581640d34,1,1007,Curtailment MWh Settlement Product 07,168.00,45.50,7644.00,0.00,191.10
+aafdd4bf-ade6-55b6-ba77-8f41b997916d,1,1008,Green Tariff MWh Settlement Product 08,181.00,48.50,8778.50,0.00,219.46
+0803d685-b35a-5477-886a-cf23c8892146,1,1009,Community Solar Subscription MWh Settlement Product 09,74.00,51.50,3811.00,0.00,95.28
+aa05a5cf-1e14-584a-aac8-cd80d48679d3,1,1010,Geothermal MWh Settlement Product 10,87.00,54.50,4616.50,125.00,115.41
+5246865b-2e95-567b-a848-67915980c7c6,1,1011,Solar MWh Settlement Product 11,100.00,24.50,2450.00,0.00,61.25
+6c33de39-079b-567f-99ab-17a9e627a698,1,1012,Wind MWh Settlement Product 12,113.00,27.50,3107.50,0.00,77.69
+fad82213-04a9-52b8-9aef-6e511ff1586c,1,1013,Hybrid MWh Settlement Product 13,126.00,30.50,3843.00,0.00,96.08
+3e71297f-6f3e-5b30-9d2b-6c6baebddad6,1,1014,Storage Storage MWh Settlement Product 14,139.00,33.50,4656.50,0.00,116.41
+f7996efe-b5b1-5ddc-abca-ab8d9d59efbf,1,1015,REC REC Settlement Product 15,152.00,36.50,5548.00,0.00,138.70
+25f0ad5c-0a3f-5960-b21f-071c79264547,1,1016,Capacity MW-month Settlement Product 16,165.00,39.50,6392.50,125.00,159.81
+b122b01b-b2bd-5ce5-abf0-c3dc173eb0d6,1,1017,Curtailment MWh Settlement Product 17,178.00,42.50,7565.00,0.00,189.13
+8b819334-80e6-5833-b123-3c453540da63,1,1018,Green Tariff MWh Settlement Product 18,71.00,45.50,3230.50,0.00,80.76
+e40f8214-fcfa-599b-9290-063966442c83,1,1019,Community Solar Subscription MWh Settlement Product 19,84.00,48.50,4074.00,0.00,101.85
+5a1a77dc-e608-55d0-a861-565757ec1aab,1,1020,Geothermal MWh Settlement Product 20,97.00,51.50,4995.50,0.00,124.89
+95d0ec9e-1892-5fad-b9fb-c239a1abd088,1,1021,Solar MWh Settlement Product 21,110.00,54.50,5995.00,0.00,149.88
+b4f4b8d9-b9ba-5553-bc13-65358f8cc567,1,1022,Wind MWh Settlement Product 22,145.14,24.50,3430.93,125.00,85.77
+1ac9f341-114a-55db-a819-6c385a1acb44,1,1023,Hybrid MWh Settlement Product 23,160.48,27.50,4413.20,0.00,110.33
+da9bd5e4-46b7-5b87-a6d5-4246124bbaa4,1,1024,Storage Storage MWh Settlement Product 24,175.82,30.50,5362.51,0.00,134.06
+b1cb0a62-07fd-51de-89ee-2c3c31175521,1,1025,REC REC Settlement Product 25,191.16,33.50,6403.86,0.00,160.10
+ae324ffc-9660-5d50-81bd-553b9d1b4117,1,1026,Capacity MW-month Settlement Product 26,206.50,36.50,7537.25,0.00,188.43
+d38a427b-739f-5dbc-b322-38b10421b626,1,1027,Curtailment MWh Settlement Product 27,221.84,39.50,8762.68,0.00,219.07
+e22a9f01-d052-5cf6-8115-19c16cd47219,1,1028,Green Tariff MWh Settlement Product 28,95.58,42.50,3937.15,125.00,98.43
+b6b4fe8e-3d34-5ce2-a506-9225de6d36b0,1,1029,Community Solar Subscription MWh Settlement Product 29,110.92,45.50,5046.86,0.00,126.17
+60cd0e21-d9cb-53f5-976a-30ce679973c8,1,1030,Geothermal MWh Settlement Product 30,126.26,48.50,6123.61,0.00,153.09
+68611ddc-2030-5c7c-9959-22e8a31dc84d,1,1031,Solar MWh Settlement Product 31,141.60,51.50,7292.40,0.00,182.31
+3a2aa445-ad65-5698-b23c-b475daddf3ba,1,1032,Wind MWh Settlement Product 32,156.94,54.50,8553.23,0.00,213.83
+e7bd1ee6-693a-51c0-a9cc-8fdcd5d9ce8f,1,1033,Hybrid MWh Settlement Product 33,172.28,24.50,4220.86,0.00,105.52
+fd132954-a401-56ef-8f9d-38f1426307a1,1,1034,Storage Storage MWh Settlement Product 34,187.62,27.50,5034.55,125.00,125.86
+52d6516b-350f-5222-a372-8c10d3e307b7,1,1035,REC REC Settlement Product 35,202.96,30.50,6190.28,0.00,154.76
+959a3ade-7230-57b2-a0e0-662e698501f8,1,1036,Capacity MW-month Settlement Product 36,218.30,33.50,7313.05,0.00,182.83
+e82aa88c-c2d4-5f5e-97a5-89ee7fe1f79f,1,1037,Curtailment MWh Settlement Product 37,92.04,36.50,3359.46,0.00,83.99
+21ff0263-6c7b-5aa5-b2eb-e7ff7282f99f,1,1038,Green Tariff MWh Settlement Product 38,107.38,39.50,4241.51,0.00,106.04
+f1e8214e-bd54-5974-af17-462bd8ede431,1,1039,Community Solar Subscription MWh Settlement Product 39,122.72,42.50,5215.60,0.00,130.39
+21237e95-11b6-50a5-922d-860dca41bac4,1,1040,Geothermal MWh Settlement Product 40,117.00,45.50,5198.50,125.00,129.96
+9de337ac-35dd-5c0d-8450-8f4a45d27988,1,1041,Solar MWh Settlement Product 41,130.00,48.50,6305.00,0.00,157.63
+e62024ce-319f-5b07-9f30-17cd11ee558f,1,1042,Wind MWh Settlement Product 42,143.00,51.50,7364.50,0.00,184.11
+ba81b025-2a67-56ab-a9fb-04cdae7ddd8a,1,1043,Hybrid MWh Settlement Product 43,156.00,54.50,8502.00,0.00,212.55
+1e8c8896-3580-5645-b6a9-0f9fb4332517,1,1044,Storage Storage MWh Settlement Product 44,169.00,24.50,4140.50,0.00,103.51
+55ca754d-f92d-536b-93f7-b35d3cbfb398,1,1045,REC REC Settlement Product 45,182.00,27.50,5005.00,0.00,125.13
+08f180b9-326e-5b53-b36c-b6138930adba,1,1046,Capacity MW-month Settlement Product 46,75.00,30.50,2162.50,125.00,54.06
+cc44fa9c-f0e5-5a9f-b287-753c2b9961e9,1,1047,Curtailment MWh Settlement Product 47,88.00,33.50,2948.00,0.00,73.70
+92ee5800-772b-5442-b8e0-83c2f6825515,1,1048,Green Tariff MWh Settlement Product 48,101.00,36.50,3686.50,0.00,92.16
+2e0dd266-f73f-5381-8a74-9e0421273d3b,1,1049,Community Solar Subscription MWh Settlement Product 49,114.00,39.50,4503.00,0.00,112.58
+2104551f-7320-58ad-aad8-eb5d4b59f68c,1,1050,Geothermal MWh Settlement Product 50,127.00,42.50,5397.50,0.00,134.94
+986a7527-2bbe-5cef-9cf7-7018f897896e,1,1001,Solar MWh Settlement Product 01,97.00,27.50,2667.50,0.00,66.69
+dffec6cf-8736-50b3-bcb4-ae949174287d,1,1002,Wind MWh Settlement Product 02,110.00,30.50,3230.00,125.00,80.75
+704e14e1-6e14-5b20-89b8-56808e288bde,1,1003,Hybrid MWh Settlement Product 03,123.00,33.50,4120.50,0.00,103.01
+a4d6ea83-86f6-520e-b49a-832d529230d6,1,1004,Storage Storage MWh Settlement Product 04,136.00,36.50,4964.00,0.00,124.10
+000c3dde-f345-55c9-9d37-217a30f31900,1,1005,REC REC Settlement Product 05,149.00,39.50,5885.50,0.00,147.14
+a401c601-d6ee-55ed-8c3e-a1aa8f53f465,1,1006,Capacity MW-month Settlement Product 06,162.00,42.50,6885.00,0.00,172.13
+0cd26452-4ad0-59ba-98bf-abd3b14fe50d,1,1007,Curtailment MWh Settlement Product 07,175.00,45.50,7962.50,0.00,199.06
+2a8dc145-cb36-5ff0-b4b7-1d759cc78fc4,1,1008,Green Tariff MWh Settlement Product 08,188.00,48.50,8993.00,125.00,224.83
+c1323289-4364-5be1-a120-f966e6617347,1,1009,Community Solar Subscription MWh Settlement Product 09,81.00,51.50,4171.50,0.00,104.29
+88b3f821-f701-5c39-ad5e-cc9ffa2f1de3,1,1010,Geothermal MWh Settlement Product 10,94.00,54.50,5123.00,0.00,128.08
+f1791fc0-2f46-5d2b-b9b9-1c4e8bfbd3de,1,1011,Solar MWh Settlement Product 11,107.00,24.50,2621.50,0.00,65.54
+0bce6719-74a3-5c83-85bf-363adcc020ee,1,1012,Wind MWh Settlement Product 12,120.00,27.50,3300.00,0.00,82.50
+a75be7af-8532-5868-923e-4855f952ac90,1,1013,Hybrid MWh Settlement Product 13,133.00,30.50,4056.50,0.00,101.41
+9523136c-c8de-5a97-a13d-40825945f3f2,1,1014,Storage Storage MWh Settlement Product 14,146.00,33.50,4766.00,125.00,119.15
+d27dc9e5-14f8-5457-a3c7-93457f622eb1,1,1015,REC REC Settlement Product 15,159.00,36.50,5803.50,0.00,145.09
+3ac10301-fd8f-5fc5-b792-f32e7fceb0df,1,1016,Capacity MW-month Settlement Product 16,172.00,39.50,6794.00,0.00,169.85
+a1732ed0-ed2f-5162-8ef4-eaa1d6369583,1,1017,Curtailment MWh Settlement Product 17,185.00,42.50,7862.50,0.00,196.56
+45540e3f-4539-5e0d-acfe-370352a566df,1,1018,Green Tariff MWh Settlement Product 18,78.00,45.50,3549.00,0.00,88.73
+95926a29-7ead-5800-b3a5-9944e5d2e015,1,1019,Community Solar Subscription MWh Settlement Product 19,91.00,48.50,4413.50,0.00,110.34
+d57ffb14-1697-528c-b6dc-f1a25ffebbf8,1,1020,Geothermal MWh Settlement Product 20,104.00,51.50,5231.00,125.00,130.78
+deeb59bb-e25d-53f6-86ba-802606463999,1,1021,Solar MWh Settlement Product 21,117.00,54.50,6376.50,0.00,159.41
+094e355d-25b0-54d2-86a2-41df9677acb5,1,1022,Wind MWh Settlement Product 22,153.40,24.50,3758.30,0.00,93.96
+ab4f7f28-3e6a-5476-9744-b95fdccbd1cc,1,1023,Hybrid MWh Settlement Product 23,168.74,27.50,4640.35,0.00,116.01
+bcc3032f-5677-51d2-8711-fdab23b9fc38,1,1024,Storage Storage MWh Settlement Product 24,184.08,30.50,5614.44,0.00,140.36
+64f5db8c-1cbb-5625-97ab-7cdb24251c86,1,1025,REC REC Settlement Product 25,199.42,33.50,6680.57,0.00,167.01
+8445c538-05d5-5b71-a53c-1333fc5b45af,1,1026,Capacity MW-month Settlement Product 26,214.76,36.50,7713.74,125.00,192.84
+d328517f-1876-5217-90d4-496286c9a31a,1,1027,Curtailment MWh Settlement Product 27,88.50,39.50,3495.75,0.00,87.39
+4ed13bee-a047-5349-a872-5f038cfe1421,1,1028,Green Tariff MWh Settlement Product 28,103.84,42.50,4413.20,0.00,110.33
+92a1e63a-51f8-560e-b30b-09197b8090b4,1,1029,Community Solar Subscription MWh Settlement Product 29,119.18,45.50,5422.69,0.00,135.57
+b73a220f-039e-5627-80a7-d83c8658bac9,1,1030,Geothermal MWh Settlement Product 30,134.52,48.50,6524.22,0.00,163.11
+f4a09ac7-2315-5415-8e5b-73ebaa9f1660,1,1031,Solar MWh Settlement Product 31,149.86,51.50,7717.79,0.00,192.94
+9cc489c4-d5dd-53e2-bcab-08f7b51cc67d,1,1032,Wind MWh Settlement Product 32,165.20,54.50,8878.40,125.00,221.96
+cacd5477-ec44-53cb-ae1d-b58ffc447007,1,1033,Hybrid MWh Settlement Product 33,180.54,24.50,4423.23,0.00,110.58
+07f94a27-02f9-5cfb-98b4-872392314d8b,1,1034,Storage Storage MWh Settlement Product 34,195.88,27.50,5386.70,0.00,134.67
+95afd12f-dcdc-565f-85e3-8ddaf4a644a3,1,1035,REC REC Settlement Product 35,211.22,30.50,6442.21,0.00,161.06
+cb210abc-76a1-54a4-80d3-c81967256e68,1,1036,Capacity MW-month Settlement Product 36,84.96,33.50,2846.16,0.00,71.15
+bfbe3885-c90b-50d3-998a-28c0c99367a6,1,1037,Curtailment MWh Settlement Product 37,100.30,36.50,3660.95,0.00,91.52
+88ee8973-a098-50c3-a756-e953be73eded,1,1038,Green Tariff MWh Settlement Product 38,115.64,39.50,4442.78,125.00,111.07
+708b2008-39b6-5f96-88e1-9f3342479d24,1,1039,Community Solar Subscription MWh Settlement Product 39,130.98,42.50,5566.65,0.00,139.17
+417ae349-3d88-539d-b169-1af69ad69de3,1,1040,Geothermal MWh Settlement Product 40,124.00,45.50,5642.00,0.00,141.05
+9eeabe26-e630-54e9-beea-23f3f0d7e24c,1,1041,Solar MWh Settlement Product 41,137.00,48.50,6644.50,0.00,166.11
+31d65d13-4cc6-59f2-9f55-d78b27bc2892,1,1042,Wind MWh Settlement Product 42,150.00,51.50,7725.00,0.00,193.13
+65869d57-df7a-517c-98b1-db925dc8825b,1,1043,Hybrid MWh Settlement Product 43,163.00,54.50,8883.50,0.00,222.09
+7beb0e1b-ca10-560c-99e0-2a8c47a22a51,1,1044,Storage Storage MWh Settlement Product 44,176.00,24.50,4187.00,125.00,104.68
+2d8fcbd2-7d90-54da-aaac-1ea3e7b9398e,1,1045,REC REC Settlement Product 45,189.00,27.50,5197.50,0.00,129.94
+bfbf83d0-ac33-5f76-bfe7-e612ce792f57,1,1046,Capacity MW-month Settlement Product 46,82.00,30.50,2501.00,0.00,62.53
+67305c4c-3abc-5e21-86ff-ae4adaac7f4f,1,1047,Curtailment MWh Settlement Product 47,95.00,33.50,3182.50,0.00,79.56
+2599a97c-6057-58db-88ee-6ce446527277,1,1048,Green Tariff MWh Settlement Product 48,108.00,36.50,3942.00,0.00,98.55
+c3a0a386-3bef-571a-8633-9a34ea6f5ac6,1,1049,Community Solar Subscription MWh Settlement Product 49,121.00,39.50,4779.50,0.00,119.49
+96aec156-026c-59b5-8faf-baf4d4293e70,1,1050,Geothermal MWh Settlement Product 50,134.00,42.50,5570.00,125.00,139.25
+dda2bba1-6f04-5c49-b36c-49fd0e706cfa,1,1001,Solar MWh Settlement Product 01,104.00,27.50,2860.00,0.00,71.50
+05e01295-e74c-5201-a9a6-69c89c7e86b8,1,1002,Wind MWh Settlement Product 02,117.00,30.50,3568.50,0.00,89.21
+45422537-f52a-5aa7-9037-52984ee32aee,1,1003,Hybrid MWh Settlement Product 03,130.00,33.50,4355.00,0.00,108.88
+f24d2ed0-19d0-53fb-9ab2-a6c044d95c32,1,1004,Storage Storage MWh Settlement Product 04,143.00,36.50,5219.50,0.00,130.49
+1d869da6-26df-53e6-9cd4-b17181903115,1,1005,REC REC Settlement Product 05,156.00,39.50,6162.00,0.00,154.05
+5964d5a6-c820-5c14-8681-5b9f9f678c06,1,1006,Capacity MW-month Settlement Product 06,169.00,42.50,7057.50,125.00,176.44
+5902a5a5-fdad-5f24-8c5e-f60b543f4671,1,1007,Curtailment MWh Settlement Product 07,182.00,45.50,8281.00,0.00,207.03
+ecfd7a35-823b-5a96-9c5c-02d591530fe5,1,1008,Green Tariff MWh Settlement Product 08,75.00,48.50,3637.50,0.00,90.94
+30fa9115-361d-53b8-bf94-4502d272efe7,1,1009,Community Solar Subscription MWh Settlement Product 09,88.00,51.50,4532.00,0.00,113.30
+c3b3c0ec-d7de-56dd-905f-b9455c1902dd,1,1010,Geothermal MWh Settlement Product 10,101.00,54.50,5504.50,0.00,137.61
+1b21fcbe-49ba-590e-ae76-33ec35991946,1,1011,Solar MWh Settlement Product 11,114.00,24.50,2793.00,0.00,69.83
+274eb434-9a62-5635-a335-abffcf3a341a,1,1012,Wind MWh Settlement Product 12,127.00,27.50,3367.50,125.00,84.19
+f3f7932b-e4cd-57c9-948e-1aa00962b874,1,1013,Hybrid MWh Settlement Product 13,140.00,30.50,4270.00,0.00,106.75
+3bcd7779-f939-5ec7-acfb-3ae8f94c10fc,1,1014,Storage Storage MWh Settlement Product 14,153.00,33.50,5125.50,0.00,128.14
+077b0332-ad2a-55f3-bcf6-5d5061532c2e,1,1015,REC REC Settlement Product 15,166.00,36.50,6059.00,0.00,151.48
+75774de9-3ee3-5884-a577-48fddf148865,1,1016,Capacity MW-month Settlement Product 16,179.00,39.50,7070.50,0.00,176.76
+d9498d24-0155-56de-b63b-f2e053740060,1,1017,Curtailment MWh Settlement Product 17,72.00,42.50,3060.00,0.00,76.50
+f43d7947-114e-5948-abe0-71958e1c14d2,1,1018,Green Tariff MWh Settlement Product 18,85.00,45.50,3742.50,125.00,93.56
+f1131939-d211-5e85-b503-477f70d3d02a,1,1019,Community Solar Subscription MWh Settlement Product 19,98.00,48.50,4753.00,0.00,118.83
+ad2af970-3dea-56db-a6da-247ff0cbd996,1,1020,Geothermal MWh Settlement Product 20,111.00,51.50,5716.50,0.00,142.91
+585cda05-7336-5214-9f17-61cbfabd3143,1,1021,Solar MWh Settlement Product 21,124.00,54.50,6758.00,0.00,168.95
+3bac9e39-8646-5c43-aa4a-5bff1430b76f,1,1022,Wind MWh Settlement Product 22,161.66,24.50,3960.67,0.00,99.02
+a36ce71a-5c46-5e13-87e3-d93e0852cdb1,1,1023,Hybrid MWh Settlement Product 23,177.00,27.50,4867.50,0.00,121.69
+c23aae6d-70ca-5b3f-a4df-54e3e016b2b3,1,1024,Storage Storage MWh Settlement Product 24,192.34,30.50,5741.37,125.00,143.53
+e5398151-5aa4-5181-b307-892c99bc39bc,1,1025,REC REC Settlement Product 25,207.68,33.50,6957.28,0.00,173.93
+a094b7ce-6a73-59af-bf37-9eade493f714,1,1026,Capacity MW-month Settlement Product 26,223.02,36.50,8140.23,0.00,203.51
+b8d8ed9e-179e-56a0-b95a-96812069c928,1,1027,Curtailment MWh Settlement Product 27,96.76,39.50,3822.02,0.00,95.55
+e9e39b5c-fac7-57d2-8b6f-640f6a7b382a,1,1028,Green Tariff MWh Settlement Product 28,112.10,42.50,4764.25,0.00,119.11
+47382a65-0cc1-51c7-8992-abe27fc6e807,1,1029,Community Solar Subscription MWh Settlement Product 29,127.44,45.50,5798.52,0.00,144.96
+2520a214-ba28-555a-bfd2-6b4ddf2756e8,1,1030,Geothermal MWh Settlement Product 30,142.78,48.50,6799.83,125.00,170.00
+6707f66d-6269-5f8c-ace9-b44d9807cf54,1,1031,Solar MWh Settlement Product 31,158.12,51.50,8143.18,0.00,203.58
+ad80a705-4c54-5902-99ab-29c5c3a7654c,1,1032,Wind MWh Settlement Product 32,173.46,54.50,9453.57,0.00,236.34
+dfd5466a-6cac-5caf-b58f-84c5fc43ffaf,1,1033,Hybrid MWh Settlement Product 33,188.80,24.50,4625.60,0.00,115.64
+60a3a059-7d01-5276-b7bc-424496376686,1,1034,Storage Storage MWh Settlement Product 34,204.14,27.50,5613.85,0.00,140.35
+ac9a72b8-423e-5a16-8cec-cb4afb5c16a0,1,1035,REC REC Settlement Product 35,219.48,30.50,6694.14,0.00,167.35
+84eae1e4-3c90-5a5f-a5a0-88e7ac038b48,1,1036,Capacity MW-month Settlement Product 36,93.22,33.50,2997.87,125.00,74.95
+e1097edd-1603-5671-be8c-b30f8278aec7,1,1037,Curtailment MWh Settlement Product 37,108.56,36.50,3962.44,0.00,99.06
+c7af6a08-724e-57eb-87e4-ecb220bc1291,1,1038,Green Tariff MWh Settlement Product 38,123.90,39.50,4894.05,0.00,122.35
+37c61f55-d870-5064-a9bf-4f13f3cd9f8a,1,1039,Community Solar Subscription MWh Settlement Product 39,139.24,42.50,5917.70,0.00,147.94
+9847ae59-e6ea-5aee-a65d-16ca911af8e1,1,1040,Geothermal MWh Settlement Product 40,131.00,45.50,5960.50,0.00,149.01
+37f881a1-5e39-5c46-b824-a4dfcae50853,1,1041,Solar MWh Settlement Product 41,144.00,48.50,6984.00,0.00,174.60
+c41239f6-a120-5714-ac80-3298aac3df45,1,1042,Wind MWh Settlement Product 42,157.00,51.50,7960.50,125.00,199.01
+88f82a8a-7c6f-5942-b43f-eb79fc9af055,1,1043,Hybrid MWh Settlement Product 43,170.00,54.50,9265.00,0.00,231.63
+be1b699b-7f0a-5f45-a95e-789cd3f7f2b1,1,1044,Storage Storage MWh Settlement Product 44,183.00,24.50,4483.50,0.00,112.09
+bec6a6fa-23ac-57be-90ec-2a40ffe1aa71,1,1045,REC REC Settlement Product 45,76.00,27.50,2090.00,0.00,52.25
+18981ccb-752d-590b-8a98-9e3250b0510c,1,1046,Capacity MW-month Settlement Product 46,89.00,30.50,2714.50,0.00,67.86
+c6f2c423-c666-58ca-939f-46a1837b60ac,1,1047,Curtailment MWh Settlement Product 47,102.00,33.50,3417.00,0.00,85.43
+f9e1629f-5f05-5343-924d-46e9f0ab271e,1,1048,Green Tariff MWh Settlement Product 48,115.00,36.50,4072.50,125.00,101.81
+5d5d8994-3428-51af-9041-97bbd4955f6f,1,1049,Community Solar Subscription MWh Settlement Product 49,128.00,39.50,5056.00,0.00,126.40
+bd04f0e9-4061-5e60-b9ca-6cc81580118f,1,1050,Geothermal MWh Settlement Product 50,141.00,42.50,5992.50,0.00,149.81

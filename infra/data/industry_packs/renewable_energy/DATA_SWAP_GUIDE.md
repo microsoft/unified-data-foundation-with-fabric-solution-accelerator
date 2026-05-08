@@ -16,7 +16,7 @@ Compliance assumptions:
 
 ## 2. Data format specification
 
-All staged CSVs preserve native Fabric sample headers and are generated with 50 synthetic rows per staged entity.
+All staged CSVs preserve native Fabric sample headers. The activated transactional sales and finance files now include 200 synthetic rows per source, with 50 rows per year across 2023-2026; dimension files keep the 50-row renewable reference set unless noted.
 
 | Domain | Staged file | Renewable entity | Key contract fields preserved |
 |---|---|---|---|
