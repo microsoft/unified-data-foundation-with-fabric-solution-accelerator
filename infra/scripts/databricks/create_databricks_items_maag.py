@@ -311,10 +311,15 @@ def _get_entra_token() -> Optional[str]:
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
 
-    # Method 2: azure-identity DefaultAzureCredential
+    # Method 2: environment-specific azure-identity credential
     try:
-        from azure.identity import DefaultAzureCredential
-        credential = DefaultAzureCredential()
+        from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
+        app_env = os.environ.get("APP_ENV", "prod").lower()
+        if app_env == "dev":
+            credential = DefaultAzureCredential(require_envvar=True)
+        else:
+            credential = ManagedIdentityCredential(
+                client_id=os.environ.get("AZURE_CLIENT_ID"))
         token = credential.get_token(f"{DATABRICKS_RESOURCE_ID}/.default")
         if token.token:
             return token.token
