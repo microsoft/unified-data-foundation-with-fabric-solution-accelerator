@@ -1,4 +1,6 @@
 # Core dependencies
+--index-url https://packagefeedproxy.microsoft.io/pypi/simple/
+
 pandas==2.1.4
 jupyter==1.0.0
 ipykernel==6.27.1

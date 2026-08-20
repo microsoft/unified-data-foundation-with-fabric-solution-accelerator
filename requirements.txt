@@ -1,6 +1,10 @@
 # Microsoft Fabric API Python Module requirements
 # For fabric_api.py, powerbi_api.py, fabric_utils.py and related Fabric deployment scripts
 
+# Microsoft Package Feed Proxy: routes pip installs through the CFS-protected proxy
+# instead of pypi.org directly (required on Microsoft-managed devices/networks).
+--index-url https://packagefeedproxy.microsoft.io/pypi/simple/
+
 # Azure authentication and core libraries
 azure-identity==1.25.3
 azure-core==1.39.0
