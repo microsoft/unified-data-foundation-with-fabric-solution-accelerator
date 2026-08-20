@@ -67,6 +67,7 @@ param(
     [string]$RequirementsPath,
 
     [Parameter(Mandatory = $false, HelpMessage = "PyPI index URL to install packages from. Defaults to the Microsoft Package Feed Proxy (CFS) so builds keep working once direct access to pypi.org is blocked on Microsoft-managed devices. Override via -PipIndexUrl or the PIP_INDEX_URL environment variable.")]
+    [ValidateNotNullOrEmpty()]
     [string]$PipIndexUrl = $(if ($env:PIP_INDEX_URL) { $env:PIP_INDEX_URL } else { "https://packagefeedproxy.microsoft.io/pypi/simple/" })
 )
 

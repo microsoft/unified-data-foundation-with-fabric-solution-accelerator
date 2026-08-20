@@ -35,7 +35,7 @@ jobs:
           AZURE_ENV_MODEL_CAPACITY: 1
           AZURE_DEV_COLLECT_TELEMETRY: ${{ vars.AZURE_DEV_COLLECT_TELEMETRY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PIP_INDEX_URL: https://packagefeedproxy.microsoft.io/pypi/simple/
+          PIP_INDEX_URL: ${{ vars.PIP_INDEX_URL || 'https://packagefeedproxy.microsoft.io/pypi/simple/' }}
 
       - name: print result
         run: cat ${{ steps.validation.outputs.resultFile }}

@@ -4,7 +4,7 @@
         "dockerfile": "Dockerfile"
     },
     "containerEnv": {
-        "PIP_INDEX_URL": "https://packagefeedproxy.microsoft.io/pypi/simple/"
+        "PIP_INDEX_URL": "${localEnv:PIP_INDEX_URL:https://packagefeedproxy.microsoft.io/pypi/simple/}"
     },
     "features": {
         "ghcr.io/devcontainers/features/azure-cli:1": {
