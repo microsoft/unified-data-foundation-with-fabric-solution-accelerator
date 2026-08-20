@@ -132,6 +132,26 @@ pwsh ./Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_udf_solutio
 
 ## Environment Configuration
 
+### Package Feed Proxy (Microsoft-Managed Devices)
+
+On Microsoft-managed devices, direct access to public package registries (`pypi.org`, `files.pythonhosted.org`) may be blocked by network policy. All `pip install` commands in this repo's scripts (`Run-PythonScript.ps1`, `install.sh`, Databricks provisioning scripts, devcontainer setup) already default to the Microsoft Package Feed Proxy:
+
+```
+https://packagefeedproxy.microsoft.io/pypi/simple/
+```
+
+This is applied automatically via the `PIP_INDEX_URL` environment variable (set in `.devcontainer/devcontainer.json` and GitHub Actions workflows) or an explicit `--index-url` flag. If you're on a non-Microsoft-managed network and the proxy isn't reachable, override it to use public PyPI instead:
+
+```bash
+# Linux/macOS
+export PIP_INDEX_URL="https://pypi.org/simple/"
+```
+
+```powershell
+# Windows PowerShell
+$env:PIP_INDEX_URL = "https://pypi.org/simple/"
+```
+
 ### Required Environment Variables
 
 - `AZURE_FABRIC_CAPACITY_NAME`: Name of existing Fabric capacity (Required)
@@ -193,7 +213,7 @@ export FABRIC_WORKSPACE_NAME="Custom Workspace Name"  # Optional
 1. **Install Python dependencies:**
 
    ```bash
-   pip install requests azure-identity azure-mgmt-fabric
+   pip install --index-url "${PIP_INDEX_URL:-https://packagefeedproxy.microsoft.io/pypi/simple/}" requests azure-identity azure-mgmt-fabric
    ```
 
 2. **Set required environment variables:**
@@ -349,6 +369,7 @@ In your Fabric workspace, verify:
 | Workspace creation failed | Insufficient permissions | Ensure Fabric admin permissions on capacity |
 | Python import errors | Missing dependencies | Install required packages with pip |
 | PowerShell execution error | Execution policy | Use `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` |
+| `pip install` times out / can't resolve pypi.org | Public registry blocked on Microsoft-managed network | Ensure `PIP_INDEX_URL` points to `https://packagefeedproxy.microsoft.io/pypi/simple/` (see [Package Feed Proxy](#package-feed-proxy-microsoft-managed-devices)) |
 
 ### Environment-Specific Issues
 

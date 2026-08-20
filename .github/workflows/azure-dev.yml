@@ -18,6 +18,7 @@ jobs:
       AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
       AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
       AZURE_DEV_COLLECT_TELEMETRY: ${{ vars.AZURE_DEV_COLLECT_TELEMETRY }}
+      PIP_INDEX_URL: https://packagefeedproxy.microsoft.io/pypi/simple/
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
