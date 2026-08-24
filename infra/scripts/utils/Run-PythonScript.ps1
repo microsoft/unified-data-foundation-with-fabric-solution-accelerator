@@ -67,11 +67,25 @@ param(
     [string]$RequirementsPath,
 
     [Parameter(Mandatory = $false, HelpMessage = "PyPI index URL to install packages from. Defaults to the Microsoft Package Feed Proxy (CFS) so builds keep working once direct access to pypi.org is blocked on Microsoft-managed devices. Override via -PipIndexUrl or the PIP_INDEX_URL environment variable.")]
-    [ValidateNotNullOrEmpty()]
     [string]$PipIndexUrl = $(if ($env:PIP_INDEX_URL) { $env:PIP_INDEX_URL } else { "https://packagefeedproxy.microsoft.io/pypi/simple/" })
 )
 
 $ErrorActionPreference = "Stop"
+
+# Default pip index URL (Microsoft Package Feed Proxy). Used both as the parameter default
+# above and as the fallback when a supplied/host PIP_INDEX_URL turns out to be malformed.
+$DefaultPipIndexUrl = "https://packagefeedproxy.microsoft.io/pypi/simple/"
+
+# Guard against malformed PIP_INDEX_URL values (e.g. whitespace-only, or a bare scheme like
+# "https" with no host/path) that would otherwise be silently passed through to pip and
+# produce confusing "index url seems invalid" / "Location is ignored" warnings.
+if ([string]::IsNullOrWhiteSpace($PipIndexUrl) -or $PipIndexUrl.Trim() -notmatch '^https?://[^/\s]+') {
+    Write-Warning "PIP_INDEX_URL value '$PipIndexUrl' is not a valid URL; falling back to $DefaultPipIndexUrl"
+    $PipIndexUrl = $DefaultPipIndexUrl
+}
+else {
+    $PipIndexUrl = $PipIndexUrl.Trim()
+}
 
 # Helper functions for colored output
 function Write-Info { param([string]$Message) Write-Host $Message -ForegroundColor Cyan }

@@ -152,6 +152,8 @@ export PIP_INDEX_URL="https://pypi.org/simple/"
 $env:PIP_INDEX_URL = "https://pypi.org/simple/"
 ```
 
+> **Note:** `devcontainer.json`'s `${localEnv:PIP_INDEX_URL:default}` substitution only checks whether a host `PIP_INDEX_URL` is *set* — it can't validate that the value is a well-formed URL. Make sure any override you set is a complete `http(s)://` URL (not just a scheme or a blank/whitespace value), otherwise `pip` will fail with an "index url seems invalid" error. `Run-PythonScript.ps1` validates and falls back to the proxy default automatically; the devcontainer/shell scripts do not.
+
 ### Required Environment Variables
 
 - `AZURE_FABRIC_CAPACITY_NAME`: Name of existing Fabric capacity (Required)
