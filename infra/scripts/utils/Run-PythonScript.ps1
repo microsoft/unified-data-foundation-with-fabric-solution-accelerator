@@ -80,7 +80,7 @@ $DefaultPipIndexUrl = "https://packagefeedproxy.microsoft.io/pypi/simple/"
 # "https" with no host/path) that would otherwise be silently passed through to pip and
 # produce confusing "index url seems invalid" / "Location is ignored" warnings.
 if ([string]::IsNullOrWhiteSpace($PipIndexUrl) -or $PipIndexUrl.Trim() -notmatch '^https?://[^/\s]+') {
-    Write-Warning "PIP_INDEX_URL value '$PipIndexUrl' is not a valid URL; falling back to $DefaultPipIndexUrl"
+    Write-Warning "PipIndexUrl value '$PipIndexUrl' is not a valid URL; falling back to $DefaultPipIndexUrl"
     $PipIndexUrl = $DefaultPipIndexUrl
 }
 else {
