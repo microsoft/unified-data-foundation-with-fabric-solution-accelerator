@@ -28,6 +28,12 @@
 .PARAMETER RequirementsPath
     Path to requirements.txt file. Defaults to repository root requirements.txt.
 
+.PARAMETER PipIndexUrl
+    PyPI index URL used for pip installs. Defaults to the Microsoft Package Feed Proxy
+    (https://packagefeedproxy.microsoft.io/pypi/simple/), or the PIP_INDEX_URL environment
+    variable when set. Override with -PipIndexUrl to target a different index (e.g. for
+    local development without corporate network access).
+
 .EXAMPLE
     .\Run-PythonScript.ps1 -ScriptPath "infra/scripts/fabric/deploy_fabric_rti.py"
     
@@ -58,10 +64,28 @@ param(
     [switch]$SkipPipUpgrade,
     
     [Parameter(Mandatory = $false, HelpMessage = "Path to requirements.txt file")]
-    [string]$RequirementsPath
+    [string]$RequirementsPath,
+
+    [Parameter(Mandatory = $false, HelpMessage = "PyPI index URL to install packages from. Defaults to the Microsoft Package Feed Proxy (CFS) so builds keep working once direct access to pypi.org is blocked on Microsoft-managed devices. Override via -PipIndexUrl or the PIP_INDEX_URL environment variable.")]
+    [string]$PipIndexUrl = $(if ($env:PIP_INDEX_URL) { $env:PIP_INDEX_URL } else { "https://packagefeedproxy.microsoft.io/pypi/simple/" })
 )
 
 $ErrorActionPreference = "Stop"
+
+# Default pip index URL (Microsoft Package Feed Proxy). Used both as the parameter default
+# above and as the fallback when a supplied/host PIP_INDEX_URL turns out to be malformed.
+$DefaultPipIndexUrl = "https://packagefeedproxy.microsoft.io/pypi/simple/"
+
+# Guard against malformed PIP_INDEX_URL values (e.g. whitespace-only, or a bare scheme like
+# "https" with no host/path) that would otherwise be silently passed through to pip and
+# produce confusing "index url seems invalid" / "Location is ignored" warnings.
+if ([string]::IsNullOrWhiteSpace($PipIndexUrl) -or $PipIndexUrl.Trim() -notmatch '^https?://[^/\s]+') {
+    Write-Warning "PipIndexUrl value '$PipIndexUrl' is not a valid URL; falling back to $DefaultPipIndexUrl"
+    $PipIndexUrl = $DefaultPipIndexUrl
+}
+else {
+    $PipIndexUrl = $PipIndexUrl.Trim()
+}
 
 # Helper functions for colored output
 function Write-Info { param([string]$Message) Write-Host $Message -ForegroundColor Cyan }
@@ -89,7 +113,8 @@ function Initialize-PythonEnvironment {
         [bool]$SkipVirtualEnv,
         [bool]$SkipDependencies,
         [bool]$SkipPipUpgrade,
-        [string]$RequirementsPath
+        [string]$RequirementsPath,
+        [string]$PipIndexUrl
     )
     
     $pythonCmd = Get-PythonCommand
@@ -130,7 +155,7 @@ function Initialize-PythonEnvironment {
     # Upgrade pip if not skipped
     if (-not $SkipPipUpgrade) {
         Write-Warning "Upgrading pip..."
-        & $pythonExec -m pip install --upgrade pip --quiet
+        & $pythonExec -m pip install --index-url $PipIndexUrl --upgrade pip --quiet
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "Warning: Failed to upgrade pip, continuing with existing version..."
         }
@@ -145,7 +170,8 @@ function Initialize-PythonEnvironment {
         if (-not (Test-Path $RequirementsPath)) {
             throw "requirements.txt not found at: $RequirementsPath"
         }
-        & $pythonExec -m pip install -r "$RequirementsPath" --quiet
+        Write-Info "Using pip index URL: $PipIndexUrl"
+        & $pythonExec -m pip install --index-url $PipIndexUrl -r "$RequirementsPath" --quiet
         if ($LASTEXITCODE -ne 0) { throw "Failed to install Python dependencies." }
     }
     else {
@@ -181,7 +207,7 @@ try {
     Write-Success "Working directory: $TargetScriptDir"
     
     # Initialize Python environment
-    $pythonExec = Initialize-PythonEnvironment -RepoRoot $RepoRoot -SkipVirtualEnv:$SkipPythonVirtualEnvironment -SkipDependencies:$SkipPythonDependencies -SkipPipUpgrade:$SkipPipUpgrade -RequirementsPath $RequirementsPath
+    $pythonExec = Initialize-PythonEnvironment -RepoRoot $RepoRoot -SkipVirtualEnv:$SkipPythonVirtualEnvironment -SkipDependencies:$SkipPythonDependencies -SkipPipUpgrade:$SkipPipUpgrade -RequirementsPath $RequirementsPath -PipIndexUrl $PipIndexUrl
     
     # Change to the target script directory and execute
     Push-Location $TargetScriptDir

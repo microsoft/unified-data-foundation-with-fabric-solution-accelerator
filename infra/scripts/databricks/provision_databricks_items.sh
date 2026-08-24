@@ -129,7 +129,8 @@ if [ ! -f "$requirements" ]; then
   echo "Could not find requirements.txt at $requirements. Please check your repository structure."; exit 1
 fi
 echo "Installing Python dependencies from $requirements..."
-pip install -r "$requirements" --quiet
+# Route pip through the Microsoft Package Feed Proxy (falls back to env var / default proxy URL)
+pip install --index-url "${PIP_INDEX_URL:-https://packagefeedproxy.microsoft.io/pypi/simple/}" -r "$requirements" --quiet
 
 # Run the deployment script from the current directory
 
