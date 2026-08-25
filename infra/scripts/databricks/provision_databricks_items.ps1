@@ -174,7 +174,9 @@ if (-not (Test-Path $requirements)) {
     throw "Could not find requirements.txt at $requirements. Please check your repository structure."
 }
 Write-Host "Installing Python dependencies from $requirements..." -ForegroundColor Yellow
-pip install -r "$requirements" --quiet
+# Route pip through the Microsoft Package Feed Proxy (falls back to env var / default proxy URL)
+$pipIndexUrl = if ($env:PIP_INDEX_URL) { $env:PIP_INDEX_URL } else { "https://packagefeedproxy.microsoft.io/pypi/simple/" }
+pip install --index-url $pipIndexUrl -r "$requirements" --quiet
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to install Python dependencies. Please check requirements.txt and try again."
 }

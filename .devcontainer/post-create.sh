@@ -7,6 +7,14 @@ set -e
 
 echo "🚀 Setting up Unified Data Foundation with Fabric development environment..."
 
+# Microsoft Package Feed Proxy (CFS) configuration.
+# All pip installs in this script route through the CFS-protected proxy instead of
+# pypi.org / files.pythonhosted.org directly. PIP_INDEX_URL is normally already set via
+# devcontainer.json's containerEnv, but is (re)exported here as a safety net for anyone
+# invoking this script outside of the devcontainer.
+export PIP_INDEX_URL="${PIP_INDEX_URL:-https://packagefeedproxy.microsoft.io/pypi/simple/}"
+echo "📦 Using pip index URL: $PIP_INDEX_URL"
+
 # Note: Core tools already provided by devcontainer.json:
 # - Python 3.x (base image) with pip and venv
 # - Azure CLI + Bicep (azure-cli feature)
@@ -31,19 +39,19 @@ python3 -m pip --version
 
 # Upgrade pip
 echo "🐍 Upgrading pip..."
-python3 -m pip install --upgrade pip
+python3 -m pip install --index-url "$PIP_INDEX_URL" --upgrade pip
 
 # Install Python requirements for the project
 echo "📋 Installing Python dependencies globally..."
 
 # Install Fabric requirements globally so they're pre-installed for deployment scripts
 # This improves deployment script performance by avoiding repeated installations
-if [ -f "./infra/scripts/fabric/requirements.txt" ]; then
+if [ -f "./requirements.txt" ]; then
     echo "📦 Installing Fabric script requirements globally..."
-    python3 -m pip install -r "./infra/scripts/fabric/requirements.txt"
+    python3 -m pip install --index-url "$PIP_INDEX_URL" -r "./requirements.txt"
     echo "✅ Fabric script requirements installed successfully"
 else
-    echo "⚠️ Warning: ./infra/scripts/fabric/requirements.txt not found"
+    echo "⚠️ Warning: ./requirements.txt not found"
 fi
 
 # Verify that other requirements files exist (for reference)
@@ -61,7 +69,7 @@ fi
 
 # Install additional development tools
 echo "🛠️ Installing development tools..."
-if ! python3 -m pip install --user \
+if ! python3 -m pip install --index-url "$PIP_INDEX_URL" --user \
     black \
     flake8 \
     pytest \
